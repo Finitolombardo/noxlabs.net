@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { systems } from '../data/systems';
 
@@ -84,19 +85,19 @@ export default function Systems() {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3 mt-auto">
-                    <a
-                      href={`/systems/${system.slug}`}
+                    <Link
+                      to={`/systems/${system.slug}`}
                       className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-lg border border-white/10 hover:border-[#F2C94C]/30 transition-all text-sm font-medium"
                     >
                       Details ansehen
                       <ArrowRight className="w-4 h-4" />
-                    </a>
-                    <a
-                      href="/configurator"
+                    </Link>
+                    <Link
+                      to="/configurator"
                       className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#E5B73C] to-[#F2C94C] text-black rounded-lg hover:shadow-lg hover:shadow-[#F2C94C]/20 transition-all text-sm font-semibold"
                     >
                       Konfigurieren
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </motion.div>
@@ -134,20 +135,20 @@ export default function Systems() {
                   </p>
 
                   <div className="flex flex-col gap-3 mt-auto">
-                    <a
-                      href={`/systems/${system.slug}`}
+                    <Link
+                      to={`/systems/${system.slug}`}
                       className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-lg border border-white/10 hover:border-white/20 transition-all text-sm font-medium"
                     >
                       Details ansehen
                       <ArrowRight className="w-4 h-4" />
-                    </a>
+                    </Link>
                     {system.isConfigurable && (
-                      <a
-                        href="/configurator"
+                      <Link
+                        to="/configurator"
                         className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#E5B73C] to-[#F2C94C] text-black rounded-lg hover:shadow-lg hover:shadow-[#F2C94C]/20 transition-all text-sm font-semibold"
                       >
                         Konfigurieren
-                      </a>
+                      </Link>
                     )}
                   </div>
                 </div>
