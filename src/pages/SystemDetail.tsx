@@ -6,6 +6,7 @@ import IntegrationChip from '../components/UI/IntegrationChip';
 import { systems } from '../data/systems';
 import PitchEvolutionDetail from './PitchEvolutionDetail';
 import LeadforgeDetail from './LeadforgeDetail';
+import ContentEngineDetail from './ContentEngineDetail';
 
 export default function SystemDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -21,6 +22,10 @@ export default function SystemDetail() {
 
   if (slug === 'leadforge') {
     return <LeadforgeDetail />;
+  }
+
+  if (slug === 'content-engine') {
+    return <ContentEngineDetail />;
   }
 
   const containerVariants = {

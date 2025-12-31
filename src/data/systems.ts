@@ -97,38 +97,38 @@ export const systems: System[] = [
     isConfigurable: true
   },
   {
-    slug: 'content-repurposing-system',
-    name: 'Content-Repurposing-System',
-    oneLiner: 'Verwandelt Antworten, Einwände und Trigger in skalierbare Content-Assets',
-    description: 'Verwandelt Antworten, Einwände und Trigger aus Outreach in skalierbare Content-Assets.',
+    slug: 'content-engine',
+    name: 'Content Engine',
+    oneLiner: 'Systematisches Lernen aus Markt- & Nutzerreaktionen',
+    description: 'Ein Content-System, das reale Marktreaktionen, Einwände und erfolgreiche Muster in skalierbare Content-Assets übersetzt – statt Inhalte zu raten.',
     properties: [
-      'Content aus realen Marktreaktionen',
-      'Nutzung von Einwänden & Triggern',
-      'Langfristiger Content-Hebel'
+      'Lernt aus echten Markt- und Nutzer-Signalen',
+      'Extrahiert Strukturen, nicht Texte',
+      'Wandelt Erkenntnisse in wiederverwendbare Assets'
     ],
-    category: ['Leadgen', 'Ops'],
+    category: ['Content', 'Ops'],
     channel: ['Mixed'],
     integrations: ['n8n', 'Notion', 'CRM', 'Google Sheets'],
-    problem: 'Deine wertvollsten Insights stecken in Kundenantworten und Einwänden – aber du nutzt sie nicht systematisch. Content-Produktion ist reaktiv statt datengetrieben.',
+    problem: 'Content basiert auf Annahmen statt Marktvalidierung. Erfolg wird nicht systematisch zerlegt. Kein strukturierter Wissensaufbau.',
     solutionBullets: [
-      'Extrahiert wiederkehrende Einwände, Fragen und Trigger aus Antworten',
-      'Clustert Themen und erstellt Content-Briefings',
-      'Generiert mehrsprachige Assets (Posts, Scripts, Mail-Sequenzen)',
-      'Verknüpft Content mit ursprünglichen Antworten für Kontext',
-      'Liefert priorisierte Content-Roadmap basierend auf Volumen'
+      'Analyse erfolgreicher Marktteilnehmer und Wettbewerber',
+      'Pattern-Erkennung in Hooks, Formaten und Tonalität',
+      'Signal-Bewertung und Korrelations-Analyse',
+      'Übersetzung in Content-Strukturen für Ihr Produkt',
+      'Integration in bestehende Content- und Outreach-Systeme'
     ],
     inputBullets: [
-      'E-Mail-Antworten, CRM-Notizen oder Chat-Logs',
-      'Zielsprachen und Formate',
-      'Content-Tonalität und Marke',
-      'Optional: Bestehende Content-Library zum Abgleich'
+      'Zielgruppe, Branche und Produkt',
+      'Gewünschte Plattformen und Formate',
+      'Content-Tonalität und Positionierung',
+      'Optional: Bestehende Content- oder Outreach-Systeme'
     ],
     outputBullets: [
-      'Themen-Cluster mit Häufigkeit und Priorität',
-      'Content-Briefings mit Kontext aus echten Antworten',
-      'Mehrsprachige Content-Assets (Social, Mail, Landing Pages)',
-      'Dashboard: Was triggert positive vs. negative Reaktionen',
-      'Automatische Updates bei neuen Mustern'
+      'Strukturierte Content-Patterns und Erfolgsmechaniken',
+      'Wiederverwendbare Content-Module und Vorlagen',
+      'Plattform-spezifische Content-Strategien',
+      'Integration in Publishing- oder Outreach-Systeme',
+      'Kontinuierliche Anpassung an Marktveränderungen'
     ],
     modules: [],
     isMainSystem: true,
