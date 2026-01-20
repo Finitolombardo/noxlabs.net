@@ -52,9 +52,20 @@ export default function Systems() {
             transition={{ duration: 0.5 }}
             className="mb-12"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-nox-white mb-3" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
-              Hauptsysteme (laufend betrieben & lernend)
-            </h2>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-3">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-nox-white" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
+                  Hauptsysteme (laufend betrieben & lernend)
+                </h2>
+              </div>
+              <Link
+                to="/configurator"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#E5B73C] to-nox-yellow text-black rounded-lg hover:shadow-lg hover:shadow-nox-yellow/20 transition-all font-semibold whitespace-nowrap"
+              >
+                Hauptsystem konfigurieren
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </div>
             <p className="text-nox-white-muted text-lg max-w-4xl">
               Diese Systeme sind nicht einmalige Setups. Sie werden betrieben, überwacht und kontinuierlich weiterentwickelt.
             </p>
@@ -84,19 +95,13 @@ export default function Systems() {
                     </ul>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 mt-auto">
+                  <div className="mt-auto">
                     <Link
                       to={`/systems/${system.slug}`}
                       className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-nox-white rounded-lg border border-white/10 hover:border-nox-yellow/30 transition-all text-sm font-medium"
                     >
                       Details ansehen
                       <ArrowRight className="w-4 h-4" />
-                    </Link>
-                    <Link
-                      to="/configurator"
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#E5B73C] to-nox-yellow text-black rounded-lg hover:shadow-lg hover:shadow-nox-yellow/20 transition-all text-sm font-semibold"
-                    >
-                      Konfigurieren
                     </Link>
                   </div>
                 </div>
