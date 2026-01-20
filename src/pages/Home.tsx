@@ -45,7 +45,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <section className="relative py-20 md:py-32 px-4 overflow-hidden">
+      <section className="relative py-10 md:py-16 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900/20 via-transparent to-transparent" />
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-pink-500/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/5 rounded-full blur-3xl" />
@@ -60,12 +60,12 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.8 }}
-            className="flex justify-center mb-8"
+            className="flex justify-center mb-4"
           >
             <img
               src="/dein_abschnittstext_(2).png"
               alt="NOX"
-              className="w-80 md:w-96 h-auto object-contain"
+              className="w-96 md:w-[28rem] h-auto object-contain"
             />
           </motion.div>
 
