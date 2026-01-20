@@ -23,12 +23,7 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center space-x-3">
-            <img
-              src="/dein_abschnittstext_(2).png"
-              alt="NOX"
-              className="h-8 w-auto"
-            />
+          <Link to="/" className="flex items-center">
             <span className="text-xl font-bold text-nox-white">
               NOX
             </span>
