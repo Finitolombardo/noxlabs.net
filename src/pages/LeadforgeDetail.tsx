@@ -253,7 +253,7 @@ export default function LeadforgeDetail() {
         >
           <Link
             to="/systems"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-[#f5c542] transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-nox-white-muted hover:text-nox-yellow transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
             Zurück zu Systemen
@@ -269,19 +269,19 @@ export default function LeadforgeDetail() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#d6a400]/20 to-[#f5c542]/20 rounded-3xl blur-2xl" />
           <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#d6a400]/30 rounded-3xl p-8 md:p-12">
             <div className="flex flex-wrap gap-2 mb-4">
-              <span className="text-xs px-3 py-1 bg-white/10 text-gray-300 rounded-full border border-white/10">
+              <span className="text-xs px-3 py-1 bg-white/10 text-nox-white-muted rounded-full border border-white/10">
                 Leadgen
               </span>
-              <span className="text-xs px-3 py-1 bg-white/10 text-gray-300 rounded-full border border-white/10">
+              <span className="text-xs px-3 py-1 bg-white/10 text-nox-white-muted rounded-full border border-white/10">
                 Outreach
               </span>
             </div>
 
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
+            <h1 className="text-3xl md:text-5xl font-bold text-nox-white mb-4">
               Leadforge – strukturierte Lead-Intelligence statt Rohlisten
             </h1>
 
-            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+            <p className="text-xl text-nox-white-muted mb-8 leading-relaxed">
               Von lokalen B2B-Leads bis Investoren: kontextualisiert, anreicherbar und systemfähig für skalierbaren Outreach.
             </p>
 
@@ -291,8 +291,8 @@ export default function LeadforgeDetail() {
                   key={index}
                   className="border-l-2 border-[#d6a400] pl-4"
                 >
-                  <h3 className="text-white font-semibold mb-2 leading-snug text-sm">{stat.label}</h3>
-                  <p className="text-xs text-gray-400">{stat.description}</p>
+                  <h3 className="text-nox-white font-semibold mb-2 leading-snug text-sm">{stat.label}</h3>
+                  <p className="text-xs text-nox-white-muted">{stat.description}</p>
                 </div>
               ))}
             </div>
@@ -319,7 +319,7 @@ export default function LeadforgeDetail() {
         >
           <motion.div variants={itemVariants}>
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8">
-              <h2 className="text-3xl font-bold text-white mb-6">
+              <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Warum klassische Leadgenerierung stagniert
               </h2>
               <div className="w-16 h-1 bg-[#d6a400] mb-8" />
@@ -330,14 +330,14 @@ export default function LeadforgeDetail() {
                     key={index}
                     className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6"
                   >
-                    <h3 className="text-white font-semibold mb-2">{problem.title}</h3>
-                    <p className="text-sm text-gray-400">{problem.description}</p>
+                    <h3 className="text-nox-white font-semibold mb-2">{problem.title}</h3>
+                    <p className="text-sm text-nox-white-muted">{problem.description}</p>
                   </div>
                 ))}
               </div>
 
               <div className="border-l-4 border-[#d6a400] pl-6 py-4">
-                <p className="text-xl text-white font-light italic">
+                <p className="text-xl text-nox-white font-light italic">
                   Das eigentliche Problem ist nicht der Lead – sondern fehlende Intelligence.
                 </p>
               </div>
@@ -346,17 +346,17 @@ export default function LeadforgeDetail() {
 
           <motion.div variants={itemVariants}>
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8">
-              <h2 className="text-3xl font-bold text-white mb-6">
+              <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Kontext ist das stärkste Differenzierungsmerkmal
               </h2>
               <div className="w-16 h-1 bg-[#d6a400] mb-8" />
 
-              <p className="text-gray-300 leading-relaxed mb-6">
+              <p className="text-nox-white-muted leading-relaxed mb-6">
                 Name und Email sind Commodity. Kontext, Priorität und strukturierte Übergabe sind das, was Outreach skalierbar macht. Leadforge arbeitet nicht mit Vermutungen, sondern mit strukturierter Intelligence.
               </p>
 
               <div className="bg-gradient-to-br from-[#d6a400]/10 to-transparent border-l-4 border-[#d6a400] p-8 rounded-r-xl">
-                <p className="text-2xl text-white font-light">
+                <p className="text-2xl text-nox-white font-light">
                   Nicht mehr sammeln – strukturiert qualifizieren.
                 </p>
               </div>
@@ -365,7 +365,7 @@ export default function LeadforgeDetail() {
 
           <motion.div variants={itemVariants}>
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8">
-              <h2 className="text-3xl font-bold text-white mb-6">
+              <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Wie Leadforge arbeitet
               </h2>
               <div className="w-16 h-1 bg-[#d6a400] mb-8" />
@@ -385,10 +385,10 @@ export default function LeadforgeDetail() {
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-gray-300 leading-relaxed font-medium mb-2">
+                    <p className="text-nox-white-muted leading-relaxed font-medium mb-2">
                       Strukturierte Erfassung und Deduplication sind kein Modul – sie sind das Fundament des Systems.
                     </p>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-nox-white-muted">
                       Ohne sie existiert keine saubere Lead-Intelligence.
                     </p>
                   </div>
@@ -399,16 +399,16 @@ export default function LeadforgeDetail() {
 
           <motion.div variants={itemVariants}>
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8">
-              <h2 className="text-3xl font-bold text-white mb-6">
+              <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Modulare System-Architektur
               </h2>
               <div className="w-16 h-1 bg-[#d6a400] mb-8" />
 
-              <p className="text-gray-300 leading-relaxed mb-8">
+              <p className="text-nox-white-muted leading-relaxed mb-8">
                 Leadforge ist modular aufgebaut. Das Core-System ist immer enthalten. Module können je nach Bedarf und Markt ergänzt werden.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mb-6">
+              <h3 className="text-xl font-semibold text-nox-white mb-6">
                 Core System (immer enthalten)
               </h3>
               <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6 mb-10">
@@ -416,13 +416,13 @@ export default function LeadforgeDetail() {
                   {coreSystem.map((item, index) => (
                     <div key={index} className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-[#d6a400] flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-300">{item}</span>
+                      <span className="text-nox-white-muted">{item}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <h3 className="text-xl font-semibold text-white mb-6">
+              <h3 className="text-xl font-semibold text-nox-white mb-6">
                 1. Geo & Market Scope
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
@@ -435,14 +435,14 @@ export default function LeadforgeDetail() {
                       <span className="text-[#d6a400] font-mono text-sm font-bold">
                         {String(index + 1).padStart(2, '0')}
                       </span>
-                      <h4 className="text-white font-semibold">{item.name}</h4>
+                      <h4 className="text-nox-white font-semibold">{item.name}</h4>
                     </div>
-                    <p className="text-sm text-gray-400 leading-relaxed">{item.effect}</p>
+                    <p className="text-sm text-nox-white-muted leading-relaxed">{item.effect}</p>
                   </div>
                 ))}
               </div>
 
-              <h3 className="text-xl font-semibold text-white mb-6">
+              <h3 className="text-xl font-semibold text-nox-white mb-6">
                 2. Lead Type Module
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
@@ -455,14 +455,14 @@ export default function LeadforgeDetail() {
                       <span className="text-[#d6a400] font-mono text-sm font-bold">
                         {String(index + 1).padStart(2, '0')}
                       </span>
-                      <h4 className="text-white font-semibold">{item.name}</h4>
+                      <h4 className="text-nox-white font-semibold">{item.name}</h4>
                     </div>
-                    <p className="text-sm text-gray-400 leading-relaxed">{item.effect}</p>
+                    <p className="text-sm text-nox-white-muted leading-relaxed">{item.effect}</p>
                   </div>
                 ))}
               </div>
 
-              <h3 className="text-xl font-semibold text-white mb-6">
+              <h3 className="text-xl font-semibold text-nox-white mb-6">
                 3. Deep Lead Intelligence (Premium)
               </h3>
               <div className="space-y-4 mb-8">
@@ -477,7 +477,7 @@ export default function LeadforgeDetail() {
               </div>
 
               <div className="border-l-4 border-[#d6a400] pl-6 py-4">
-                <p className="text-lg text-white font-light">
+                <p className="text-lg text-nox-white font-light">
                   Ergebnis: Strukturierte Lead-Intelligence, nicht nur Datenpunkte
                 </p>
               </div>
@@ -486,12 +486,12 @@ export default function LeadforgeDetail() {
 
           <motion.div variants={itemVariants}>
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8">
-              <h2 className="text-3xl font-bold text-white mb-6">
+              <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Optionale Erweiterungen
               </h2>
               <div className="w-16 h-1 bg-[#d6a400] mb-8" />
 
-              <p className="text-gray-400 mb-8 leading-relaxed">
+              <p className="text-nox-white-muted mb-8 leading-relaxed">
                 Das Core-System ist immer enthalten. Erweiterungen können je nach Bedarf ergänzt werden. Die Auswahl erfolgt im Konfigurator.
               </p>
 
@@ -510,12 +510,12 @@ export default function LeadforgeDetail() {
 
           <motion.div variants={itemVariants}>
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8">
-              <h2 className="text-3xl font-bold text-white mb-6">
+              <h2 className="text-3xl font-bold text-nox-white mb-6">
                 System-Orchestrierung
               </h2>
               <div className="w-16 h-1 bg-[#d6a400] mb-8" />
 
-              <p className="text-gray-400 mb-8 leading-relaxed">
+              <p className="text-nox-white-muted mb-8 leading-relaxed">
                 Optional: Verbindung mit anderen Systemen für geschlossene Datenkreisläufe.
               </p>
 
@@ -527,11 +527,11 @@ export default function LeadforgeDetail() {
                   >
                     <div className="flex items-start gap-3 mb-4">
                       <Layers className="w-5 h-5 text-[#d6a400] flex-shrink-0 mt-0.5" />
-                      <h3 className="text-white font-semibold">{option.title}</h3>
+                      <h3 className="text-nox-white font-semibold">{option.title}</h3>
                     </div>
                     <ul className="space-y-2 ml-8">
                       {option.points.map((point, idx) => (
-                        <li key={idx} className="flex items-start gap-3 text-sm text-gray-300">
+                        <li key={idx} className="flex items-start gap-3 text-sm text-nox-white-muted">
                           <span className="text-[#d6a400] mt-1">•</span>
                           <span>{point}</span>
                         </li>
@@ -545,28 +545,28 @@ export default function LeadforgeDetail() {
 
           <motion.div variants={itemVariants}>
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8">
-              <h2 className="text-3xl font-bold text-white mb-6">
+              <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Betrieb & Continuous Delivery
               </h2>
               <div className="w-16 h-1 bg-[#d6a400] mb-8" />
 
               <div className="border-l-4 border-[#d6a400] pl-6 py-4 bg-gradient-to-r from-[#d6a400]/10 to-transparent rounded-r-xl mb-8">
-                <p className="text-xl text-white font-light leading-relaxed">
+                <p className="text-xl text-nox-white font-light leading-relaxed">
                   Leadforge ist kein einmaliges Setup. Das System wird betrieben, überwacht und kontinuierlich erweitert.
                 </p>
               </div>
 
-              <p className="text-gray-300 leading-relaxed mb-6">
+              <p className="text-nox-white-muted leading-relaxed mb-6">
                 Datenquellen verändern sich. Märkte entwickeln sich. Neue Recherche-Strategien entstehen. Ein statisches System veraltet. Ein betriebenes System lernt.
               </p>
 
               <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6">
-                <div className="space-y-4 text-gray-300">
+                <div className="space-y-4 text-nox-white-muted">
                   <div className="flex items-start gap-3">
                     <span className="text-[#d6a400] mt-1">•</span>
                     <div>
-                      <strong className="text-white">Klare Volumensteuerung:</strong>
-                      <span className="text-sm text-gray-400 block mt-1">
+                      <strong className="text-nox-white">Klare Volumensteuerung:</strong>
+                      <span className="text-sm text-nox-white-muted block mt-1">
                         Transparente Limits, skalierbare Infrastruktur
                       </span>
                     </div>
@@ -574,8 +574,8 @@ export default function LeadforgeDetail() {
                   <div className="flex items-start gap-3">
                     <span className="text-[#d6a400] mt-1">•</span>
                     <div>
-                      <strong className="text-white">Skalierbare Infrastruktur:</strong>
-                      <span className="text-sm text-gray-400 block mt-1">
+                      <strong className="text-nox-white">Skalierbare Infrastruktur:</strong>
+                      <span className="text-sm text-nox-white-muted block mt-1">
                         Von Einzelstadt bis Multi-Country ohne Qualitätsverlust
                       </span>
                     </div>
@@ -583,8 +583,8 @@ export default function LeadforgeDetail() {
                   <div className="flex items-start gap-3">
                     <span className="text-[#d6a400] mt-1">•</span>
                     <div>
-                      <strong className="text-white">Transparente Grenzen bei sehr hohem Volumen:</strong>
-                      <span className="text-sm text-gray-400 block mt-1">
+                      <strong className="text-nox-white">Transparente Grenzen bei sehr hohem Volumen:</strong>
+                      <span className="text-sm text-nox-white-muted block mt-1">
                         Kein unbegrenztes Versprechen. Klare Kommunikation bei Skalierungsgrenzen.
                       </span>
                     </div>
@@ -598,10 +598,10 @@ export default function LeadforgeDetail() {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-[#d6a400]/20 to-[#f5c542]/20 rounded-2xl blur-xl" />
               <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#d6a400]/30 rounded-2xl p-10 text-center">
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                <h2 className="text-2xl md:text-3xl font-bold text-nox-white mb-4">
                   Bereit für strukturierte Lead-Intelligence?
                 </h2>
-                <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
+                <p className="text-nox-white-muted mb-6 max-w-2xl mx-auto">
                   Konfigurieren oder unverbindlich sprechen.
                 </p>
                 <Link to="/contact">

@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply bg-[#070707] text-white;
+    @apply bg-[#070707] text-nox-white;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 

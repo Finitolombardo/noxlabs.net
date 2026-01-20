@@ -64,7 +64,7 @@ export default function Roadmap() {
     switch (status) {
       case 'in-entwicklung':
         return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#F2C94C]/10 text-[#F2C94C] border border-[#F2C94C]/30">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-nox-yellow/10 text-nox-yellow border border-nox-yellow/30">
             In Entwicklung
           </span>
         );
@@ -92,10 +92,10 @@ export default function Roadmap() {
       className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-6"
     >
       <div className="flex items-start justify-between gap-4 mb-3">
-        <h3 className="text-xl font-bold text-[#FFF1F4]">{system.name}</h3>
+        <h3 className="text-xl font-bold text-nox-white">{system.name}</h3>
         {getStatusBadge(system.status)}
       </div>
-      <p className="text-[#E8DDE1] text-sm leading-relaxed">
+      <p className="text-nox-white-muted text-sm leading-relaxed">
         {system.description}
       </p>
     </motion.div>
@@ -110,10 +110,10 @@ export default function Roadmap() {
           transition={{ duration: 0.6 }}
           className="text-center mb-20"
         >
-          <h1 className="text-4xl md:text-6xl font-bold text-[#FFF1F4] mb-4" style={{ textShadow: '0 0 40px rgba(255, 182, 193, 0.15), 0 0 20px rgba(255, 182, 193, 0.1)' }}>
+          <h1 className="text-4xl md:text-6xl font-bold text-nox-white mb-4" style={{ textShadow: '0 0 40px rgba(255, 182, 193, 0.15), 0 0 20px rgba(255, 182, 193, 0.1)' }}>
             Roadmap
           </h1>
-          <p className="text-lg text-[#E8DDE1] max-w-3xl mx-auto">
+          <p className="text-lg text-nox-white-muted max-w-3xl mx-auto">
             Transparente Produktvision und Entwicklungsrichtung – ohne Marketing-Floskeln.
           </p>
         </motion.div>
@@ -126,10 +126,10 @@ export default function Roadmap() {
               transition={{ duration: 0.5 }}
               className="mb-12"
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-[#FFF1F4] mb-3" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
+              <h2 className="text-3xl md:text-4xl font-bold text-nox-white mb-3" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
                 In Entwicklung
               </h2>
-              <p className="text-[#E8DDE1] text-lg max-w-4xl">
+              <p className="text-nox-white-muted text-lg max-w-4xl">
                 Systeme, die aktuell gebaut und getestet werden.
               </p>
             </motion.div>
@@ -153,10 +153,10 @@ export default function Roadmap() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="mb-12"
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-[#FFF1F4] mb-3" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
+              <h2 className="text-3xl md:text-4xl font-bold text-nox-white mb-3" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
                 Geplant
               </h2>
-              <p className="text-[#E8DDE1] text-lg max-w-4xl">
+              <p className="text-nox-white-muted text-lg max-w-4xl">
                 Systeme in Planung mit klar definiertem Scope.
               </p>
             </motion.div>
@@ -180,10 +180,10 @@ export default function Roadmap() {
               transition={{ duration: 0.5, delay: 0.4 }}
               className="mb-12"
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-[#FFF1F4] mb-3" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
+              <h2 className="text-3xl md:text-4xl font-bold text-nox-white mb-3" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
                 Research
               </h2>
-              <p className="text-[#E8DDE1] text-lg max-w-4xl">
+              <p className="text-nox-white-muted text-lg max-w-4xl">
                 Experimentelle Konzepte und technische Machbarkeitsprüfung.
               </p>
             </motion.div>

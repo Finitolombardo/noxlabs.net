@@ -56,41 +56,41 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           className="max-w-5xl mx-auto text-center relative z-10"
         >
-          <motion.h1
-            className="text-4xl md:text-6xl lg:text-7xl font-bold text-[#FFF1F4] mb-6 leading-tight"
-            style={{ textShadow: '0 0 40px rgba(255, 182, 193, 0.15), 0 0 20px rgba(255, 182, 193, 0.1)' }}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.8 }}
+            className="flex justify-center mb-8"
           >
-            KI-Systeme, die Prozesse strukturieren –{' '}
-            <span className="text-[#FFE6EC]">
-              und gezielt weiterentwickelbar sind.
+            <img
+              src="/dein_abschnittstext_(2).png"
+              alt="NOX"
+              className="w-40 md:w-56 h-auto object-contain"
+            />
+          </motion.div>
+
+          <motion.h1
+            className="text-4xl md:text-6xl lg:text-7xl font-bold text-nox-white mb-6 leading-tight"
+            style={{ textShadow: '0 0 40px rgba(255, 182, 193, 0.15), 0 0 20px rgba(255, 182, 193, 0.1)' }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+          >
+            Systeme, die strukturieren –{' '}
+            <span className="text-nox-white-soft">
+              und gezielt evolvieren.
             </span>
           </motion.h1>
 
           <motion.p
-            className="text-lg md:text-xl text-[#E8DDE1] mb-6 max-w-3xl mx-auto"
+            className="text-lg md:text-xl text-nox-white-muted mb-6 max-w-3xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.8 }}
           >
-            Modulare Systeme für Unternehmen jeder Größe.<br />
-            Von stabilen Spezial-Systemen bis zu evolvierbaren Kernsystemen – ohne Chaos, ohne Abhängigkeiten.
+            Modulare Architektur für kontrolliertes Wachstum.<br />
+            Von stabilen Spezial-Systemen bis zu lernenden Kernsystemen – ohne Chaos.
           </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.8 }}
-            className="flex justify-center mb-6"
-          >
-            <img
-              src="/dein_abschnittstext_(2).png"
-              alt="Obsidian Nexus"
-              className="w-32 md:w-52 h-auto object-contain"
-            />
-          </motion.div>
 
           <motion.div
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
@@ -99,7 +99,7 @@ export default function Home() {
             transition={{ delay: 0.6, duration: 0.8 }}
           >
             <Link to="/systems">
-              <button className="px-8 py-4 bg-[#F2C94C] text-black font-semibold rounded-lg hover:bg-[#F5D76E] transition-all duration-300 inline-flex items-center gap-2">
+              <button className="px-8 py-4 bg-nox-yellow text-black font-semibold rounded-lg hover:bg-nox-yellow-hover transition-all duration-300 inline-flex items-center gap-2">
                 Systeme ansehen
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -122,8 +122,8 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <p className="text-lg md:text-xl text-[#E8DDE1] leading-relaxed max-w-3xl mx-auto">
-              Nicht jedes System muss lernen. Obsidian Nexus kombiniert stabile, spezialisierte Systeme
+            <p className="text-lg md:text-xl text-nox-white-muted leading-relaxed max-w-3xl mx-auto">
+              Nicht jedes System muss lernen. NOX kombiniert stabile, spezialisierte Systeme
               mit lernenden Kernsystemen, dort wo echte Rückkopplung entsteht.
             </p>
           </motion.div>
@@ -136,20 +136,20 @@ export default function Home() {
             className="grid grid-cols-1 md:grid-cols-3 gap-6"
           >
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-[#FFF3F6] mb-2">Stabile Systeme für definierte Aufgaben</h3>
-              <p className="text-[#E8DDE1] leading-relaxed text-sm">
+              <h3 className="text-lg font-semibold text-nox-white mb-2">Stabile Systeme für definierte Aufgaben</h3>
+              <p className="text-nox-white-muted leading-relaxed text-sm">
                 Automatisierung dort, wo Prozesse klar sind und Stabilität wichtiger ist als Experimente.
               </p>
             </div>
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-[#FFF3F6] mb-2">Erweiterbar durch Feedback & Daten</h3>
-              <p className="text-[#E8DDE1] leading-relaxed text-sm">
+              <h3 className="text-lg font-semibold text-nox-white mb-2">Erweiterbar durch Feedback & Daten</h3>
+              <p className="text-nox-white-muted leading-relaxed text-sm">
                 Systeme können modular erweitert werden, sobald echte Rückkopplung verfügbar ist.
               </p>
             </div>
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-[#FFF3F6] mb-2">Gemeinsame Architektur statt Tool-Sammlung</h3>
-              <p className="text-[#E8DDE1] leading-relaxed text-sm">
+              <h3 className="text-lg font-semibold text-nox-white mb-2">Gemeinsame Architektur statt Tool-Sammlung</h3>
+              <p className="text-nox-white-muted leading-relaxed text-sm">
                 Keine isolierten Einzellösungen. Alle Module folgen einer konsistenten Systemlogik.
               </p>
             </div>
@@ -166,7 +166,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-bold text-[#FFF1F4] mb-4" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
+            <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-4" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
               Hauptsysteme
             </h2>
           </motion.div>
@@ -182,11 +182,11 @@ export default function Home() {
               variants={itemVariants}
               className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8 hover:border-white/20 transition-all flex flex-col"
             >
-              <h3 className="text-2xl font-bold text-[#FFF1F4] mb-4">Leadforge</h3>
-              <p className="text-[#E8DDE1] mb-6 leading-relaxed flex-grow">
+              <h3 className="text-2xl font-bold text-nox-white mb-4">Leadforge</h3>
+              <p className="text-nox-white-muted mb-6 leading-relaxed flex-grow">
                 Fundament für strukturierte Lead-Erfassung und Anreicherung. Aktuell regelbasiert – vorbereitet für datengetriebene Weiterentwicklung.
               </p>
-              <Link to="/systems/leadforge" className="text-[#FFE6EC] hover:text-[#FFF1F4] font-semibold inline-flex items-center gap-2 transition-colors">
+              <Link to="/systems/leadforge" className="text-nox-white-soft hover:text-nox-white font-semibold inline-flex items-center gap-2 transition-colors">
                 Details ansehen
                 <ArrowRight className="w-4 h-4" />
               </Link>
@@ -196,11 +196,11 @@ export default function Home() {
               variants={itemVariants}
               className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8 hover:border-white/20 transition-all flex flex-col"
             >
-              <h3 className="text-2xl font-bold text-[#FFF1F4] mb-4">Pitch-Evolutionssystem</h3>
-              <p className="text-[#E8DDE1] mb-6 leading-relaxed flex-grow">
+              <h3 className="text-2xl font-bold text-nox-white mb-4">Pitch-Evolutionssystem</h3>
+              <p className="text-nox-white-muted mb-6 leading-relaxed flex-grow">
                 Entwickelt Ansprache systematisch weiter – basierend auf realen Reaktionen, Klassifikationen und kausalen Anpassungen.
               </p>
-              <Link to="/systems/pitch-evolution-system" className="text-[#FFE6EC] hover:text-[#FFF1F4] font-semibold inline-flex items-center gap-2 transition-colors">
+              <Link to="/systems/pitch-evolution-system" className="text-nox-white-soft hover:text-nox-white font-semibold inline-flex items-center gap-2 transition-colors">
                 Details ansehen
                 <ArrowRight className="w-4 h-4" />
               </Link>
@@ -210,11 +210,11 @@ export default function Home() {
               variants={itemVariants}
               className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8 hover:border-white/20 transition-all flex flex-col"
             >
-              <h3 className="text-2xl font-bold text-[#FFF1F4] mb-4">Content Engine</h3>
-              <p className="text-[#E8DDE1] mb-6 leading-relaxed flex-grow">
+              <h3 className="text-2xl font-bold text-nox-white mb-4">Content Engine</h3>
+              <p className="text-nox-white-muted mb-6 leading-relaxed flex-grow">
                 Lernendes System, das aus echten Markt- und Nutzer-Signalen strukturiertes Content-Wissen aufbaut und skalierbar macht.
               </p>
-              <Link to="/systems/content-engine" className="text-[#FFE6EC] hover:text-[#FFF1F4] font-semibold inline-flex items-center gap-2 transition-colors">
+              <Link to="/systems/content-engine" className="text-nox-white-soft hover:text-nox-white font-semibold inline-flex items-center gap-2 transition-colors">
                 Details ansehen
                 <ArrowRight className="w-4 h-4" />
               </Link>
@@ -228,7 +228,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-center mt-12"
           >
-            <p className="text-[#E8DDE1] max-w-3xl mx-auto leading-relaxed">
+            <p className="text-nox-white-muted max-w-3xl mx-auto leading-relaxed">
               Ergänzend existieren spezialisierte Systeme für einzelne Anwendungsfälle.
               Diese sind bewusst stabil ausgelegt und kein Teil der lernenden Kernlogik.
             </p>
@@ -245,7 +245,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-bold text-[#FFF1F4] mb-4" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
+            <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-4" style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}>
               Wie es abläuft
             </h2>
           </motion.div>
@@ -273,10 +273,10 @@ export default function Home() {
                     <div className="text-gray-400 text-sm font-semibold mb-2">
                       Schritt {index + 1}
                     </div>
-                    <h3 className="text-2xl font-bold text-[#FFF1F4] mb-4">
+                    <h3 className="text-2xl font-bold text-nox-white mb-4">
                       {step.title}
                     </h3>
-                    <p className="text-[#E8DDE1] leading-relaxed">
+                    <p className="text-nox-white-muted leading-relaxed">
                       {step.description}
                     </p>
                   </div>
@@ -298,12 +298,12 @@ export default function Home() {
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-gray-800/10 to-gray-800/5 rounded-3xl blur-2xl" />
             <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-white/10 rounded-3xl p-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-[#FFF1F4] mb-8">
-                Bereit für ein System, das mitwächst?
+              <h2 className="text-3xl md:text-4xl font-bold text-nox-white mb-8">
+                Bereit für Systeme, die mitwachsen?
               </h2>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/systems">
-                  <button className="px-8 py-4 bg-[#F2C94C] text-black font-semibold rounded-lg hover:bg-[#F5D76E] transition-all duration-300 inline-flex items-center gap-2">
+                  <button className="px-8 py-4 bg-nox-yellow text-black font-semibold rounded-lg hover:bg-nox-yellow-hover transition-all duration-300 inline-flex items-center gap-2">
                     Systeme ansehen
                     <ArrowRight className="w-5 h-5" />
                   </button>

@@ -13,7 +13,7 @@ export default function Impressum() {
         >
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-[#f5c542] transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-nox-white-muted hover:text-nox-yellow transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
             Zurück zur Startseite
@@ -26,17 +26,17 @@ export default function Impressum() {
           transition={{ duration: 0.6 }}
           className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8 md:p-12"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-nox-white mb-8">
             Impressum
           </h1>
 
-          <div className="space-y-8 text-gray-300 leading-relaxed">
+          <div className="space-y-8 text-nox-white-muted leading-relaxed">
             <section>
-              <h2 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-xl font-semibold text-nox-white mb-4">
                 Angaben gemäß § 5 TMG
               </h2>
               <div className="space-y-2">
-                <p className="font-semibold text-white">Obsidian Nexus</p>
+                <p className="font-semibold text-nox-white">NOX</p>
                 <p>Alexander Lapizky</p>
                 <p>Bessererstraße 16/2</p>
                 <p>89073 Ulm</p>
@@ -45,14 +45,14 @@ export default function Impressum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-xl font-semibold text-nox-white mb-4">
                 Kontakt
               </h2>
               <p>
                 E-Mail:{' '}
                 <a
                   href="mailto:admin@alphamindhub.com"
-                  className="text-[#f5c542] hover:underline"
+                  className="text-nox-yellow hover:underline"
                 >
                   admin@alphamindhub.com
                 </a>
@@ -60,7 +60,7 @@ export default function Impressum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-xl font-semibold text-nox-white mb-4">
                 Umsatzsteuer-ID
               </h2>
               <p>
@@ -69,7 +69,7 @@ export default function Impressum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-xl font-semibold text-nox-white mb-4">
                 Steuernummer
               </h2>
               <p>
@@ -78,7 +78,7 @@ export default function Impressum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-xl font-semibold text-nox-white mb-4">
                 EU-Streitschlichtung
               </h2>
               <p>
@@ -87,7 +87,7 @@ export default function Impressum() {
                   href="https://ec.europa.eu/consumers/odr/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#f5c542] hover:underline break-all"
+                  className="text-nox-yellow hover:underline break-all"
                 >
                   https://ec.europa.eu/consumers/odr/
                 </a>
@@ -97,7 +97,7 @@ export default function Impressum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-xl font-semibold text-nox-white mb-4">
                 Verbraucherstreitbeilegung / Universalschlichtungsstelle
               </h2>
               <p>
@@ -106,7 +106,7 @@ export default function Impressum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-xl font-semibold text-nox-white mb-4">
                 Haftung für Inhalte
               </h2>
               <p className="mb-4">
@@ -118,7 +118,7 @@ export default function Impressum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-xl font-semibold text-nox-white mb-4">
                 Haftung für Links
               </h2>
               <p className="mb-4">
@@ -130,7 +130,7 @@ export default function Impressum() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-xl font-semibold text-nox-white mb-4">
                 Urheberrecht
               </h2>
               <p className="mb-4">

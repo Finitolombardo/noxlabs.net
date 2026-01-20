@@ -153,10 +153,10 @@ export default function Configurator() {
               <div className="w-20 h-20 bg-gradient-to-br from-[#d6a400] to-[#f5c542] rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle2 className="w-10 h-10 text-black" />
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              <h1 className="text-3xl md:text-4xl font-bold text-nox-white mb-4">
                 Vielen Dank!
               </h1>
-              <p className="text-lg text-gray-300 mb-8">
+              <p className="text-lg text-nox-white-muted mb-8">
                 Wir haben deine Anfrage erhalten und melden uns innerhalb von 24 Stunden
                 bei dir mit einem maßgeschneiderten Angebot.
               </p>
@@ -178,10 +178,10 @@ export default function Configurator() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
+          <h1 className="text-3xl md:text-5xl font-bold text-nox-white mb-4">
             System Konfigurator
           </h1>
-          <p className="text-gray-400">
+          <p className="text-nox-white-muted">
             Schritt {currentStep} von {totalSteps}
           </p>
         </motion.div>
@@ -215,7 +215,7 @@ export default function Configurator() {
             >
               {currentStep === 1 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-6">
+                  <h2 className="text-2xl font-bold text-nox-white mb-6">
                     Was willst du automatisieren?
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -230,7 +230,7 @@ export default function Configurator() {
                             : 'border-white/10 hover:border-white/20 bg-white/5'
                         }`}
                       >
-                        <div className="text-lg font-semibold text-white">
+                        <div className="text-lg font-semibold text-nox-white">
                           {goal.label}
                         </div>
                       </button>
@@ -241,7 +241,7 @@ export default function Configurator() {
 
               {currentStep === 2 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-6">
+                  <h2 className="text-2xl font-bold text-nox-white mb-6">
                     Welche Branche?
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -258,7 +258,7 @@ export default function Configurator() {
                             : 'border-white/10 hover:border-white/20 bg-white/5'
                         }`}
                       >
-                        <div className="text-lg font-semibold text-white">
+                        <div className="text-lg font-semibold text-nox-white">
                           {industry.label}
                         </div>
                       </button>
@@ -269,7 +269,7 @@ export default function Configurator() {
 
               {currentStep === 3 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-6">Kanal</h2>
+                  <h2 className="text-2xl font-bold text-nox-white mb-6">Kanal</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {channels.map((channel) => (
                       <button
@@ -284,7 +284,7 @@ export default function Configurator() {
                             : 'border-white/10 hover:border-white/20 bg-white/5'
                         }`}
                       >
-                        <div className="text-lg font-semibold text-white">
+                        <div className="text-lg font-semibold text-nox-white">
                           {channel.label}
                         </div>
                       </button>
@@ -295,7 +295,7 @@ export default function Configurator() {
 
               {currentStep === 4 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-6">Volumen</h2>
+                  <h2 className="text-2xl font-bold text-nox-white mb-6">Volumen</h2>
                   <div className="grid grid-cols-1 gap-4">
                     {volumes.map((volume) => (
                       <button
@@ -310,7 +310,7 @@ export default function Configurator() {
                             : 'border-white/10 hover:border-white/20 bg-white/5'
                         }`}
                       >
-                        <div className="text-lg font-semibold text-white">
+                        <div className="text-lg font-semibold text-nox-white">
                           {volume.label}
                         </div>
                       </button>
@@ -321,10 +321,10 @@ export default function Configurator() {
 
               {currentStep === 5 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-6">
+                  <h2 className="text-2xl font-bold text-nox-white mb-6">
                     Integrationen
                   </h2>
-                  <p className="text-gray-400 mb-6">
+                  <p className="text-nox-white-muted mb-6">
                     Wähle alle gewünschten Integrationen aus (mehrfach möglich)
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -339,7 +339,7 @@ export default function Configurator() {
                             : 'border-white/10 hover:border-white/20 bg-white/5'
                         }`}
                       >
-                        <div className="text-sm font-semibold text-white">
+                        <div className="text-sm font-semibold text-nox-white">
                           {integration}
                         </div>
                       </button>
@@ -350,10 +350,10 @@ export default function Configurator() {
 
               {currentStep === 6 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-6">Kontakt</h2>
+                  <h2 className="text-2xl font-bold text-nox-white mb-6">Kontakt</h2>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-nox-white-muted mb-2">
                         Name *
                       </label>
                       <input
@@ -363,13 +363,13 @@ export default function Configurator() {
                         onChange={(e) =>
                           setFormData({ ...formData, name: e.target.value })
                         }
-                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
+                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-nox-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
                         placeholder="Max Mustermann"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-nox-white-muted mb-2">
                         Email *
                       </label>
                       <input
@@ -379,13 +379,13 @@ export default function Configurator() {
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
-                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
+                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-nox-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
                         placeholder="max@beispiel.de"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-nox-white-muted mb-2">
                         Telefon (optional)
                       </label>
                       <input
@@ -394,13 +394,13 @@ export default function Configurator() {
                         onChange={(e) =>
                           setFormData({ ...formData, phone: e.target.value })
                         }
-                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
+                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-nox-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
                         placeholder="+49 123 456789"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-nox-white-muted mb-2">
                         Firma (optional)
                       </label>
                       <input
@@ -409,7 +409,7 @@ export default function Configurator() {
                         onChange={(e) =>
                           setFormData({ ...formData, company: e.target.value })
                         }
-                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
+                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-nox-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
                         placeholder="Beispiel GmbH"
                       />
                     </div>
@@ -424,7 +424,7 @@ export default function Configurator() {
                           }
                           className="w-5 h-5 mt-0.5 accent-[#d6a400] cursor-pointer"
                         />
-                        <span className="text-sm text-gray-300">
+                        <span className="text-sm text-nox-white-muted">
                           Ich will in 14 Tagen live gehen
                         </span>
                       </label>

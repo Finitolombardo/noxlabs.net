@@ -26,11 +26,11 @@ export default function Navbar() {
           <Link to="/" className="flex items-center space-x-3">
             <img
               src="/dein_abschnittstext_(2).png"
-              alt="Obsidian Nexus"
+              alt="NOX"
               className="h-8 w-auto"
             />
-            <span className="text-xl font-bold text-[#FFF1F4] hidden sm:block">
-              Obsidian Nexus
+            <span className="text-xl font-bold text-nox-white">
+              NOX
             </span>
           </Link>
 
@@ -41,8 +41,8 @@ export default function Navbar() {
                 to={link.href}
                 className={`px-4 py-2 rounded-lg transition-all ${
                   isActive(link.href)
-                    ? 'text-[#FFF1F4] bg-white/10'
-                    : 'text-[#E8DDE1] hover:text-[#FFF1F4] hover:bg-white/5'
+                    ? 'text-nox-white bg-white/10'
+                    : 'text-nox-white-muted hover:text-nox-white hover:bg-white/5'
                 }`}
               >
                 {link.label}
@@ -53,7 +53,7 @@ export default function Navbar() {
           <div className="hidden md:block">
             <Link
               to="/systems"
-              className="px-6 py-2.5 bg-[#F2C94C] text-black font-semibold rounded-lg hover:bg-[#F5D76E] hover:shadow-lg hover:shadow-[#F2C94C]/20 hover:scale-105 transition-all"
+              className="px-6 py-2.5 bg-nox-yellow text-black font-semibold rounded-lg hover:bg-nox-yellow-hover hover:shadow-lg hover:shadow-nox-yellow/20 hover:scale-105 transition-all"
             >
               Systeme ansehen
             </Link>
@@ -84,8 +84,8 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`block px-4 py-3 rounded-lg transition-all ${
                     isActive(link.href)
-                      ? 'text-[#FFF1F4] bg-white/10'
-                      : 'text-[#E8DDE1] hover:text-[#FFF1F4] hover:bg-white/5'
+                      ? 'text-nox-white bg-white/10'
+                      : 'text-nox-white-muted hover:text-nox-white hover:bg-white/5'
                   }`}
                 >
                   {link.label}
@@ -94,7 +94,7 @@ export default function Navbar() {
               <Link
                 to="/systems"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block w-full px-4 py-3 bg-[#F2C94C] text-black font-semibold rounded-lg text-center mt-4 hover:bg-[#F5D76E] transition-colors"
+                className="block w-full px-4 py-3 bg-nox-yellow text-black font-semibold rounded-lg text-center mt-4 hover:bg-nox-yellow-hover transition-colors"
               >
                 Systeme ansehen
               </Link>

@@ -21,9 +21,9 @@ export default function Button({
   const baseClasses = 'px-6 py-3 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variantClasses = {
-    primary: 'bg-gradient-to-r from-[#E5B73C] to-[#F2C94C] text-black hover:shadow-lg hover:shadow-[#F2C94C]/20 hover:scale-105',
-    secondary: 'bg-white/5 text-white border border-white/10 hover:bg-white/10 hover:border-[#F2C94C]/30',
-    outline: 'border-2 border-[#F2C94C] text-[#F2C94C] hover:bg-[#F2C94C]/10'
+    primary: 'bg-gradient-to-r from-[#E5B73C] to-nox-yellow text-black hover:shadow-lg hover:shadow-nox-yellow/20 hover:scale-105',
+    secondary: 'bg-white/5 text-nox-white border border-white/10 hover:bg-white/10 hover:border-nox-yellow/30',
+    outline: 'border-2 border-nox-yellow text-nox-yellow hover:bg-nox-yellow/10'
   };
 
   return (

@@ -31,10 +31,10 @@ export default function Contact() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+          <h1 className="text-4xl md:text-6xl font-bold text-nox-white mb-4">
             Kontakt
           </h1>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg text-nox-white-muted max-w-2xl mx-auto">
             Hast du Fragen oder möchtest du direkt starten? Schreib uns eine Nachricht
             und wir melden uns innerhalb von 24 Stunden.
           </p>
@@ -47,7 +47,7 @@ export default function Contact() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8 h-full">
-              <h2 className="text-2xl font-bold text-white mb-6">
+              <h2 className="text-2xl font-bold text-nox-white mb-6">
                 Lass uns sprechen
               </h2>
 
@@ -57,8 +57,8 @@ export default function Contact() {
                     <Mail className="w-6 h-6 text-black" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-1">Email</h3>
-                    <p className="text-gray-400">
+                    <h3 className="text-lg font-semibold text-nox-white mb-1">Email</h3>
+                    <p className="text-nox-white-muted">
                       Schreib uns deine Anfrage und wir melden uns schnellstmöglich.
                     </p>
                   </div>
@@ -69,10 +69,10 @@ export default function Contact() {
                     <MessageSquare className="w-6 h-6 text-black" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-1">
+                    <h3 className="text-lg font-semibold text-nox-white mb-1">
                       Direkt buchen
                     </h3>
-                    <p className="text-gray-400">
+                    <p className="text-nox-white-muted">
                       Buche dir einen Termin für ein kostenloses Erstgespräch. (Coming
                       Soon)
                     </p>
@@ -81,12 +81,12 @@ export default function Contact() {
               </div>
 
               <div className="mt-8 pt-8 border-t border-white/10">
-                <h3 className="text-lg font-semibold text-white mb-4">
+                <h3 className="text-lg font-semibold text-nox-white mb-4">
                   Häufige Fragen
                 </h3>
-                <div className="space-y-3 text-sm text-gray-400">
+                <div className="space-y-3 text-sm text-nox-white-muted">
                   <p>
-                    <span className="text-white font-medium">
+                    <span className="text-nox-white font-medium">
                       Wie lange dauert die Umsetzung?
                     </span>
                     <br />
@@ -94,13 +94,13 @@ export default function Contact() {
                     schneller.
                   </p>
                   <p>
-                    <span className="text-white font-medium">Was kostet ein System?</span>
+                    <span className="text-nox-white font-medium">Was kostet ein System?</span>
                     <br />
                     Abhängig von Komplexität und Integrationen. Im Erstgespräch besprechen
                     wir dein Budget.
                   </p>
                   <p>
-                    <span className="text-white font-medium">
+                    <span className="text-nox-white font-medium">
                       Brauche ich technisches Know-How?
                     </span>
                     <br />
@@ -128,17 +128,17 @@ export default function Contact() {
                     <div className="w-16 h-16 bg-gradient-to-br from-[#d6a400] to-[#f5c542] rounded-full flex items-center justify-center mx-auto mb-4">
                       <Send className="w-8 h-8 text-black" />
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">
+                    <h3 className="text-2xl font-bold text-nox-white mb-2">
                       Nachricht gesendet!
                     </h3>
-                    <p className="text-gray-400">
+                    <p className="text-nox-white-muted">
                       Wir melden uns in Kürze bei dir.
                     </p>
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-nox-white-muted mb-2">
                         Name *
                       </label>
                       <input
@@ -148,13 +148,13 @@ export default function Contact() {
                         onChange={(e) =>
                           setFormData({ ...formData, name: e.target.value })
                         }
-                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
+                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-nox-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
                         placeholder="Max Mustermann"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-nox-white-muted mb-2">
                         Email *
                       </label>
                       <input
@@ -164,13 +164,13 @@ export default function Contact() {
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
-                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
+                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-nox-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
                         placeholder="max@beispiel.de"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-nox-white-muted mb-2">
                         Firma (optional)
                       </label>
                       <input
@@ -179,13 +179,13 @@ export default function Contact() {
                         onChange={(e) =>
                           setFormData({ ...formData, company: e.target.value })
                         }
-                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
+                        className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-nox-white placeholder-gray-500 focus:outline-none focus:border-[#d6a400]/30"
                         placeholder="Beispiel GmbH"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-nox-white-muted mb-2">
                         Nachricht *
                       </label>
                       <textarea
