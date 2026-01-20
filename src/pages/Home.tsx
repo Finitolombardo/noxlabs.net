@@ -210,11 +210,11 @@ export default function Home() {
               variants={itemVariants}
               className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8 hover:border-white/20 transition-all flex flex-col"
             >
-              <h3 className="text-2xl font-bold text-[#FFF1F4] mb-4">Content-Repurposing-System</h3>
+              <h3 className="text-2xl font-bold text-[#FFF1F4] mb-4">Content Engine</h3>
               <p className="text-[#E8DDE1] mb-6 leading-relaxed flex-grow">
-                Wandelt vorhandene Inhalte in skalierbare Formate um. Erweiterbar um Feedback-basierte Optimierung.
+                Lernendes System, das aus echten Markt- und Nutzer-Signalen strukturiertes Content-Wissen aufbaut und skalierbar macht.
               </p>
-              <Link to="/systems/content-repurposing-system" className="text-[#FFE6EC] hover:text-[#FFF1F4] font-semibold inline-flex items-center gap-2 transition-colors">
+              <Link to="/systems/content-engine" className="text-[#FFE6EC] hover:text-[#FFF1F4] font-semibold inline-flex items-center gap-2 transition-colors">
                 Details ansehen
                 <ArrowRight className="w-4 h-4" />
               </Link>

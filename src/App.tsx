@@ -6,6 +6,8 @@ import SystemDetail from './pages/SystemDetail';
 import Roadmap from './pages/Roadmap';
 import Configurator from './pages/Configurator';
 import Contact from './pages/Contact';
+import Impressum from './pages/Impressum';
+import Datenschutz from './pages/Datenschutz';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
           <Route path="roadmap" element={<Roadmap />} />
           <Route path="configurator" element={<Configurator />} />
           <Route path="contact" element={<Contact />} />
+          <Route path="impressum" element={<Impressum />} />
+          <Route path="datenschutz" element={<Datenschutz />} />
         </Route>
       </Routes>
     </BrowserRouter>

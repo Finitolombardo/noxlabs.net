@@ -11,7 +11,7 @@ export default function Footer() {
             <span className="text-lg font-bold text-[#FFF1F4]">Obsidian Nexus</span>
           </div>
 
-          <div className="flex items-center gap-8 text-sm text-gray-400">
+          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 text-sm text-gray-400">
             <Link to="/" className="hover:text-[#F2C94C] transition-colors">
               Start
             </Link>
@@ -23,6 +23,13 @@ export default function Footer() {
             </Link>
             <Link to="/contact" className="hover:text-[#F2C94C] transition-colors">
               Kontakt
+            </Link>
+            <span className="text-gray-600">|</span>
+            <Link to="/impressum" className="hover:text-[#F2C94C] transition-colors">
+              Impressum
+            </Link>
+            <Link to="/datenschutz" className="hover:text-[#F2C94C] transition-colors">
+              Datenschutz
             </Link>
           </div>
 
