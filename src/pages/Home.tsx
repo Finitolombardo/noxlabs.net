@@ -65,7 +65,7 @@ export default function Home() {
             <img
               src="/dein_abschnittstext_(2).png"
               alt="NOX"
-              className="w-40 md:w-56 h-auto object-contain"
+              className="w-80 md:w-96 h-auto object-contain"
             />
           </motion.div>
 
