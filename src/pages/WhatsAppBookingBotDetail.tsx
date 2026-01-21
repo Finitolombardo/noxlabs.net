@@ -31,45 +31,41 @@ export default function WhatsAppBookingBotDetail() {
     'Reporting: Anzahl Anfragen, gebuchte Termine, häufigste Ablehnungsgründe'
   ];
 
-  const tiers = [
+  const priceClusters = [
     {
-      name: 'Starter',
-      description: 'Basis-Antwort + strukturierte Übergabe',
-      examples: 'Friseur, Kosmetikstudio, kleine Praxen',
-      goal: 'Anfragen entgegennehmen, Kontext erfassen, manuell nachfassen',
-      includes: [
-        'FAQ-Automatisierung',
-        'Kontaktdaten-Erfassung',
-        'Strukturierte Übergabe an Google Sheets oder Notion',
-        'Basic Reporting'
+      name: 'Local Services',
+      examples: 'Friseure, Beauty- & Nagelstudios, lokale Dienstleister',
+      typical: [
+        'Hohe Wiederholungsanfragen',
+        'Klare Services',
+        'Fokus auf Terminbuchung & Entlastung'
       ]
     },
     {
-      name: 'Booking',
-      description: 'Inkl. Terminlogik & Kalender-Sync',
-      examples: 'Beratung, Dienstleister, medizinische Praxen',
-      goal: 'Terminbuchung automatisieren, Ping-Pong eliminieren',
-      includes: [
-        'Alles aus Starter',
-        'Cal.com / Calendly Integration',
-        'Terminvorschläge basierend auf Verfügbarkeit',
-        'Automatische Buchungsbestätigung',
-        'Reminder-Funktion (24h vorher)'
+      name: 'Pro Services',
+      examples: 'Praxen, Beratungen, Dienstleister mit mehreren Mitarbeitern',
+      typical: [
+        'Vorqualifizierung notwendig',
+        'Kalender- & Team-Übergabe',
+        'Status-Tracking & Reporting'
       ]
     },
     {
-      name: 'Sales / Retention',
-      description: 'Inkl. Follow-ups, Reaktivierung, Upsell',
-      examples: 'Coaching, High-Ticket-Services, Agencies',
-      goal: 'Leads aktiv nachverfolgen, Conversion steigern',
-      includes: [
-        'Alles aus Booking',
-        'Automatische Follow-ups bei Nicht-Antwort',
-        'Reaktivierungs-Sequenzen für verlorene Leads',
-        'Upsell-Trigger bei bestimmten Signalen',
-        'CRM-Integration mit erweiterten Datenfeldern'
+      name: 'High-Ticket / Sales-getrieben',
+      examples: 'Coaching, Agenturen, Premium-Services',
+      typical: [
+        'Follow-ups & Reaktivierung',
+        'Lead-Scoring',
+        'Übergabe an Sales / CRM'
       ]
     }
+  ];
+
+  const priceInfluencers = [
+    'Anzahl der monatlichen Anfragen',
+    'Art der Terminlogik (einfach vs. komplex)',
+    'Integrationen (Kalender, CRM, Team)',
+    'Follow-ups, Reporting, Upsell-Logiken'
   ];
 
   const suitableFor = [
@@ -219,54 +215,65 @@ export default function WhatsAppBookingBotDetail() {
                 className="text-3xl font-bold text-nox-white mb-6"
                 style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}
               >
-                Pakete & Optionen
+                Preisgestaltung – nischenspezifisch & modular
               </h2>
               <div className="w-16 h-1 bg-[#d6a400] mb-8" />
 
               <p className="text-nox-white-muted mb-8 leading-relaxed">
-                Die Pakete sind nischenspezifisch und werden im Erstgespräch exakt auf Ihr Geschäftsmodell zugeschnitten. Hier eine Orientierung:
+                Die Preisgestaltung richtet sich nicht nach einem Pauschalbetrag, sondern nach Branche, Anfragevolumen und gewünschter Automatisierungstiefe. Das System wird immer an das jeweilige Geschäftsmodell angepasst.
               </p>
 
-              <div className="space-y-6">
-                {tiers.map((tier, index) => (
+              <h3 className="text-xl font-semibold text-nox-white mb-6">Preis-Cluster</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                {priceClusters.map((cluster, index) => (
                   <div
                     key={index}
                     className="bg-gradient-to-br from-gray-900/30 to-gray-800/20 border border-white/10 rounded-xl p-6"
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-nox-white mb-2">{tier.name}</h3>
-                        <p className="text-nox-white-muted mb-3">{tier.description}</p>
-                      </div>
+                    <h4 className="text-lg font-bold text-nox-white mb-3">{cluster.name}</h4>
+
+                    <div className="mb-4">
+                      <p className="text-xs text-nox-white-muted uppercase tracking-wide mb-2">Beispiele</p>
+                      <p className="text-sm text-nox-white-muted leading-relaxed">{cluster.examples}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="bg-black/20 border border-white/10 rounded-lg p-4">
-                        <p className="text-xs text-nox-white-muted uppercase tracking-wide mb-2">Typische Kunden</p>
-                        <p className="text-sm text-nox-white">{tier.examples}</p>
+                    <div>
+                      <p className="text-xs text-nox-white-muted uppercase tracking-wide mb-3">Typisch</p>
+                      <div className="space-y-2">
+                        {cluster.typical.map((item, idx) => (
+                          <div key={idx} className="flex items-start gap-2">
+                            <span className="text-[#d6a400] mt-1">•</span>
+                            <span className="text-sm text-nox-white-muted">{item}</span>
+                          </div>
+                        ))}
                       </div>
-                      <div className="bg-black/20 border border-white/10 rounded-lg p-4">
-                        <p className="text-xs text-nox-white-muted uppercase tracking-wide mb-2">Ziel</p>
-                        <p className="text-sm text-nox-white">{tier.goal}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <p className="text-sm text-nox-white-muted font-semibold mb-3">Inkludiert:</p>
-                      {tier.includes.map((item, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-[#d6a400] flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-nox-white-muted">{item}</span>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-8 bg-gradient-to-br from-[#d6a400]/10 to-transparent border-l-4 border-[#d6a400] p-6 rounded-r-xl">
-                <p className="text-lg text-nox-white leading-relaxed">
-                  Die finale Konfiguration und Preisgestaltung erfolgt nach einer kurzen Bedarfsanalyse. Keine versteckten Kosten.
+              <h3 className="text-xl font-semibold text-nox-white mb-6">Was den Preis beeinflusst</h3>
+
+              <div className="bg-gradient-to-br from-gray-900/30 to-gray-800/20 border border-white/10 rounded-xl p-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {priceInfluencers.map((influencer, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-gradient-to-br from-[#E5B73C] to-[#F2C94C] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <CheckCircle2 className="w-4 h-4 text-black" />
+                      </div>
+                      <span className="text-nox-white-muted leading-relaxed">{influencer}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-[#d6a400]/10 to-transparent border-l-4 border-[#d6a400] p-6 rounded-r-xl">
+                <p className="text-lg text-nox-white leading-relaxed mb-2">
+                  Nach einer kurzen Bedarfsklärung erhalten Sie ein fixes Angebot. Keine versteckten Kosten.
+                </p>
+                <p className="text-sm text-nox-white-muted">
+                  Das System wird exakt auf Ihr Geschäftsmodell zugeschnitten – transparent und nachvollziehbar.
                 </p>
               </div>
             </div>
@@ -354,8 +361,8 @@ export default function WhatsAppBookingBotDetail() {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link to="/contact">
                     <Button variant="primary" className="text-lg px-8 py-4">
-                      Termin vereinbaren
-                      <Calendar className="inline-block ml-2 w-5 h-5" />
+                      Termin vereinbaren – System konfigurieren
+                      <ArrowRight className="inline-block ml-2 w-5 h-5" />
                     </Button>
                   </Link>
                   <Link to="/systems">
