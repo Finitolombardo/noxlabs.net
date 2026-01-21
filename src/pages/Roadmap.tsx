@@ -2,35 +2,49 @@ import { motion } from 'framer-motion';
 
 interface RoadmapSystem {
   name: string;
+  subtitle: string;
   status: 'in-entwicklung' | 'geplant' | 'research';
   description: string;
+  bullets: string[];
 }
 
 const roadmapSystems: RoadmapSystem[] = [
   {
-    name: 'Reply Classifier',
+    name: 'Projekt Y',
+    subtitle: 'Autonomer Sales-Conversation-Analyzer & Performance-Optimizer',
     status: 'in-entwicklung',
-    description: 'Automatische Klassifikation von E-Mail-Antworten nach Interesse, Einwänden und Bounce-Typ'
+    description: 'Analysiert Verkaufsgespräche objektiv (Audio + Outcome), erkennt Trigger-Reaktions-Muster und liefert konkrete Verbesserungen in Sprache, Timing und Struktur. Lernt aus echten Ergebnissen statt „Gefühlen".',
+    bullets: [
+      'Transkription + Timeline + Phasen-Erkennung',
+      'Trigger-Reaktions-Korrelationen (messbar)',
+      'Phrase-Impact-Scoring (Bibliothek + Blacklist)',
+      'A/B-Reframes, getestet in echten Calls',
+      'Silent-Failure-Detection („nett aber wirkungslos")'
+    ]
   },
   {
-    name: 'Outreach Performance Dashboard',
+    name: 'Projekt X',
+    subtitle: 'Autonomer Workflow-Generator & Optimierungs-Agent (n8n)',
     status: 'geplant',
-    description: 'Echtzeit-Monitoring und KPI-Tracking für alle aktiven Outreach-Systeme'
+    description: 'Erzeugt aus einer Spezifikation produktionsreife n8n-Workflows, testet Node-weise, optimiert Kosten und versioniert automatisch. Ziel: Automatisierungen industriell bauen statt basteln.',
+    bullets: [
+      'Spec → Blueprint → Builder',
+      'Node Unit Tests + End-to-End Tests',
+      'Kosten-Optimizer (LLM nur bei Unklarheit)',
+      'Versionierung, Rollback, Modularität'
+    ]
   },
   {
-    name: 'Content Timing Optimizer',
-    status: 'geplant',
-    description: 'Datengetriebene Empfehlungen für optimale Versandzeiten basierend auf historischer Performance'
-  },
-  {
-    name: 'Voice-to-CRM Pipeline',
+    name: 'Projekt NOX',
+    subtitle: 'LifeOS: Entscheidungs- & Skill-System (AR + Biometrie + Quest-Engine)',
     status: 'research',
-    description: 'Automatische Erfassung und Strukturierung von Verkaufsgesprächen für CRM-Integration'
-  },
-  {
-    name: 'Multi-Channel Attribution System',
-    status: 'research',
-    description: 'Tracking und Attribution von Leads über mehrere Kanäle (E-Mail, WhatsApp, LinkedIn, Website)'
+    description: 'Research-Projekt für ein persönliches System, das Kontext, Zustand und Ziele verbindet und daraus Quests, Skillbäume und Interventionen ableitet. Fokus: Handlungsqualität, nicht Motivation.',
+    bullets: [
+      'Quest-/Skillbaum-Logik & Progression',
+      'Biometrie-Trigger (Stress, Müdigkeit, Impuls)',
+      'Datenschutz-first (Edge-Verarbeitung, minimaler Cloud-Teil)',
+      'Finanzmuster → Prävention & Entscheidungen'
+    ]
   }
 ];
 
@@ -92,12 +106,23 @@ export default function Roadmap() {
       className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-6"
     >
       <div className="flex items-start justify-between gap-4 mb-3">
-        <h3 className="text-xl font-bold text-nox-white">{system.name}</h3>
+        <div>
+          <h3 className="text-xl font-bold text-nox-white mb-1">{system.name}</h3>
+          <p className="text-sm text-nox-white-muted">{system.subtitle}</p>
+        </div>
         {getStatusBadge(system.status)}
       </div>
-      <p className="text-nox-white-muted text-sm leading-relaxed">
+      <p className="text-nox-white-muted text-sm leading-relaxed mb-4">
         {system.description}
       </p>
+      <div className="space-y-2">
+        {system.bullets.map((bullet, index) => (
+          <div key={index} className="flex items-start gap-2">
+            <span className="text-[#d6a400] mt-1 flex-shrink-0">•</span>
+            <span className="text-sm text-nox-white-muted leading-relaxed">{bullet}</span>
+          </div>
+        ))}
+      </div>
     </motion.div>
   );
 
@@ -138,7 +163,7 @@ export default function Roadmap() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="max-w-4xl"
             >
               {inDevelopment.map(renderSystemCard)}
             </motion.div>
@@ -165,7 +190,7 @@ export default function Roadmap() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="max-w-4xl"
             >
               {planned.map(renderSystemCard)}
             </motion.div>
@@ -192,7 +217,7 @@ export default function Roadmap() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="max-w-4xl"
             >
               {research.map(renderSystemCard)}
             </motion.div>
