@@ -26,7 +26,7 @@ export default function Accordion({ title, description, details }: AccordionProp
           transition={{ duration: 0.3 }}
           className="flex-shrink-0 mt-1"
         >
-          <ChevronDown className="w-5 h-5 text-[#d6a400]" />
+          <ChevronDown className="w-5 h-5 text-[#E84040]" />
         </motion.div>
       </button>
 
@@ -43,7 +43,7 @@ export default function Accordion({ title, description, details }: AccordionProp
               <ul className="space-y-2">
                 {details.map((detail, index) => (
                   <li key={index} className="flex items-start gap-3 text-sm text-gray-300">
-                    <span className="text-[#d6a400] mt-1">•</span>
+                    <span className="text-[#E84040] mt-1">•</span>
                     <span>{detail}</span>
                   </li>
                 ))}

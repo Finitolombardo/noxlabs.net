@@ -25,7 +25,7 @@ export default function CheckboxOption({
       <div
         className={`border rounded-xl p-6 transition-all ${
           checked
-            ? 'border-[#d6a400] bg-[#d6a400]/5'
+            ? 'border-[#E84040] bg-[#E84040]/5'
             : 'border-white/10 bg-gradient-to-br from-gray-900/30 to-gray-800/20 hover:border-white/20'
         }`}
       >
@@ -33,11 +33,11 @@ export default function CheckboxOption({
           <motion.div
             animate={{
               scale: checked ? [1, 1.2, 1] : 1,
-              backgroundColor: checked ? '#d6a400' : 'transparent'
+              backgroundColor: checked ? '#E84040' : 'transparent'
             }}
             transition={{ duration: 0.3 }}
             className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5 border-2 ${
-              checked ? 'border-[#d6a400]' : 'border-white/30'
+              checked ? 'border-[#E84040]' : 'border-white/30'
             }`}
           >
             {checked && (
@@ -46,7 +46,7 @@ export default function CheckboxOption({
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.2 }}
               >
-                <Check className="w-4 h-4 text-black" strokeWidth={3} />
+                <Check className="w-4 h-4 text-white" strokeWidth={3} />
               </motion.div>
             )}
           </motion.div>
@@ -54,7 +54,7 @@ export default function CheckboxOption({
           <div className="flex-1">
             <h4 className="text-white font-semibold mb-2">{title}</h4>
             <p className="text-gray-400 text-sm mb-3">{description}</p>
-            <p className="text-[#d6a400] text-sm font-medium">{benefit}</p>
+            <p className="text-[#E84040] text-sm font-medium">{benefit}</p>
           </div>
         </div>
       </div>

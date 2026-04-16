@@ -184,7 +184,7 @@ export default function ContentEngineDetail() {
         >
           <Link
             to="/systems"
-            className="inline-flex items-center gap-2 text-nox-white-muted hover:text-nox-yellow transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-nox-white-muted hover:text-nox-red transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
             Zurück zu Systemen
@@ -197,8 +197,8 @@ export default function ContentEngineDetail() {
           transition={{ duration: 0.6 }}
           className="relative mb-12"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#d6a400]/20 to-[#f5c542]/20 rounded-3xl blur-2xl" />
-          <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#d6a400]/30 rounded-3xl p-8 md:p-12">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#E84040]/20 to-[#FF6B6B]/20 rounded-3xl blur-2xl" />
+          <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#E84040]/30 rounded-3xl p-8 md:p-12">
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="text-xs px-3 py-1 bg-white/10 text-nox-white-muted rounded-full border border-white/10">
                 Content
@@ -227,7 +227,7 @@ export default function ContentEngineDetail() {
               {stats.map((stat, index) => (
                 <div
                   key={index}
-                  className="border-l-2 border-[#d6a400] pl-4"
+                  className="border-l-2 border-[#E84040] pl-4"
                 >
                   <h3 className="text-nox-white font-semibold mb-2 leading-snug text-sm">{stat.label}</h3>
                   <p className="text-xs text-nox-white-muted">{stat.description}</p>
@@ -260,7 +260,7 @@ export default function ContentEngineDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Warum klassische Content-Strategien stagnieren
               </h2>
-              <div className="w-16 h-1 bg-[#d6a400] mb-8" />
+              <div className="w-16 h-1 bg-[#E84040] mb-8" />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 {problems.map((problem, index) => (
@@ -274,7 +274,7 @@ export default function ContentEngineDetail() {
                 ))}
               </div>
 
-              <div className="border-l-4 border-[#d6a400] pl-6 py-4">
+              <div className="border-l-4 border-[#E84040] pl-6 py-4">
                 <p className="text-xl text-nox-white font-light italic">
                   Das eigentliche Problem ist nicht Content-Mangel – sondern fehlende Struktur im Lernen.
                 </p>
@@ -287,7 +287,7 @@ export default function ContentEngineDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Was die Content Engine anders macht
               </h2>
-              <div className="w-16 h-1 bg-[#d6a400] mb-8" />
+              <div className="w-16 h-1 bg-[#E84040] mb-8" />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {principles.map((principle, index) => (
@@ -308,7 +308,7 @@ export default function ContentEngineDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Wie das System arbeitet
               </h2>
-              <div className="w-16 h-1 bg-[#d6a400] mb-8" />
+              <div className="w-16 h-1 bg-[#E84040] mb-8" />
 
               <div className="space-y-4">
                 {solutionSteps.map((step, index) => (
@@ -328,7 +328,7 @@ export default function ContentEngineDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Optionale Module
               </h2>
-              <div className="w-16 h-1 bg-[#d6a400] mb-8" />
+              <div className="w-16 h-1 bg-[#E84040] mb-8" />
 
               <p className="text-nox-white-muted mb-8 leading-relaxed">
                 Das Basissystem ist immer enthalten. Module können je nach Bedarf ergänzt werden. Die Auswahl erfolgt im Konfigurator.
@@ -352,7 +352,7 @@ export default function ContentEngineDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Für wen die Content Engine geeignet ist
               </h2>
-              <div className="w-16 h-1 bg-[#d6a400] mb-8" />
+              <div className="w-16 h-1 bg-[#E84040] mb-8" />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {targetAudience.map((item, index) => (
@@ -360,7 +360,7 @@ export default function ContentEngineDetail() {
                     key={index}
                     className="flex items-start gap-3 bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6"
                   >
-                    <CheckCircle2 className="w-5 h-5 text-[#d6a400] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-5 h-5 text-[#E84040] flex-shrink-0 mt-0.5" />
                     <span className="text-nox-white-muted">{item}</span>
                   </div>
                 ))}
@@ -373,9 +373,9 @@ export default function ContentEngineDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Betrieb & Weiterentwicklung
               </h2>
-              <div className="w-16 h-1 bg-[#d6a400] mb-8" />
+              <div className="w-16 h-1 bg-[#E84040] mb-8" />
 
-              <div className="border-l-4 border-[#d6a400] pl-6 py-4 bg-gradient-to-r from-[#d6a400]/10 to-transparent rounded-r-xl mb-8">
+              <div className="border-l-4 border-[#E84040] pl-6 py-4 bg-gradient-to-r from-[#E84040]/10 to-transparent rounded-r-xl mb-8">
                 <p className="text-xl text-nox-white font-light leading-relaxed">
                   Die Content Engine ist kein einmaliges Setup.
                   Sie wird betrieben, überwacht und kontinuierlich erweitert.
@@ -385,7 +385,7 @@ export default function ContentEngineDetail() {
               <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6">
                 <div className="space-y-4 text-gray-300">
                   <div className="flex items-start gap-3">
-                    <span className="text-[#d6a400] mt-1">•</span>
+                    <span className="text-[#E84040] mt-1">•</span>
                     <div>
                       <strong className="text-nox-white">Laufender Betrieb:</strong>
                       <span className="text-sm text-nox-white-muted block mt-1">
@@ -394,7 +394,7 @@ export default function ContentEngineDetail() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="text-[#d6a400] mt-1">•</span>
+                    <span className="text-[#E84040] mt-1">•</span>
                     <div>
                       <strong className="text-nox-white">Erweiterbare Module:</strong>
                       <span className="text-sm text-nox-white-muted block mt-1">
@@ -403,7 +403,7 @@ export default function ContentEngineDetail() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="text-[#d6a400] mt-1">•</span>
+                    <span className="text-[#E84040] mt-1">•</span>
                     <div>
                       <strong className="text-nox-white">Anpassung an Marktveränderungen:</strong>
                       <span className="text-sm text-nox-white-muted block mt-1">
@@ -418,8 +418,8 @@ export default function ContentEngineDetail() {
 
           <motion.div variants={itemVariants}>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#d6a400]/20 to-[#f5c542]/20 rounded-2xl blur-xl" />
-              <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#d6a400]/30 rounded-2xl p-10 text-center">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#E84040]/20 to-[#FF6B6B]/20 rounded-2xl blur-xl" />
+              <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#E84040]/30 rounded-2xl p-10 text-center">
                 <h2 className="text-2xl md:text-3xl font-bold text-nox-white mb-4">
                   Bereit, Content nicht mehr zu raten – sondern abzuleiten?
                 </h2>

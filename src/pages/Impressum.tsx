@@ -4,8 +4,9 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function Impressum() {
   return (
-    <div className="min-h-screen py-20 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="relative min-h-screen py-28 px-4 noise">
+      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-nox-red/[0.05] blur-[140px] pointer-events-none" />
+      <div className="relative max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -13,7 +14,7 @@ export default function Impressum() {
         >
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-nox-white-muted hover:text-nox-yellow transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-nox-white-muted hover:text-nox-red transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
             Zurück zur Startseite
@@ -24,9 +25,15 @@ export default function Impressum() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8 md:p-12"
+          className="bg-gradient-to-br from-[#0f0f0f] to-[#070707] border border-white/[0.07] rounded-2xl p-8 md:p-12 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)]"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-nox-white mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="w-10 h-[2px] bg-nox-red" />
+            <span className="text-[15px] font-mono font-bold tracking-[0.26em] text-[#FF6B6B] uppercase">
+              Rechtliches
+            </span>
+          </div>
+          <h1 className="text-3xl md:text-5xl font-bold text-nox-white mb-8 tracking-[-0.02em] text-depth-red-subtle">
             Impressum
           </h1>
 
@@ -52,7 +59,7 @@ export default function Impressum() {
                 E-Mail:{' '}
                 <a
                   href="mailto:admin@alphamindhub.com"
-                  className="text-nox-yellow hover:underline"
+                  className="text-nox-red hover:underline"
                 >
                   admin@alphamindhub.com
                 </a>
@@ -87,7 +94,7 @@ export default function Impressum() {
                   href="https://ec.europa.eu/consumers/odr/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-nox-yellow hover:underline break-all"
+                  className="text-nox-red hover:underline break-all"
                 >
                   https://ec.europa.eu/consumers/odr/
                 </a>
