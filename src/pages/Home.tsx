@@ -175,117 +175,13 @@ export default function Home() {
               <div className="w-[160px] h-[160px] rounded-full bg-[#FF4D4D]/40 blur-[46px] animate-breath" style={{ animationDelay: '0.7s' }} />
             </div>
 
-            <motion.svg
-              viewBox="0 0 120 180"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="relative w-32 h-48 md:w-36 md:h-56 lg:w-44 lg:h-64 drop-shadow-[0_0_60px_rgba(232,64,64,0.75)] drop-shadow-[0_0_18px_rgba(255,120,120,0.55)]"
+            <motion.div
+              className="relative w-32 h-48 md:w-36 md:h-56 lg:w-44 lg:h-64 drop-shadow-[0_0_55px_rgba(201,48,48,0.6)]"
               animate={{ opacity: [0.94, 1, 0.94] }}
               transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <defs>
-                {/* Deep dimensional base — dark red core fading to crimson */}
-                <linearGradient id="bolt3dBase" x1="0.15" y1="0" x2="0.9" y2="1">
-                  <stop offset="0%" stopColor="#FF8A8A" />
-                  <stop offset="22%" stopColor="#F04545" />
-                  <stop offset="55%" stopColor="#B81E1E" />
-                  <stop offset="100%" stopColor="#4A0808" />
-                </linearGradient>
-                {/* Shadow facet (right/back plane) */}
-                <linearGradient id="bolt3dShadow" x1="0" y1="0" x2="1" y2="0.8">
-                  <stop offset="0%" stopColor="#000000" stopOpacity="0" />
-                  <stop offset="55%" stopColor="#2A0404" stopOpacity="0.55" />
-                  <stop offset="100%" stopColor="#140202" stopOpacity="0.95" />
-                </linearGradient>
-                {/* Front specular bevel (left highlight plane) */}
-                <linearGradient id="bolt3dSpecular" x1="0" y1="0" x2="1" y2="0.6">
-                  <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85" />
-                  <stop offset="35%" stopColor="#FFD6D6" stopOpacity="0.45" />
-                  <stop offset="100%" stopColor="#FFD6D6" stopOpacity="0" />
-                </linearGradient>
-                {/* Inner glow core */}
-                <radialGradient id="bolt3dCore" cx="0.45" cy="0.4" r="0.55">
-                  <stop offset="0%" stopColor="#FFE4E4" stopOpacity="0.85" />
-                  <stop offset="40%" stopColor="#FF7070" stopOpacity="0.45" />
-                  <stop offset="100%" stopColor="#C93030" stopOpacity="0" />
-                </radialGradient>
-                {/* Rim edge gradient */}
-                <linearGradient id="bolt3dRim" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#FFE0E0" stopOpacity="1" />
-                  <stop offset="50%" stopColor="#FF7070" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="#5A0B0B" stopOpacity="0.9" />
-                </linearGradient>
-                {/* Soft atmospheric glow */}
-                <filter id="bolt3dGlow" x="-40%" y="-40%" width="180%" height="180%">
-                  <feGaussianBlur stdDeviation="1.4" />
-                </filter>
-              </defs>
-
-              {/* Back ambient halo — outside the bolt, no container */}
-              <path
-                d="M70 6 L18 100 L52 100 L38 174 L104 70 L68 70 Z"
-                fill="#E84040"
-                opacity="0.25"
-                filter="url(#bolt3dGlow)"
-              />
-
-              {/* Base body — primary dimensional fill */}
-              <path
-                d="M70 6 L18 100 L52 100 L38 174 L104 70 L68 70 Z"
-                fill="url(#bolt3dBase)"
-              />
-
-              {/* Shadow facet — back/right plane to create depth */}
-              <path
-                d="M70 6 L68 70 L104 70 L38 174 L46 110 L52 100 L38 100 Z"
-                fill="url(#bolt3dShadow)"
-                opacity="0.9"
-              />
-
-              {/* Front specular bevel — catches the light along leading edges */}
-              <path
-                d="M70 6 L66 24 L30 90 L50 98 L52 100 L18 100 Z"
-                fill="url(#bolt3dSpecular)"
-                opacity="0.75"
-              />
-
-              {/* Inner core glow */}
-              <path
-                d="M70 6 L18 100 L52 100 L38 174 L104 70 L68 70 Z"
-                fill="url(#bolt3dCore)"
-              />
-
-              {/* Sharp crest highlight — top edge specular */}
-              <path
-                d="M70 6 L62 28 L36 76 L22 98 L18 100 Z"
-                fill="#FFFFFF"
-                opacity="0.18"
-              />
-
-              {/* Rim stroke — crisp outer edge for premium definition */}
-              <path
-                d="M70 6 L18 100 L52 100 L38 174 L104 70 L68 70 Z"
-                fill="none"
-                stroke="url(#bolt3dRim)"
-                strokeWidth="1.4"
-                strokeLinejoin="miter"
-              />
-
-              {/* Inner soft rim — bevel depth */}
-              <path
-                d="M70 6 L18 100 L52 100 L38 174 L104 70 L68 70 Z"
-                fill="none"
-                stroke="#FFB0B0"
-                strokeOpacity="0.28"
-                strokeWidth="0.4"
-                strokeLinejoin="miter"
-              />
-
-              {/* Bottom tip accent glow */}
-              <circle cx="38" cy="172" r="3" fill="#FFCDCD" opacity="0.7" filter="url(#bolt3dGlow)" />
-              {/* Top tip accent glow */}
-              <circle cx="70" cy="8" r="2.4" fill="#FFE0E0" opacity="0.85" filter="url(#bolt3dGlow)" />
-            </motion.svg>
+              <NoxBolt className="w-full h-full" />
+            </motion.div>
           </motion.div>
 
           {/* Eyebrow */}
