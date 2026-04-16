@@ -124,8 +124,8 @@ const stagger = {
 function SectionEyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 mb-6">
-      <span className="w-8 h-px bg-nox-red" />
-      <span className="text-[13px] font-mono font-semibold tracking-[0.3em] text-[#FF5A5A] uppercase">
+      <span className="w-10 h-[2px] bg-nox-red" />
+      <span className="text-[15px] font-mono font-bold tracking-[0.26em] text-[#FF6B6B] uppercase">
         {children}
       </span>
     </div>
@@ -137,7 +137,7 @@ export default function Home() {
     <div className="min-h-screen relative">
 
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex items-start justify-center px-4 pt-40 md:pt-48 lg:pt-52 pb-28 overflow-hidden noise">
+      <section className="relative min-h-screen flex items-center justify-center px-4 pt-24 md:pt-28 lg:pt-32 pb-24 overflow-hidden noise">
         {/* Deep atmospheric base */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(18,8,10,1)_0%,#050505_60%,#030303_100%)]" />
 
@@ -163,7 +163,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex justify-center items-center mx-auto mb-20 md:mb-24 w-full h-[200px] md:h-[240px] lg:h-[280px]"
+            className="relative flex justify-center items-center mx-auto mt-4 md:mt-6 mb-10 md:mb-12 w-full h-[180px] md:h-[210px] lg:h-[240px]"
           >
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-[520px] h-[520px] rounded-full bg-nox-red/[0.14] blur-[130px]" />
@@ -217,7 +217,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.7 }}
-            className="flex justify-center mb-7"
+            className="flex justify-center mb-5"
           >
             <span className="text-[12px] font-mono font-semibold tracking-[0.32em] text-white/80 uppercase px-5 py-2.5 border border-white/[0.14] rounded-full bg-white/[0.035] backdrop-blur-sm">
               <span className="text-[#FF5A5A]">NOX</span> <span className="text-white/40 mx-1">·</span> High-End Learning Systems
@@ -229,7 +229,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="text-5xl md:text-7xl lg:text-[6rem] font-bold mb-7 leading-[1] tracking-[-0.025em] text-balance"
+            className="text-5xl md:text-7xl lg:text-[6rem] font-bold mb-6 leading-[1] tracking-[-0.025em] text-balance"
           >
             <span className="text-gradient-red">KI-Systeme.</span>
             <br />
@@ -243,7 +243,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65, duration: 0.9 }}
-            className="text-lg md:text-xl text-nox-white-muted/90 mb-12 max-w-2xl mx-auto leading-relaxed"
+            className="text-lg md:text-xl text-nox-white-muted/90 mb-10 max-w-2xl mx-auto leading-relaxed"
           >
             NOX Labs baut operative KI-Infrastruktur für Lead-Generierung, Qualifizierung und Workflow — strukturiert, messbar, produktionsreif.
           </motion.p>
@@ -595,7 +595,7 @@ export default function Home() {
           >
             <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-nox-red/[0.03] blur-[60px] pointer-events-none" />
             <div className="relative">
-              <p className="text-[12px] font-mono font-semibold tracking-[0.28em] text-[#FF5A5A] uppercase mb-3">Entry Layer <span className="text-white/40">·</span> GetVoidra</p>
+              <p className="text-[14px] font-mono font-bold tracking-[0.24em] text-[#FF6B6B] uppercase mb-3">Entry Layer <span className="text-white/40">·</span> GetVoidra</p>
               <h3 className="text-lg font-bold text-nox-white mb-2 tracking-tight">Der produktisierte NOX-Layer.</h3>
               <p className="text-nox-white-muted text-sm max-w-md leading-relaxed">
                 Ready-to-deploy Add-Ons und kleinere Systeme — schnelle Deployments, schmaler Scope, klarer Einstieg in die NOX-Architektur.

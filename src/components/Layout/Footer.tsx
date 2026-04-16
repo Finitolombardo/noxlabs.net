@@ -27,7 +27,7 @@ export default function Footer() {
 
           {/* Nav block */}
           <div className="md:col-span-4 md:col-start-7">
-            <p className="text-[13px] font-mono font-semibold tracking-[0.3em] text-[#FF5A5A] uppercase mb-5">Navigation</p>
+            <p className="text-[15px] font-mono font-bold tracking-[0.26em] text-[#FF6B6B] uppercase mb-5">Navigation</p>
             <div className="grid grid-cols-2 gap-x-8 gap-y-3.5">
               <Link to="/" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Start</Link>
               <Link to="/systems" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Systeme</Link>
