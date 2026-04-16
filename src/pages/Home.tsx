@@ -10,7 +10,6 @@ import {
   Gauge,
 } from 'lucide-react';
 import HeroOrchestration from '../components/UI/HeroOrchestration';
-import NoxBolt from '../components/UI/NoxBolt';
 
 const problems = [
   {
@@ -158,20 +157,58 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#070707] via-[#070707]/80 to-transparent z-10 pointer-events-none" />
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {/* Lightning Bolt brand mark — the origin of the network */}
+          {/* ─── NEW HERO LIGHTNING ─── free-floating, ambient glow only, no container */}
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.88 }}
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-            className="flex justify-center mb-16 md:mb-20 relative"
+            className="relative flex justify-center items-center mx-auto mb-20 md:mb-24 w-full h-[200px] md:h-[240px] lg:h-[280px]"
           >
-            <div className="relative flex items-center justify-center">
-              {/* Ambient energy — soft, circular, edgeless */}
-              <div className="absolute w-[420px] h-[420px] rounded-full bg-nox-red/15 blur-[110px] pointer-events-none" />
-              <div className="absolute w-[260px] h-[260px] rounded-full bg-nox-red/30 blur-[70px] pointer-events-none animate-breath" />
-              <div className="absolute w-[140px] h-[140px] rounded-full bg-[#E84040]/35 blur-[40px] pointer-events-none animate-breath" style={{ animationDelay: '0.6s' }} />
-              <NoxBolt className="relative w-24 h-32 md:w-28 md:h-40 lg:w-32 lg:h-44 drop-shadow-[0_0_42px_rgba(232,64,64,0.75)]" />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-[520px] h-[520px] rounded-full bg-nox-red/[0.14] blur-[130px]" />
             </div>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-[320px] h-[320px] rounded-full bg-nox-red/30 blur-[80px] animate-breath" />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-[160px] h-[160px] rounded-full bg-[#FF4D4D]/40 blur-[46px] animate-breath" style={{ animationDelay: '0.7s' }} />
+            </div>
+
+            <motion.svg
+              viewBox="0 0 120 180"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="relative w-32 h-48 md:w-36 md:h-56 lg:w-44 lg:h-64 drop-shadow-[0_0_55px_rgba(232,64,64,0.75)]"
+              animate={{ opacity: [0.92, 1, 0.92] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <defs>
+                <linearGradient id="noxBoltFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FF6B6B" />
+                  <stop offset="45%" stopColor="#E84040" />
+                  <stop offset="100%" stopColor="#9B1C1C" />
+                </linearGradient>
+                <linearGradient id="noxBoltEdge" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#FFD0D0" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#E84040" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M70 6 L18 100 L52 100 L38 174 L104 70 L68 70 Z"
+                fill="url(#noxBoltFill)"
+                stroke="url(#noxBoltEdge)"
+                strokeWidth="1.2"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M70 6 L18 100 L52 100 L38 174 L104 70 L68 70 Z"
+                fill="none"
+                stroke="#FFB0B0"
+                strokeOpacity="0.35"
+                strokeWidth="0.6"
+                strokeLinejoin="round"
+              />
+            </motion.svg>
           </motion.div>
 
           {/* Eyebrow */}
