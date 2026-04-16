@@ -137,7 +137,7 @@ export default function Home() {
     <div className="min-h-screen relative">
 
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 pt-24 md:pt-28 lg:pt-32 pb-24 overflow-hidden noise">
+      <section className="relative min-h-screen flex items-start justify-center px-4 pt-40 md:pt-48 lg:pt-56 pb-24 overflow-x-clip noise">
         {/* Deep atmospheric base */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(18,8,10,1)_0%,#050505_60%,#030303_100%)]" />
 
@@ -163,7 +163,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex justify-center items-center mx-auto mt-4 md:mt-6 mb-10 md:mb-12 w-full h-[180px] md:h-[210px] lg:h-[240px]"
+            className="relative flex justify-center items-center mx-auto mt-6 md:mt-10 mb-10 md:mb-12 w-full h-[230px] md:h-[270px] lg:h-[310px] overflow-visible"
           >
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-[520px] h-[520px] rounded-full bg-nox-red/[0.14] blur-[130px]" />
