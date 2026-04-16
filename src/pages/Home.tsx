@@ -10,6 +10,7 @@ import {
   Gauge,
 } from 'lucide-react';
 import HeroOrchestration from '../components/UI/HeroOrchestration';
+import NoxBolt from '../components/UI/NoxBolt';
 
 const problems = [
   {
