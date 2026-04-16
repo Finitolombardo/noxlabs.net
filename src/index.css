@@ -36,4 +36,38 @@
   .animate-pulse-subtle {
     animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+
+  @keyframes glow-pulse {
+    0%, 100% {
+      opacity: 0.15;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  .animate-glow-pulse {
+    animation: glow-pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes scan-line {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 0.5;
+    }
+    100% {
+      transform: translateY(100vh);
+      opacity: 0;
+    }
+  }
+
+  .animate-scan {
+    animation: scan-line 8s linear infinite;
+  }
 }
