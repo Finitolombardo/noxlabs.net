@@ -113,11 +113,11 @@ const processSteps = [
 ];
 
 const differentiators = [
-  'Systeme statt Hacks — nachhaltig, nicht kurzfristig',
-  'Struktur statt Chaos — klare Architektur von Anfang an',
-  'Leverage statt Mehrarbeit — mehr Output, weniger manuelle Arbeit',
-  'Modular und skalierbar — gebaut, um zu wachsen',
-  'Ergebnisgebunden — kein Consulting, keine Floskeln',
+  'Systeme statt Hacks. Gebaut, um zu bleiben.',
+  'Struktur statt Chaos. Architektur vor Code.',
+  'Leverage statt Mehrarbeit. Output statt Aufwand.',
+  'Modular und skalierbar. Gebaut, um zu wachsen.',
+  'Ergebnisgebunden. Nicht an Deliverables, an Wirkung.',
 ];
 
 const fadeUp = {
@@ -155,27 +155,45 @@ export default function Home() {
           <HeroOrchestration />
         </div>
 
-        {/* Vertical light beam */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-[55%] bg-gradient-to-b from-transparent via-nox-red/25 to-transparent pointer-events-none" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-px h-[45%] bg-gradient-to-t from-transparent via-nox-red/15 to-transparent pointer-events-none" />
+        {/* Vertical light beam — anchored through the core */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-[48%] bg-gradient-to-b from-transparent via-nox-red/30 to-nox-red/60 pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-px h-[52%] bg-gradient-to-t from-transparent via-nox-red/15 to-nox-red/50 pointer-events-none" />
 
-        {/* Hero glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] rounded-full bg-red-950/25 blur-[160px] pointer-events-none animate-glow-pulse" />
+        {/* Concentric core rings — the bolt as the pulse point */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] pointer-events-none">
+          <div className="absolute -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full border border-nox-red/10 animate-breath" />
+          <div className="absolute -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full border border-nox-red/[0.06] animate-breath" style={{ animationDelay: '1s' }} />
+          <div className="absolute -translate-x-1/2 -translate-y-1/2 w-[760px] h-[760px] rounded-full border border-white/[0.03]" />
+        </div>
+
+        {/* Hero core glow — anchored to bolt position */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[560px] h-[560px] rounded-full bg-nox-red/[0.18] blur-[120px] pointer-events-none animate-glow-pulse" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%] w-[1000px] h-[500px] rounded-full bg-red-950/25 blur-[180px] pointer-events-none" />
 
         {/* Fade to page */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#070707] via-[#070707]/80 to-transparent z-10 pointer-events-none" />
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {/* Lightning Bolt brand mark */}
+          {/* Lightning Bolt brand mark — the origin of the network */}
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.9 }}
+            initial={{ opacity: 0, y: 16, scale: 0.85 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="flex justify-center mb-8 relative"
+            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+            className="flex justify-center mb-10 relative"
           >
             <div className="relative">
-              <div className="absolute inset-0 blur-2xl bg-nox-red/40 scale-150 animate-breath" />
-              <NoxBolt className="relative w-14 h-20 md:w-16 md:h-24 drop-shadow-[0_0_24px_rgba(201,48,48,0.5)]" />
+              {/* Deep red ember behind bolt */}
+              <div className="absolute inset-0 blur-[60px] bg-nox-red/60 scale-[2.2]" />
+              <div className="absolute inset-0 blur-3xl bg-nox-red/50 scale-[1.6] animate-breath" />
+              {/* Radiant rays */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] opacity-40 pointer-events-none"
+                style={{
+                  background: 'conic-gradient(from 0deg, transparent 0deg, rgba(201,48,48,0.25) 20deg, transparent 40deg, transparent 90deg, rgba(201,48,48,0.2) 110deg, transparent 130deg, transparent 180deg, rgba(201,48,48,0.25) 200deg, transparent 220deg, transparent 270deg, rgba(201,48,48,0.2) 290deg, transparent 310deg)',
+                  maskImage: 'radial-gradient(circle, transparent 30%, black 70%)',
+                  WebkitMaskImage: 'radial-gradient(circle, transparent 30%, black 70%)',
+                }}
+              />
+              <NoxBolt className="relative w-16 h-24 md:w-20 md:h-28 lg:w-24 lg:h-32 drop-shadow-[0_0_32px_rgba(232,64,64,0.65)]" />
             </div>
           </motion.div>
 
@@ -186,8 +204,8 @@ export default function Home() {
             transition={{ delay: 0.3, duration: 0.7 }}
             className="flex justify-center mb-7"
           >
-            <span className="text-[11px] font-mono tracking-[0.4em] text-nox-white-muted/80 uppercase px-5 py-2 border border-white/[0.08] rounded-full bg-white/[0.02] backdrop-blur-sm">
-              <span className="text-nox-red/90">NOX</span> · High-End AI Systems
+            <span className="text-[11px] font-mono tracking-[0.4em] text-nox-white-muted/85 uppercase px-5 py-2 border border-white/[0.1] rounded-full bg-white/[0.025] backdrop-blur-sm">
+              <span className="text-nox-red">NOX</span> · High-End AI Systems
             </span>
           </motion.div>
 
@@ -196,13 +214,13 @@ export default function Home() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="text-5xl md:text-7xl lg:text-[5.75rem] font-bold mb-7 leading-[1.02] tracking-[-0.02em] text-balance"
+            className="text-5xl md:text-7xl lg:text-[6rem] font-bold mb-7 leading-[1] tracking-[-0.025em] text-balance"
           >
-            <span className="text-gradient-red">KI-Systeme für</span>
+            <span className="text-gradient-red">KI-Systeme.</span>
             <br />
             <span className="text-nox-red relative inline-block">
-              skalierbares Wachstum.
-              <span className="absolute -bottom-1 left-0 right-0 h-px bg-gradient-to-r from-transparent via-nox-red/60 to-transparent" />
+              Gebaut für Wachstum.
+              <span className="absolute -bottom-1 left-0 right-0 h-px bg-gradient-to-r from-transparent via-nox-red/70 to-transparent" />
             </span>
           </motion.h1>
 
@@ -210,9 +228,9 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65, duration: 0.9 }}
-            className="text-lg md:text-xl text-nox-white-muted mb-12 max-w-2xl mx-auto leading-relaxed"
+            className="text-lg md:text-xl text-nox-white-muted/90 mb-12 max-w-2xl mx-auto leading-relaxed"
           >
-            NOX Labs baut Systeme für Lead-Generierung, Qualifizierung, Workflow-Automatisierung und Business-Leverage — strukturiert, messbar, ohne Experimente.
+            NOX Labs baut operative KI-Infrastruktur für Lead-Generierung, Qualifizierung und Workflow — strukturiert, messbar, produktionsreif.
           </motion.p>
 
           <motion.div
@@ -265,11 +283,11 @@ export default function Home() {
             className="mb-16 max-w-3xl"
           >
             <SectionEyebrow>Das Problem</SectionEyebrow>
-            <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-5 leading-[1.1] tracking-[-0.01em]">
-              Was euch täglich<br />Wachstum kostet.
+            <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-5 leading-[1.05] tracking-[-0.02em]">
+              Was Wachstum<br />täglich kostet.
             </h2>
             <p className="text-nox-white-muted max-w-lg leading-relaxed text-[15px]">
-              Die meisten Businesses haben nicht zu wenig Potenzial — sie haben zu viel strukturellen Lärm.
+              Die meisten Unternehmen haben kein Potenzialproblem — sie haben ein Strukturproblem.
             </p>
           </motion.div>
 
@@ -315,11 +333,11 @@ export default function Home() {
             className="mb-16 max-w-3xl"
           >
             <SectionEyebrow>Systeme</SectionEyebrow>
-            <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-5 leading-[1.1] tracking-[-0.01em]">
-              Die Infrastruktur<br />für Wachstum.
+            <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-5 leading-[1.05] tracking-[-0.02em]">
+              Infrastruktur,<br />die skaliert.
             </h2>
             <p className="text-nox-white-muted max-w-lg leading-relaxed text-[15px]">
-              Keine Tool-Sammlung. Keine Experimente. Systeme mit klarem Scope, definiertem Ergebnis und skalierbarer Architektur.
+              Keine Tool-Stacks. Keine Prototypen. Produktionsreife Systeme mit klarem Scope, definiertem Output und skalierbarer Architektur.
             </p>
           </motion.div>
 
@@ -334,28 +352,36 @@ export default function Home() {
               <motion.div
                 key={i}
                 variants={fadeUp}
-                whileHover={{ y: -4 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                className="group relative bg-gradient-to-br from-[#0f0f0f] to-[#080808] border border-white/[0.07] rounded-2xl p-8 hover:border-nox-red/25 transition-all duration-500 flex flex-col overflow-hidden"
+                whileHover={{ y: -6 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                className="group relative bg-gradient-to-br from-[#0f0f0f] to-[#070707] border border-white/[0.07] rounded-2xl p-8 hover:border-nox-red/30 transition-all duration-500 flex flex-col overflow-hidden hover:shadow-[0_30px_80px_-20px_rgba(201,48,48,0.25),inset_0_1px_0_0_rgba(255,255,255,0.04)]"
                 style={{
-                  boxShadow: '0 20px 60px -20px rgba(0,0,0,0.8)',
+                  boxShadow: '0 20px 60px -20px rgba(0,0,0,0.8), inset 0 1px 0 0 rgba(255,255,255,0.02)',
                 }}
               >
-                {/* Hover glow */}
-                <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-nox-red/0 group-hover:bg-nox-red/[0.1] blur-[80px] transition-all duration-700 pointer-events-none" />
+                {/* Inner edge glow on hover */}
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                  style={{ boxShadow: 'inset 0 0 40px 0 rgba(201,48,48,0.08)' }}
+                />
+
+                {/* Hover glow bloom */}
+                <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-nox-red/0 group-hover:bg-nox-red/[0.14] blur-[90px] transition-all duration-700 pointer-events-none" />
+
+                {/* Top sheen on hover */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-nox-red/0 group-hover:via-nox-red/60 to-transparent transition-all duration-700 pointer-events-none" />
 
                 {/* Card corner accent */}
-                <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
-                  <div className="absolute top-0 right-0 w-full h-px bg-gradient-to-l from-nox-red/30 to-transparent" />
-                  <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-nox-red/30 to-transparent" />
+                <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none transition-opacity duration-500 opacity-60 group-hover:opacity-100">
+                  <div className="absolute top-0 right-0 w-full h-px bg-gradient-to-l from-nox-red/40 to-transparent" />
+                  <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-nox-red/40 to-transparent" />
                 </div>
 
                 <div className="relative">
                   <div className="flex items-start justify-between mb-6">
-                    <span className="text-5xl font-bold text-nox-red/20 font-mono leading-none group-hover:text-nox-red/40 transition-colors duration-500">
+                    <span className="text-5xl font-bold text-nox-red/20 font-mono leading-none group-hover:text-nox-red/50 transition-colors duration-500">
                       {system.number}
                     </span>
-                    <div className="w-8 h-8 rounded-full border border-white/[0.08] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    <div className="w-9 h-9 rounded-full border border-white/[0.08] bg-white/[0.02] flex items-center justify-center opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500">
                       <ArrowRight className="w-3.5 h-3.5 text-nox-red" />
                     </div>
                   </div>
@@ -366,17 +392,20 @@ export default function Home() {
                       <span className="text-sm text-nox-white-muted">{system.problem}</span>
                     </div>
                     <div className="flex items-baseline gap-3">
-                      <span className="text-[10px] font-mono tracking-widest text-nox-red/60 uppercase flex-shrink-0 w-14">Result</span>
+                      <span className="text-[10px] font-mono tracking-widest text-nox-red/70 uppercase flex-shrink-0 w-14">Result</span>
                       <span className="text-sm text-nox-white font-medium">{system.result}</span>
                     </div>
                   </div>
                   <p className="text-sm text-nox-white-muted leading-relaxed mb-7 flex-grow">{system.description}</p>
                   <Link
                     to={system.href}
-                    className="text-sm text-nox-white-muted hover:text-nox-white inline-flex items-center gap-2 transition-colors w-fit"
+                    className="relative text-sm text-nox-white-muted group-hover:text-nox-white inline-flex items-center gap-2 transition-colors w-fit"
                   >
-                    Details ansehen
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <span className="relative">
+                      Details ansehen
+                      <span className="absolute -bottom-0.5 left-0 h-px w-0 group-hover:w-full bg-nox-red/60 transition-all duration-500" />
+                    </span>
+                    <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
                   </Link>
                 </div>
               </motion.div>
@@ -396,7 +425,7 @@ export default function Home() {
             className="mb-20"
           >
             <SectionEyebrow>Prozess</SectionEyebrow>
-            <h2 className="text-3xl md:text-5xl font-bold text-nox-white leading-[1.1] tracking-[-0.01em]">
+            <h2 className="text-3xl md:text-5xl font-bold text-nox-white leading-[1.05] tracking-[-0.02em]">
               Wie NOX baut.
             </h2>
           </motion.div>
@@ -421,17 +450,24 @@ export default function Home() {
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6"
             >
               {processSteps.map((step, i) => (
-                <motion.div key={i} variants={fadeUp} className="relative">
+                <motion.div key={i} variants={fadeUp} className="relative group cursor-default">
                   <div className="flex lg:flex-col items-start gap-5 lg:gap-0">
                     <div className="relative flex-shrink-0 lg:mb-6">
-                      <div className="absolute inset-0 bg-nox-red/20 blur-xl rounded-full animate-breath" style={{ animationDelay: `${i * 0.3}s` }} />
-                      <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-[#121212] to-[#080808] border border-nox-red/20 flex items-center justify-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_8px_24px_-12px_rgba(201,48,48,0.4)]">
-                        <span className="text-base font-bold text-nox-red font-mono tracking-wider">{step.number}</span>
+                      {/* Ambient breathing glow */}
+                      <div
+                        className="absolute inset-0 bg-nox-red/20 blur-xl rounded-full animate-breath opacity-60 group-hover:opacity-100 transition-opacity duration-500"
+                        style={{ animationDelay: `${i * 0.3}s` }}
+                      />
+                      {/* Hover ring */}
+                      <div className="absolute -inset-1 rounded-2xl border border-nox-red/0 group-hover:border-nox-red/30 transition-all duration-500" />
+                      {/* Tile */}
+                      <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-[#121212] to-[#070707] border border-nox-red/20 group-hover:border-nox-red/60 flex items-center justify-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_8px_24px_-12px_rgba(201,48,48,0.4)] group-hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_14px_32px_-10px_rgba(201,48,48,0.7)] transition-all duration-500 group-hover:-translate-y-0.5">
+                        <span className="text-base font-bold text-nox-red font-mono tracking-wider transition-all duration-500 group-hover:text-[#FF5A5A]">{step.number}</span>
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-nox-white mb-2 tracking-tight">{step.title}</h3>
-                      <p className="text-sm text-nox-white-muted leading-relaxed">{step.description}</p>
+                      <h3 className="text-base font-bold text-nox-white mb-2 tracking-tight transition-colors duration-300">{step.title}</h3>
+                      <p className="text-sm text-nox-white-muted group-hover:text-nox-white-muted/95 leading-relaxed transition-colors duration-300">{step.description}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -453,11 +489,11 @@ export default function Home() {
               className="lg:sticky lg:top-28"
             >
               <SectionEyebrow>Warum NOX</SectionEyebrow>
-              <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-6 leading-[1.1] tracking-[-0.01em]">
+              <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-6 leading-[1.05] tracking-[-0.02em]">
                 Kein generisches<br />AI Consulting.
               </h2>
               <p className="text-nox-white-muted leading-relaxed text-[15px] max-w-md">
-                NOX Labs baut operative Systeme, die an echten Business-Ergebnissen gemessen werden. Kein Berater-Sprech, keine Random-Automatisierungen, kein Aufwand ohne Output.
+                NOX baut operative Systeme — gemessen am Business-Ergebnis. Kein Beratersprech. Keine Experimente. Kein Overhead.
               </p>
             </motion.div>
 
@@ -509,11 +545,11 @@ export default function Home() {
               </div>
 
               <SectionEyebrow>Solution Finder</SectionEyebrow>
-              <h2 className="text-3xl md:text-4xl font-bold text-nox-white mb-5 leading-tight tracking-tight">
-                Welche Systeme braucht<br />dein Business?
+              <h2 className="text-3xl md:text-4xl font-bold text-nox-white mb-5 leading-[1.05] tracking-[-0.02em]">
+                Welche Systeme braucht<br />dein Business wirklich?
               </h2>
               <p className="text-nox-white-muted leading-relaxed mb-10 max-w-xl mx-auto">
-                Gib deine Situation, Tools, Bottlenecks und Ziele ein — und erhalte die passende NOX System-Kombination für dein Business.
+                Situation, Stack, Bottlenecks, Ziele — und du erhältst die passende NOX-Systemkombination. In unter zwei Minuten.
               </p>
               <Link to="/configurator">
                 <button className="group relative px-8 py-4 bg-nox-red text-white font-semibold rounded-lg hover:bg-nox-red-deep transition-all duration-300 inline-flex items-center gap-2.5 shadow-[0_0_0_1px_rgba(232,64,64,0.25),0_16px_48px_-8px_rgba(201,48,48,0.6)] hover:shadow-[0_0_0_1px_rgba(232,64,64,0.4),0_20px_56px_-8px_rgba(201,48,48,0.75)] overflow-hidden">
@@ -539,10 +575,10 @@ export default function Home() {
           >
             <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-nox-red/[0.03] blur-[60px] pointer-events-none" />
             <div className="relative">
-              <p className="text-[10px] font-mono tracking-[0.3em] text-gray-600 uppercase mb-2">Entry Layer</p>
-              <h3 className="text-lg font-bold text-nox-white mb-2 tracking-tight">Schneller starten mit GetVoidra</h3>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-gray-500 uppercase mb-2">Entry Layer</p>
+              <h3 className="text-lg font-bold text-nox-white mb-2 tracking-tight">Schneller starten — mit GetVoidra</h3>
               <p className="text-nox-white-muted text-sm max-w-md leading-relaxed">
-                Für kleinere, sofort einsatzreiche Systeme und Einstiegsautomatisierungen: GetVoidra ist der produktisierte NOX-Layer für schnelle Deployments ohne großen Scope.
+                Der produktisierte NOX-Layer: fertige Systeme und Einstiegsautomatisierungen. Schnelle Deployments ohne großen Scope.
               </p>
             </div>
             <div className="relative flex-shrink-0">
@@ -575,13 +611,13 @@ export default function Home() {
                 <NoxBolt className="relative w-10 h-14" />
               </div>
             </div>
-            <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-[1.02] tracking-[-0.02em] text-balance">
-              <span className="text-gradient-red">Bereit für Systeme,</span>
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-[1] tracking-[-0.025em] text-balance">
+              <span className="text-gradient-red">Systeme,</span>
               <br />
-              <span className="text-nox-red">die funktionieren?</span>
+              <span className="text-nox-red">die liefern.</span>
             </h2>
             <p className="text-nox-white-muted text-lg mb-12 max-w-md mx-auto leading-relaxed">
-              Kein Consulting-Sprech. Kein Overhead. Systeme mit klarem Scope und messbarem Ergebnis.
+              Klarer Scope. Messbarer Output. Kein Overhead.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/contact">
