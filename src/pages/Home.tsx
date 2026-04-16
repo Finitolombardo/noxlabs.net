@@ -178,7 +178,8 @@ export default function Home() {
             <motion.img
               src="/nox_icon_app_square_1024.png"
               alt="NOX"
-              className="relative w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 object-contain drop-shadow-[0_0_55px_rgba(201,48,48,0.6)]"
+              style={{ mixBlendMode: 'screen' }}
+              className="relative w-56 h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-[0_0_55px_rgba(201,48,48,0.6)]"
               animate={{ opacity: [0.94, 1, 0.94] }}
               transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
             />
