@@ -17,11 +17,11 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { label: 'Home', href: '/' },
-    { label: 'Systems', href: '/systems' },
-    { label: 'Solution Finder', href: '/configurator' },
+    { label: 'Start', href: '/' },
+    { label: 'Systeme', href: '/systems' },
+    { label: 'Lösungsfinder', href: '/configurator' },
     { label: 'Roadmap', href: '/roadmap' },
-    { label: 'Contact', href: '/contact' },
+    { label: 'Kontakt', href: '/contact' },
   ];
 
   const isActive = (href: string) => {
@@ -64,7 +64,7 @@ export default function Navbar() {
               to="/contact"
               className="relative px-5 py-2.5 bg-nox-red text-white text-sm font-semibold rounded-lg hover:bg-nox-red-deep transition-all duration-300 shadow-[0_0_0_1px_rgba(232,64,64,0.2),0_8px_24px_-8px_rgba(201,48,48,0.5)] hover:shadow-[0_0_0_1px_rgba(232,64,64,0.35),0_12px_32px_-8px_rgba(201,48,48,0.65)] group overflow-hidden"
             >
-              <span className="relative z-10">Book a Call</span>
+              <span className="relative z-10">Gespräch buchen</span>
               <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
             </Link>
           </div>
@@ -106,7 +106,7 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block w-full px-4 py-3 bg-nox-red text-white text-sm font-semibold rounded-lg text-center mt-3 hover:bg-nox-red-deep transition-colors"
               >
-                Book a Call
+                Gespräch buchen
               </Link>
             </div>
           </motion.div>

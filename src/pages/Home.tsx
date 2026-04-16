@@ -2,46 +2,46 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
-  Users,
-  Clock,
-  GitMerge,
-  AlertCircle,
-  Mail,
-  BarChart2,
+  UserX,
+  Timer,
+  Network,
+  AlertTriangle,
+  MailX,
+  Gauge,
 } from 'lucide-react';
 import HeroOrchestration from '../components/UI/HeroOrchestration';
 import NoxBolt from '../components/UI/NoxBolt';
 
 const problems = [
   {
-    icon: Users,
+    icon: UserX,
     title: 'Leads gehen verloren',
     description: 'Manuelle Prozesse und fehlende Struktur lassen qualifizierte Kontakte unbearbeitet liegen.',
   },
   {
-    icon: Clock,
+    icon: Timer,
     title: 'Langsame Response-Zeiten',
     description: 'Follow-up passiert zu spät — der Moment ist vorbei, der Interessent kalt.',
   },
   {
-    icon: GitMerge,
+    icon: Network,
     title: 'Tools sprechen nicht miteinander',
     description: 'CRM, E-Mail, Kalender, Ads — Silos statt System. Keine gemeinsame Datenbasis.',
   },
   {
-    icon: AlertCircle,
+    icon: AlertTriangle,
     title: 'Manuelles Chaos skaliert nicht',
     description: 'Was bei 10 Leads funktioniert, kollabiert bei 100. Wachstum erfordert Struktur.',
   },
   {
-    icon: Mail,
+    icon: MailX,
     title: 'Schwaches Follow-up',
     description: 'Keine systematische Nachverfolgung bedeutet verlorene Deals und vergessene Chancen.',
   },
   {
-    icon: BarChart2,
+    icon: Gauge,
     title: 'Kein Überblick',
-    description: 'Ohne Visibility über den gesamten Workflow lassen sich keine fundierten Entscheidungen treffen.',
+    description: 'Ohne Sicht auf den gesamten Workflow lassen sich keine fundierten Entscheidungen treffen.',
   },
 ];
 
@@ -62,16 +62,16 @@ const systems = [
     result: 'Sofortige, automatisierte Erstqualifizierung',
     description:
       'KI-gestütztes System zur automatischen Qualifizierung eingehender Anfragen — mit Scoring, Routing und CRM-Integration.',
-    href: '/systems',
+    href: '/systems/whatsapp-booking-bot',
   },
   {
     number: '03',
-    title: 'CRM & Workflow-Integration',
-    problem: 'Tools arbeiten isoliert, Daten gehen verloren',
-    result: 'Verbundene Infrastruktur mit klarem Datenfluss',
+    title: 'Pitch & Sales Evolution',
+    problem: 'Pitches variieren, Deals verlieren Momentum',
+    result: 'Systematisch lernende Sales-Architektur',
     description:
-      'Verbindet CRM, E-Mail, Kalender und Ops-Tools zu einem kohärenten System. Kein manueller Datentransfer, keine Silos.',
-    href: '/systems',
+      'Verbindet Pitch-Logik, CRM und Ops zu einem kohärenten System. Kein manueller Datentransfer, keine Silos.',
+    href: '/systems/pitch-evolution-system',
   },
   {
     number: '04',
@@ -146,7 +146,7 @@ export default function Home() {
     <div className="min-h-screen relative">
 
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden noise">
+      <section className="relative min-h-screen flex items-center justify-center px-4 pt-32 pb-24 overflow-hidden noise">
         {/* Deep atmospheric base */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(18,8,10,1)_0%,#050505_60%,#030303_100%)]" />
 
@@ -176,24 +176,27 @@ export default function Home() {
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           {/* Lightning Bolt brand mark — the origin of the network */}
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.85 }}
+            initial={{ opacity: 0, y: 16, scale: 0.88 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-            className="flex justify-center mb-10 relative"
+            className="flex justify-center mb-12 relative"
           >
-            <div className="relative">
-              {/* Deep red ember behind bolt */}
-              <div className="absolute inset-0 blur-[60px] bg-nox-red/60 scale-[2.2]" />
-              <div className="absolute inset-0 blur-3xl bg-nox-red/50 scale-[1.6] animate-breath" />
+            <div className="relative flex items-center justify-center">
+              {/* Deep red ember halo — circular, no rectangle */}
+              <div className="absolute w-[340px] h-[340px] rounded-full bg-nox-red/25 blur-[80px] pointer-events-none" />
+              <div className="absolute w-[220px] h-[220px] rounded-full bg-nox-red/40 blur-[60px] pointer-events-none animate-breath" />
+              <div className="absolute w-[140px] h-[140px] rounded-full bg-[#E84040]/30 blur-[40px] pointer-events-none" />
               {/* Radiant rays */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] opacity-40 pointer-events-none"
+              <div
+                className="absolute w-[320px] h-[320px] opacity-45 pointer-events-none rounded-full"
                 style={{
-                  background: 'conic-gradient(from 0deg, transparent 0deg, rgba(201,48,48,0.25) 20deg, transparent 40deg, transparent 90deg, rgba(201,48,48,0.2) 110deg, transparent 130deg, transparent 180deg, rgba(201,48,48,0.25) 200deg, transparent 220deg, transparent 270deg, rgba(201,48,48,0.2) 290deg, transparent 310deg)',
-                  maskImage: 'radial-gradient(circle, transparent 30%, black 70%)',
-                  WebkitMaskImage: 'radial-gradient(circle, transparent 30%, black 70%)',
+                  background:
+                    'conic-gradient(from 0deg, transparent 0deg, rgba(232,64,64,0.28) 18deg, transparent 42deg, transparent 88deg, rgba(232,64,64,0.22) 108deg, transparent 132deg, transparent 178deg, rgba(232,64,64,0.28) 198deg, transparent 222deg, transparent 268deg, rgba(232,64,64,0.22) 288deg, transparent 312deg)',
+                  maskImage: 'radial-gradient(circle, transparent 28%, black 72%)',
+                  WebkitMaskImage: 'radial-gradient(circle, transparent 28%, black 72%)',
                 }}
               />
-              <NoxBolt className="relative w-16 h-24 md:w-20 md:h-28 lg:w-24 lg:h-32 drop-shadow-[0_0_32px_rgba(232,64,64,0.65)]" />
+              <NoxBolt className="relative w-20 h-28 md:w-24 md:h-36 lg:w-28 lg:h-40 drop-shadow-[0_0_36px_rgba(232,64,64,0.7)]" />
             </div>
           </motion.div>
 
@@ -241,14 +244,14 @@ export default function Home() {
           >
             <Link to="/contact">
               <button className="group relative px-8 py-4 bg-nox-red text-white font-semibold rounded-lg hover:bg-nox-red-deep transition-all duration-300 inline-flex items-center gap-2.5 shadow-[0_0_0_1px_rgba(232,64,64,0.25),0_12px_40px_-8px_rgba(201,48,48,0.55)] hover:shadow-[0_0_0_1px_rgba(232,64,64,0.4),0_18px_48px_-8px_rgba(201,48,48,0.7)] overflow-hidden">
-                <span className="relative z-10">Book a Call</span>
+                <span className="relative z-10">Gespräch buchen</span>
                 <ArrowRight className="relative z-10 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
               </button>
             </Link>
             <Link to="/systems">
               <button className="px-8 py-4 bg-white/[0.02] backdrop-blur-sm text-nox-white font-semibold rounded-lg border border-white/[0.12] hover:border-white/[0.28] hover:bg-white/[0.05] transition-all duration-300 inline-flex items-center gap-2.5">
-                Explore Systems
+                Systeme ansehen
                 <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
@@ -283,7 +286,7 @@ export default function Home() {
             className="mb-16 max-w-3xl"
           >
             <SectionEyebrow>Das Problem</SectionEyebrow>
-            <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-5 leading-[1.05] tracking-[-0.02em]">
+            <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-5 leading-[1.05] tracking-[-0.02em] text-depth-red-subtle">
               Was Wachstum<br />täglich kostet.
             </h2>
             <p className="text-nox-white-muted max-w-lg leading-relaxed text-[15px]">
@@ -308,10 +311,14 @@ export default function Home() {
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-nox-red/0 via-nox-red/0 to-nox-red/0 group-hover:from-nox-red/[0.06] group-hover:to-nox-red/[0.01] transition-all duration-500" />
                   <div className="relative">
-                    <div className="w-10 h-10 rounded-lg bg-white/[0.02] border border-white/[0.06] flex items-center justify-center mb-5 group-hover:border-nox-red/30 group-hover:bg-nox-red/[0.08] transition-all duration-500">
-                      <Icon className="w-4 h-4 text-nox-red/70 group-hover:text-nox-red transition-colors" />
+                    <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-[#161012] to-[#0a0707] border border-nox-red/15 flex items-center justify-center mb-5 group-hover:border-nox-red/50 transition-all duration-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_4px_12px_-4px_rgba(201,48,48,0.25)] group-hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_8px_20px_-4px_rgba(201,48,48,0.45)]">
+                      <div className="absolute inset-0 rounded-xl bg-nox-red/0 group-hover:bg-nox-red/[0.08] blur-md transition-all duration-500" />
+                      <Icon
+                        className="relative w-[18px] h-[18px] text-[#E84040] group-hover:text-[#FF5A5A] transition-colors duration-500"
+                        strokeWidth={2.25}
+                      />
                     </div>
-                    <h3 className="text-base font-semibold text-nox-white mb-2.5 tracking-tight">{problem.title}</h3>
+                    <h3 className="text-base font-semibold text-nox-white mb-2.5 tracking-tight text-depth-red-subtle">{problem.title}</h3>
                     <p className="text-sm text-nox-white-muted leading-relaxed">{problem.description}</p>
                   </div>
                 </motion.div>
@@ -333,7 +340,7 @@ export default function Home() {
             className="mb-16 max-w-3xl"
           >
             <SectionEyebrow>Systeme</SectionEyebrow>
-            <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-5 leading-[1.05] tracking-[-0.02em]">
+            <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-5 leading-[1.05] tracking-[-0.02em] text-depth-red-subtle">
               Infrastruktur,<br />die skaliert.
             </h2>
             <p className="text-nox-white-muted max-w-lg leading-relaxed text-[15px]">
@@ -354,7 +361,10 @@ export default function Home() {
                 variants={fadeUp}
                 whileHover={{ y: -6 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-                className="group relative bg-gradient-to-br from-[#0f0f0f] to-[#070707] border border-white/[0.07] rounded-2xl p-8 hover:border-nox-red/30 transition-all duration-500 flex flex-col overflow-hidden hover:shadow-[0_30px_80px_-20px_rgba(201,48,48,0.25),inset_0_1px_0_0_rgba(255,255,255,0.04)]"
+              >
+              <Link
+                to={system.href}
+                className="group relative bg-gradient-to-br from-[#0f0f0f] to-[#070707] border border-white/[0.07] rounded-2xl p-8 hover:border-nox-red/30 transition-all duration-500 flex flex-col overflow-hidden hover:shadow-[0_30px_80px_-20px_rgba(201,48,48,0.25),inset_0_1px_0_0_rgba(255,255,255,0.04)] h-full cursor-pointer"
                 style={{
                   boxShadow: '0 20px 60px -20px rgba(0,0,0,0.8), inset 0 1px 0 0 rgba(255,255,255,0.02)',
                 }}
@@ -397,17 +407,15 @@ export default function Home() {
                     </div>
                   </div>
                   <p className="text-sm text-nox-white-muted leading-relaxed mb-7 flex-grow">{system.description}</p>
-                  <Link
-                    to={system.href}
-                    className="relative text-sm text-nox-white-muted group-hover:text-nox-white inline-flex items-center gap-2 transition-colors w-fit"
-                  >
+                  <span className="relative text-sm text-nox-white-muted group-hover:text-nox-white inline-flex items-center gap-2 transition-colors w-fit">
                     <span className="relative">
                       Details ansehen
                       <span className="absolute -bottom-0.5 left-0 h-px w-0 group-hover:w-full bg-nox-red/60 transition-all duration-500" />
                     </span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
-                  </Link>
+                  </span>
                 </div>
+              </Link>
               </motion.div>
             ))}
           </motion.div>
@@ -425,7 +433,7 @@ export default function Home() {
             className="mb-20"
           >
             <SectionEyebrow>Prozess</SectionEyebrow>
-            <h2 className="text-3xl md:text-5xl font-bold text-nox-white leading-[1.05] tracking-[-0.02em]">
+            <h2 className="text-3xl md:text-5xl font-bold text-nox-white leading-[1.05] tracking-[-0.02em] text-depth-red-subtle">
               Wie NOX baut.
             </h2>
           </motion.div>
@@ -489,7 +497,7 @@ export default function Home() {
               className="lg:sticky lg:top-28"
             >
               <SectionEyebrow>Warum NOX</SectionEyebrow>
-              <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-6 leading-[1.05] tracking-[-0.02em]">
+              <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-6 leading-[1.05] tracking-[-0.02em] text-depth-red-subtle">
                 Kein generisches<br />AI Consulting.
               </h2>
               <p className="text-nox-white-muted leading-relaxed text-[15px] max-w-md">
@@ -553,7 +561,7 @@ export default function Home() {
               </p>
               <Link to="/configurator">
                 <button className="group relative px-8 py-4 bg-nox-red text-white font-semibold rounded-lg hover:bg-nox-red-deep transition-all duration-300 inline-flex items-center gap-2.5 shadow-[0_0_0_1px_rgba(232,64,64,0.25),0_16px_48px_-8px_rgba(201,48,48,0.6)] hover:shadow-[0_0_0_1px_rgba(232,64,64,0.4),0_20px_56px_-8px_rgba(201,48,48,0.75)] overflow-hidden">
-                  <span className="relative z-10">Start Solution Finder</span>
+                  <span className="relative z-10">Lösungsfinder starten</span>
                   <ArrowRight className="relative z-10 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
                 </button>
@@ -584,7 +592,7 @@ export default function Home() {
             <div className="relative flex-shrink-0">
               <Link to="/systems">
                 <button className="px-6 py-3 text-sm font-semibold text-nox-white border border-white/[0.15] rounded-lg hover:border-white/[0.3] hover:bg-white/[0.04] transition-all duration-300 inline-flex items-center gap-2 group/btn">
-                  Entry Systems ansehen
+                  Entry-Systeme ansehen
                   <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
                 </button>
               </Link>
@@ -622,14 +630,14 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/contact">
                 <button className="group relative px-8 py-4 bg-nox-red text-white font-semibold rounded-lg hover:bg-nox-red-deep transition-all duration-300 inline-flex items-center gap-2.5 shadow-[0_0_0_1px_rgba(232,64,64,0.25),0_16px_48px_-8px_rgba(201,48,48,0.6)] hover:shadow-[0_0_0_1px_rgba(232,64,64,0.45),0_20px_56px_-8px_rgba(201,48,48,0.8)] overflow-hidden">
-                  <span className="relative z-10">Book a Call</span>
+                  <span className="relative z-10">Gespräch buchen</span>
                   <ArrowRight className="relative z-10 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
                 </button>
               </Link>
               <Link to="/systems">
                 <button className="px-8 py-4 bg-white/[0.02] backdrop-blur-sm text-nox-white font-semibold rounded-lg border border-white/[0.12] hover:border-white/[0.28] hover:bg-white/[0.05] transition-all duration-300 inline-flex items-center gap-2.5">
-                  Explore Systems
+                  Systeme ansehen
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </Link>

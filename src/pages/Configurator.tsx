@@ -6,18 +6,23 @@ const CONFIG_FORM_URL = "";
 
 export default function Configurator() {
   return (
-    <div className="min-h-screen py-20 px-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="relative min-h-screen pt-32 pb-24 px-4 noise">
+      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[380px] rounded-full bg-nox-red/[0.06] blur-[140px] pointer-events-none" />
+      <div className="absolute inset-0 bg-grid mask-radial-fade opacity-40 pointer-events-none" />
+
+      <div className="relative max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h1
-            className="text-4xl md:text-6xl font-bold text-nox-white mb-6"
-            style={{ textShadow: '0 0 40px rgba(255, 182, 193, 0.15), 0 0 20px rgba(255, 182, 193, 0.1)' }}
-          >
+          <div className="inline-flex items-center gap-3 text-[10px] font-mono tracking-[0.32em] text-nox-red/80 uppercase mb-6">
+            <span className="w-8 h-px bg-nox-red/40" />
+            <span>Lösungsfinder</span>
+            <span className="w-8 h-px bg-nox-red/40" />
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold text-nox-white mb-5 text-depth-red-subtle tracking-tight">
             Hauptsystem konfigurieren
           </h1>
           <p className="text-lg md:text-xl text-nox-white-muted max-w-3xl mx-auto leading-relaxed">

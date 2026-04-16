@@ -17,11 +17,11 @@ export default function Footer() {
               <NoxLogo size="md" />
             </div>
             <p className="text-sm text-nox-white-muted/85 max-w-sm leading-[1.7]">
-              High-end AI systems for lead generation, qualification, workflow automation, and scalable business infrastructure.
+              High-End KI-Systeme für Lead-Generierung, Qualifizierung, Workflow-Automatisierung und skalierbare Business-Infrastruktur.
             </p>
             <div className="mt-8 flex items-center gap-3 text-[10px] font-mono tracking-[0.32em] text-white/30 uppercase">
               <span className="w-8 h-px bg-white/15" />
-              <span>Systems · Not Consulting</span>
+              <span>Systeme · Kein Consulting</span>
             </div>
           </div>
 
@@ -29,11 +29,11 @@ export default function Footer() {
           <div className="md:col-span-4 md:col-start-7">
             <p className="text-[10px] font-mono tracking-[0.32em] text-nox-red/70 uppercase mb-5">Navigation</p>
             <div className="grid grid-cols-2 gap-x-8 gap-y-3.5">
-              <Link to="/" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Home</Link>
-              <Link to="/systems" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Systems</Link>
-              <Link to="/configurator" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Solution Finder</Link>
+              <Link to="/" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Start</Link>
+              <Link to="/systems" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Systeme</Link>
+              <Link to="/configurator" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Lösungsfinder</Link>
               <Link to="/roadmap" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Roadmap</Link>
-              <Link to="/contact" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Contact</Link>
+              <Link to="/contact" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Kontakt</Link>
             </div>
           </div>
 

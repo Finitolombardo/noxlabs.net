@@ -106,4 +106,17 @@
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+
+  .text-depth-red {
+    text-shadow:
+      0 0 30px rgba(201, 48, 48, 0.22),
+      0 1px 0 rgba(255, 180, 190, 0.06),
+      0 0 1px rgba(232, 120, 128, 0.35);
+  }
+
+  .text-depth-red-subtle {
+    text-shadow:
+      0 0 24px rgba(201, 48, 48, 0.14),
+      0 0 1px rgba(255, 180, 190, 0.25);
+  }
 }
