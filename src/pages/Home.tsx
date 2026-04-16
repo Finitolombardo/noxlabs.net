@@ -163,7 +163,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex justify-center items-center mx-auto mt-6 md:mt-10 mb-10 md:mb-12 w-full h-[230px] md:h-[270px] lg:h-[310px] overflow-visible"
+            className="relative flex justify-center items-center mx-auto mt-6 md:mt-10 mb-10 md:mb-12 w-full h-[280px] md:h-[320px] lg:h-[360px] overflow-visible"
           >
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-[520px] h-[520px] rounded-full bg-nox-red/[0.14] blur-[130px]" />
@@ -176,10 +176,9 @@ export default function Home() {
             </div>
 
             <motion.img
-              src="/nox_icon_app_square_1024.png"
+              src="/nox_bolt_only.svg"
               alt="NOX"
-              style={{ mixBlendMode: 'screen' }}
-              className="relative w-56 h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-[0_0_55px_rgba(201,48,48,0.6)]"
+              className="relative w-32 h-64 md:w-36 md:h-72 lg:w-44 lg:h-80 object-contain drop-shadow-[0_0_55px_rgba(201,48,48,0.6)]"
               animate={{ opacity: [0.94, 1, 0.94] }}
               transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
             />
