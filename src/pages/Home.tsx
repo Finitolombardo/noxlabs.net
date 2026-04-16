@@ -48,38 +48,29 @@ const problems = [
 const systems = [
   {
     number: '01',
-    title: 'Lead Generation Engine',
-    problem: 'Zu wenig qualifizierte Leads im System',
-    result: 'Kontinuierlicher, strukturierter Lead-Zufluss',
+    title: 'Leadgen Engine',
+    problem: 'Keine strukturierte Nachfrage, keine echte Pipeline',
+    result: 'Lernendes Demand-System mit qualifiziertem Zufluss',
     description:
-      'Automatisiertes System zur Identifikation, Erfassung und Anreicherung von Zielkontakten — über Outreach, Scraping und Signal-Monitoring.',
+      'Targeting, Research, Scraping, Enrichment und strukturierter Outbound — verbunden zu einem kontinuierlich lernenden Demand-System.',
     href: '/systems/leadforge',
   },
   {
     number: '02',
-    title: 'AI Intake & Qualifizierung',
-    problem: 'Leads werden nicht qualifiziert — oder zu spät',
-    result: 'Sofortige, automatisierte Erstqualifizierung',
+    title: 'Pitch Mutation Engine',
+    problem: 'Pitches variieren, Message-Market-Fit bleibt Zufall',
+    result: 'Systematisch lernende Pitch-Architektur',
     description:
-      'KI-gestütztes System zur automatischen Qualifizierung eingehender Anfragen — mit Scoring, Routing und CRM-Integration.',
-    href: '/systems/whatsapp-booking-bot',
-  },
-  {
-    number: '03',
-    title: 'Pitch & Sales Evolution',
-    problem: 'Pitches variieren, Deals verlieren Momentum',
-    result: 'Systematisch lernende Sales-Architektur',
-    description:
-      'Verbindet Pitch-Logik, CRM und Ops zu einem kohärenten System. Kein manueller Datentransfer, keine Silos.',
+      'Mutation, Testing und gezielte Evolution der Verkaufsbotschaft — jede Iteration messbar, jede Version ein Lernzyklus.',
     href: '/systems/pitch-evolution-system',
   },
   {
-    number: '04',
-    title: 'Content & SEO Intelligence',
-    problem: 'Content produziert, aber keine organische Skalierung',
-    result: 'Systematisch skalierender organischer Traffic',
+    number: '03',
+    title: 'YouTube Engine',
+    problem: 'Content ohne Struktur, Reichweite ohne Autorität',
+    result: 'Authority- und Content-Infrastruktur, die skaliert',
     description:
-      'Lernendes System, das aus Markt- und Nutzersignalen strukturiertes Content-Wissen aufbaut und skalierbar macht.',
+      'Topic-Intelligence, Hooks, Scripting-Logik, Publishing und Learning-Loops — verbunden zu einem operativen Autoritäts-System.',
     href: '/systems/content-engine',
   },
 ];
@@ -159,13 +150,6 @@ export default function Home() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-[48%] bg-gradient-to-b from-transparent via-nox-red/30 to-nox-red/60 pointer-events-none" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-px h-[52%] bg-gradient-to-t from-transparent via-nox-red/15 to-nox-red/50 pointer-events-none" />
 
-        {/* Concentric core rings — the bolt as the pulse point */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] pointer-events-none">
-          <div className="absolute -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full border border-nox-red/10 animate-breath" />
-          <div className="absolute -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full border border-nox-red/[0.06] animate-breath" style={{ animationDelay: '1s' }} />
-          <div className="absolute -translate-x-1/2 -translate-y-1/2 w-[760px] h-[760px] rounded-full border border-white/[0.03]" />
-        </div>
-
         {/* Hero core glow — anchored to bolt position */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[560px] h-[560px] rounded-full bg-nox-red/[0.18] blur-[120px] pointer-events-none animate-glow-pulse" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%] w-[1000px] h-[500px] rounded-full bg-red-950/25 blur-[180px] pointer-events-none" />
@@ -182,21 +166,11 @@ export default function Home() {
             className="flex justify-center mb-12 relative"
           >
             <div className="relative flex items-center justify-center">
-              {/* Deep red ember halo — circular, no rectangle */}
-              <div className="absolute w-[340px] h-[340px] rounded-full bg-nox-red/25 blur-[80px] pointer-events-none" />
-              <div className="absolute w-[220px] h-[220px] rounded-full bg-nox-red/40 blur-[60px] pointer-events-none animate-breath" />
-              <div className="absolute w-[140px] h-[140px] rounded-full bg-[#E84040]/30 blur-[40px] pointer-events-none" />
-              {/* Radiant rays */}
-              <div
-                className="absolute w-[320px] h-[320px] opacity-45 pointer-events-none rounded-full"
-                style={{
-                  background:
-                    'conic-gradient(from 0deg, transparent 0deg, rgba(232,64,64,0.28) 18deg, transparent 42deg, transparent 88deg, rgba(232,64,64,0.22) 108deg, transparent 132deg, transparent 178deg, rgba(232,64,64,0.28) 198deg, transparent 222deg, transparent 268deg, rgba(232,64,64,0.22) 288deg, transparent 312deg)',
-                  maskImage: 'radial-gradient(circle, transparent 28%, black 72%)',
-                  WebkitMaskImage: 'radial-gradient(circle, transparent 28%, black 72%)',
-                }}
-              />
-              <NoxBolt className="relative w-20 h-28 md:w-24 md:h-36 lg:w-28 lg:h-40 drop-shadow-[0_0_36px_rgba(232,64,64,0.7)]" />
+              {/* Ambient energy — soft, circular, edgeless */}
+              <div className="absolute w-[420px] h-[420px] rounded-full bg-nox-red/15 blur-[110px] pointer-events-none" />
+              <div className="absolute w-[260px] h-[260px] rounded-full bg-nox-red/30 blur-[70px] pointer-events-none animate-breath" />
+              <div className="absolute w-[140px] h-[140px] rounded-full bg-[#E84040]/35 blur-[40px] pointer-events-none animate-breath" style={{ animationDelay: '0.6s' }} />
+              <NoxBolt className="relative w-24 h-32 md:w-28 md:h-40 lg:w-32 lg:h-44 drop-shadow-[0_0_42px_rgba(232,64,64,0.75)]" />
             </div>
           </motion.div>
 
@@ -208,7 +182,7 @@ export default function Home() {
             className="flex justify-center mb-7"
           >
             <span className="text-[11px] font-mono tracking-[0.4em] text-nox-white-muted/85 uppercase px-5 py-2 border border-white/[0.1] rounded-full bg-white/[0.025] backdrop-blur-sm">
-              <span className="text-nox-red">NOX</span> · High-End AI Systems
+              <span className="text-nox-red">NOX</span> · High-End Learning Systems
             </span>
           </motion.div>
 
@@ -339,12 +313,12 @@ export default function Home() {
             transition={{ duration: 0.7 }}
             className="mb-16 max-w-3xl"
           >
-            <SectionEyebrow>Systeme</SectionEyebrow>
+            <SectionEyebrow>Core Engines</SectionEyebrow>
             <h2 className="text-3xl md:text-5xl font-bold text-nox-white mb-5 leading-[1.05] tracking-[-0.02em] text-depth-red-subtle">
-              Infrastruktur,<br />die skaliert.
+              Drei Engines.<br />Ein System.
             </h2>
-            <p className="text-nox-white-muted max-w-lg leading-relaxed text-[15px]">
-              Keine Tool-Stacks. Keine Prototypen. Produktionsreife Systeme mit klarem Scope, definiertem Output und skalierbarer Architektur.
+            <p className="text-nox-white-muted max-w-xl leading-relaxed text-[15px]">
+              NOX baut keine Tools. NOX baut lernende Engines — Demand, Message, Autorität. Jede für sich operativ, zusammen der Loop.
             </p>
           </motion.div>
 
@@ -353,7 +327,7 @@ export default function Home() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-5"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
           >
             {systems.map((system, i) => (
               <motion.div
@@ -501,7 +475,7 @@ export default function Home() {
                 Kein generisches<br />AI Consulting.
               </h2>
               <p className="text-nox-white-muted leading-relaxed text-[15px] max-w-md">
-                NOX baut operative Systeme — gemessen am Business-Ergebnis. Kein Beratersprech. Keine Experimente. Kein Overhead.
+                NOX baut lernende Systeme. Keine Decks, keine Hacks, keine Experimente. Nur Architektur, die liefert.
               </p>
             </motion.div>
 
@@ -552,12 +526,12 @@ export default function Home() {
                 <NoxBolt className="w-8 h-12" glow={false} />
               </div>
 
-              <SectionEyebrow>Solution Finder</SectionEyebrow>
+              <SectionEyebrow>Lösungsfinder</SectionEyebrow>
               <h2 className="text-3xl md:text-4xl font-bold text-nox-white mb-5 leading-[1.05] tracking-[-0.02em]">
-                Welche Systeme braucht<br />dein Business wirklich?
+                Welche Engines braucht<br />dein Business wirklich?
               </h2>
               <p className="text-nox-white-muted leading-relaxed mb-10 max-w-xl mx-auto">
-                Situation, Stack, Bottlenecks, Ziele — und du erhältst die passende NOX-Systemkombination. In unter zwei Minuten.
+                Geführtes Intake: Situation, Stack, Bottlenecks, Ziele — Ergebnis ist die passende NOX-Engine-Kombination. In unter zwei Minuten.
               </p>
               <Link to="/configurator">
                 <button className="group relative px-8 py-4 bg-nox-red text-white font-semibold rounded-lg hover:bg-nox-red-deep transition-all duration-300 inline-flex items-center gap-2.5 shadow-[0_0_0_1px_rgba(232,64,64,0.25),0_16px_48px_-8px_rgba(201,48,48,0.6)] hover:shadow-[0_0_0_1px_rgba(232,64,64,0.4),0_20px_56px_-8px_rgba(201,48,48,0.75)] overflow-hidden">
@@ -583,10 +557,10 @@ export default function Home() {
           >
             <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-nox-red/[0.03] blur-[60px] pointer-events-none" />
             <div className="relative">
-              <p className="text-[10px] font-mono tracking-[0.3em] text-gray-500 uppercase mb-2">Entry Layer</p>
-              <h3 className="text-lg font-bold text-nox-white mb-2 tracking-tight">Schneller starten — mit GetVoidra</h3>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-gray-500 uppercase mb-2">Entry Layer · GetVoidra</p>
+              <h3 className="text-lg font-bold text-nox-white mb-2 tracking-tight">Der produktisierte NOX-Layer.</h3>
               <p className="text-nox-white-muted text-sm max-w-md leading-relaxed">
-                Der produktisierte NOX-Layer: fertige Systeme und Einstiegsautomatisierungen. Schnelle Deployments ohne großen Scope.
+                Ready-to-deploy Add-Ons und kleinere Systeme — schnelle Deployments, schmaler Scope, klarer Einstieg in die NOX-Architektur.
               </p>
             </div>
             <div className="relative flex-shrink-0">
