@@ -123,9 +123,9 @@ const stagger = {
 
 function SectionEyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3 mb-5">
-      <span className="w-6 h-px bg-nox-red/70" />
-      <span className="text-[11px] font-mono tracking-[0.35em] text-nox-red/80 uppercase">
+    <div className="flex items-center gap-3 mb-6">
+      <span className="w-8 h-px bg-nox-red" />
+      <span className="text-[13px] font-mono font-semibold tracking-[0.3em] text-[#FF5A5A] uppercase">
         {children}
       </span>
     </div>
@@ -137,7 +137,7 @@ export default function Home() {
     <div className="min-h-screen relative">
 
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 pt-32 pb-24 overflow-hidden noise">
+      <section className="relative min-h-screen flex items-start justify-center px-4 pt-40 md:pt-48 lg:pt-52 pb-28 overflow-hidden noise">
         {/* Deep atmospheric base */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(18,8,10,1)_0%,#050505_60%,#030303_100%)]" />
 
@@ -150,9 +150,9 @@ export default function Home() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-[48%] bg-gradient-to-b from-transparent via-nox-red/30 to-nox-red/60 pointer-events-none" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-px h-[52%] bg-gradient-to-t from-transparent via-nox-red/15 to-nox-red/50 pointer-events-none" />
 
-        {/* Hero core glow — anchored to bolt position */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[560px] h-[560px] rounded-full bg-nox-red/[0.18] blur-[120px] pointer-events-none animate-glow-pulse" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%] w-[1000px] h-[500px] rounded-full bg-red-950/25 blur-[180px] pointer-events-none" />
+        {/* Hero core glow — anchored to bolt position (upper-center) */}
+        <div className="absolute top-[38%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] rounded-full bg-nox-red/[0.18] blur-[120px] pointer-events-none animate-glow-pulse" />
+        <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[500px] rounded-full bg-red-950/25 blur-[180px] pointer-events-none" />
 
         {/* Fade to page */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#070707] via-[#070707]/80 to-transparent z-10 pointer-events-none" />
@@ -163,7 +163,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 16, scale: 0.88 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-            className="flex justify-center mb-12 relative"
+            className="flex justify-center mb-16 md:mb-20 relative"
           >
             <div className="relative flex items-center justify-center">
               {/* Ambient energy — soft, circular, edgeless */}
@@ -181,8 +181,8 @@ export default function Home() {
             transition={{ delay: 0.3, duration: 0.7 }}
             className="flex justify-center mb-7"
           >
-            <span className="text-[11px] font-mono tracking-[0.4em] text-nox-white-muted/85 uppercase px-5 py-2 border border-white/[0.1] rounded-full bg-white/[0.025] backdrop-blur-sm">
-              <span className="text-nox-red">NOX</span> · High-End Learning Systems
+            <span className="text-[12px] font-mono font-semibold tracking-[0.32em] text-white/80 uppercase px-5 py-2.5 border border-white/[0.14] rounded-full bg-white/[0.035] backdrop-blur-sm">
+              <span className="text-[#FF5A5A]">NOX</span> <span className="text-white/40 mx-1">·</span> High-End Learning Systems
             </span>
           </motion.div>
 
@@ -238,7 +238,7 @@ export default function Home() {
             transition={{ delay: 2, duration: 1 }}
             className="absolute bottom-[-120px] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
           >
-            <span className="text-[10px] font-mono tracking-[0.3em] text-white/30 uppercase">Scroll</span>
+            <span className="text-[11px] font-mono font-semibold tracking-[0.32em] text-white/50 uppercase">Scroll</span>
             <motion.div
               animate={{ y: [0, 6, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -372,11 +372,11 @@ export default function Home() {
                   <h3 className="text-xl font-bold text-nox-white mb-4 tracking-tight">{system.title}</h3>
                   <div className="space-y-2 mb-5">
                     <div className="flex items-baseline gap-3">
-                      <span className="text-[10px] font-mono tracking-widest text-gray-600 uppercase flex-shrink-0 w-14">Problem</span>
+                      <span className="text-[11px] font-mono font-semibold tracking-[0.2em] text-white/45 uppercase flex-shrink-0 w-16">Problem</span>
                       <span className="text-sm text-nox-white-muted">{system.problem}</span>
                     </div>
                     <div className="flex items-baseline gap-3">
-                      <span className="text-[10px] font-mono tracking-widest text-nox-red/70 uppercase flex-shrink-0 w-14">Result</span>
+                      <span className="text-[11px] font-mono font-semibold tracking-[0.2em] text-[#FF5A5A] uppercase flex-shrink-0 w-16">Ergebnis</span>
                       <span className="text-sm text-nox-white font-medium">{system.result}</span>
                     </div>
                   </div>
@@ -557,7 +557,7 @@ export default function Home() {
           >
             <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-nox-red/[0.03] blur-[60px] pointer-events-none" />
             <div className="relative">
-              <p className="text-[10px] font-mono tracking-[0.3em] text-gray-500 uppercase mb-2">Entry Layer · GetVoidra</p>
+              <p className="text-[12px] font-mono font-semibold tracking-[0.28em] text-[#FF5A5A] uppercase mb-3">Entry Layer <span className="text-white/40">·</span> GetVoidra</p>
               <h3 className="text-lg font-bold text-nox-white mb-2 tracking-tight">Der produktisierte NOX-Layer.</h3>
               <p className="text-nox-white-muted text-sm max-w-md leading-relaxed">
                 Ready-to-deploy Add-Ons und kleinere Systeme — schnelle Deployments, schmaler Scope, klarer Einstieg in die NOX-Architektur.

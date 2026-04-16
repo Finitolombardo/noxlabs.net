@@ -19,15 +19,15 @@ export default function Footer() {
             <p className="text-sm text-nox-white-muted/85 max-w-sm leading-[1.7]">
               High-End KI-Systeme für Lead-Generierung, Qualifizierung, Workflow-Automatisierung und skalierbare Business-Infrastruktur.
             </p>
-            <div className="mt-8 flex items-center gap-3 text-[10px] font-mono tracking-[0.32em] text-white/30 uppercase">
-              <span className="w-8 h-px bg-white/15" />
-              <span>Systeme · Kein Consulting</span>
+            <div className="mt-8 flex items-center gap-3 text-[12px] font-mono font-semibold tracking-[0.28em] text-white/55 uppercase">
+              <span className="w-8 h-px bg-white/25" />
+              <span>Systeme <span className="text-white/35 mx-0.5">·</span> Kein Consulting</span>
             </div>
           </div>
 
           {/* Nav block */}
           <div className="md:col-span-4 md:col-start-7">
-            <p className="text-[10px] font-mono tracking-[0.32em] text-nox-red/70 uppercase mb-5">Navigation</p>
+            <p className="text-[13px] font-mono font-semibold tracking-[0.3em] text-[#FF5A5A] uppercase mb-5">Navigation</p>
             <div className="grid grid-cols-2 gap-x-8 gap-y-3.5">
               <Link to="/" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Start</Link>
               <Link to="/systems" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Systeme</Link>
@@ -39,21 +39,21 @@ export default function Footer() {
 
           {/* Entry layer block */}
           <div className="md:col-span-3">
-            <p className="text-[10px] font-mono tracking-[0.32em] text-nox-red/70 uppercase mb-5">Entry Layer</p>
-            <p className="text-sm text-nox-white mb-1.5 font-medium">GetVoidra</p>
-            <p className="text-xs text-nox-white-muted/70 max-w-[200px] leading-relaxed">
+            <p className="text-[13px] font-mono font-semibold tracking-[0.3em] text-[#FF5A5A] uppercase mb-5">Entry Layer</p>
+            <p className="text-sm text-nox-white mb-1.5 font-semibold">GetVoidra</p>
+            <p className="text-[13px] text-nox-white-muted/85 max-w-[220px] leading-relaxed">
               Produktisierter NOX-Layer. Ready-to-deploy Systeme.
             </p>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-white/[0.05]">
-          <div className="text-[11px] font-mono tracking-[0.18em] text-white/35 uppercase">
-            © 2025 NOX Labs · All rights reserved
+          <div className="text-[12px] font-mono font-medium tracking-[0.2em] text-white/55 uppercase">
+            © 2025 NOX Labs <span className="text-white/30 mx-1">·</span> Alle Rechte vorbehalten
           </div>
-          <div className="flex items-center gap-7 text-[11px] font-mono tracking-[0.18em] text-white/35 uppercase">
-            <Link to="/impressum" className="hover:text-white/70 transition-colors duration-300">Impressum</Link>
-            <Link to="/datenschutz" className="hover:text-white/70 transition-colors duration-300">Datenschutz</Link>
+          <div className="flex items-center gap-7 text-[12px] font-mono font-medium tracking-[0.2em] text-white/55 uppercase">
+            <Link to="/impressum" className="hover:text-white transition-colors duration-300">Impressum</Link>
+            <Link to="/datenschutz" className="hover:text-white transition-colors duration-300">Datenschutz</Link>
           </div>
         </div>
       </div>
