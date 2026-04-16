@@ -175,13 +175,13 @@ export default function Home() {
               <div className="w-[160px] h-[160px] rounded-full bg-[#FF4D4D]/40 blur-[46px] animate-breath" style={{ animationDelay: '0.7s' }} />
             </div>
 
-            <motion.div
-              className="relative w-32 h-48 md:w-36 md:h-56 lg:w-44 lg:h-64 drop-shadow-[0_0_55px_rgba(201,48,48,0.6)]"
+            <motion.img
+              src="/nox_icon_app_square_1024.png"
+              alt="NOX"
+              className="relative w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 object-contain drop-shadow-[0_0_55px_rgba(201,48,48,0.6)]"
               animate={{ opacity: [0.94, 1, 0.94] }}
               transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <NoxBolt className="w-full h-full" />
-            </motion.div>
+            />
           </motion.div>
 
           {/* Eyebrow */}
