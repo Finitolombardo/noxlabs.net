@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, AlertTriangle, Layers, CheckCircle2 } from 'luci
 import Button from '../components/UI/Button';
 import Accordion from '../components/UI/Accordion';
 
-export default function PitchEvolutionDetail() {
+export default function PitchMutationEngineDetail() {
   const stats = [
     {
       label: 'Lernt aus Antworten, nicht aus Klicks',
@@ -189,11 +189,19 @@ export default function PitchEvolutionDetail() {
 
   const orchestrationOptions = [
     {
-      title: 'Verbindung mit Leadforge (Leadgenerierung)',
+      title: 'Koppelung mit Leadgen Engine',
       points: [
-        'Leads, Ansprechpartner und Kontextdaten werden geliefert',
-        'Pitch-Evolution übernimmt Versand und Optimierung',
-        'Geschlossener Lernkreislauf'
+        'Leadgen Engine liefert angereicherte, kontextualisierte Leads',
+        'Pitch Mutation Engine übernimmt Versand und lernende Optimierung',
+        'Geschlossener Kreislauf: Recherche → Ansprache → Lernen'
+      ]
+    },
+    {
+      title: 'Koppelung mit YouTube Engine',
+      points: [
+        'Authority-Themen der YouTube Engine fliessen als Pitch-Hypothesen ein',
+        'Antwort-Signale zeigen, welche Content-Thesen Nachfrage erzeugen',
+        'Learnings werden zurück in Topic-Pipeline und Hooks gespielt'
       ]
     },
     {
@@ -202,14 +210,6 @@ export default function PitchEvolutionDetail() {
         'Qualifizierte Leads inkl. Antwort-Kontext',
         'Sales spricht informierte Kontakte',
         'Nachvollziehbare Gesprächshistorie'
-      ]
-    },
-    {
-      title: 'Perspektive: Content-Systeme',
-      points: [
-        'Einwände und Trigger → Content-Ideen',
-        'Mehrsprachige Assets',
-        'Zukünftige Erweiterung, keine Zusage'
       ]
     }
   ];
@@ -254,31 +254,33 @@ export default function PitchEvolutionDetail() {
           transition={{ duration: 0.6 }}
           className="relative mb-12"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#E84040]/20 to-[#FF6B6B]/20 rounded-3xl blur-2xl" />
-          <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#E84040]/30 rounded-3xl p-8 md:p-12">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#EF3A4C]/20 to-[#FF4D5E]/20 rounded-3xl blur-2xl" />
+          <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#EF3A4C]/30 rounded-3xl p-8 md:p-12">
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="text-xs px-3 py-1 bg-white/10 text-nox-white-muted rounded-full border border-white/10">
-                Leadgen
+                Outreach
               </span>
               <span className="text-xs px-3 py-1 bg-white/10 text-nox-white-muted rounded-full border border-white/10">
-                Outreach
+                Pitch
+              </span>
+              <span className="text-xs px-3 py-1 bg-white/10 text-nox-white-muted rounded-full border border-white/10">
+                Learning
               </span>
             </div>
 
             <h1 className="text-3xl md:text-5xl font-bold text-nox-white mb-4">
-              Pitch-Evolutionssystem
+              Pitch Mutation Engine – lernendes Outreach statt blindem Testing
             </h1>
 
             <p className="text-xl text-nox-white-muted mb-8 leading-relaxed">
-              Ein lernendes Outreach-System, das aus echten Antworten strukturiertes Wissen
-              gewinnt – und daraus bessere Entscheidungen ableitet.
+              Lernendes Outreach-System mit kausaler Mutation aus realen Antworten. Keine Bauchgefühl-Optimierung.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {stats.map((stat, index) => (
                 <div
                   key={index}
-                  className="border-l-2 border-[#E84040] pl-4"
+                  className="border-l-2 border-[#EF3A4C] pl-4"
                 >
                   <h3 className="text-nox-white font-semibold mb-2 leading-snug text-sm">{stat.label}</h3>
                   <p className="text-xs text-nox-white-muted">{stat.description}</p>
@@ -287,9 +289,9 @@ export default function PitchEvolutionDetail() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/configurator">
+              <Link to="/solution-finder">
                 <Button variant="primary" className="group">
-                  Konfigurieren
+                  Setup anfragen
                   <ArrowRight className="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -311,7 +313,7 @@ export default function PitchEvolutionDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Warum klassische Outreach-Optimierung stagniert
               </h2>
-              <div className="w-16 h-1 bg-[#E84040] mb-8" />
+              <div className="w-16 h-1 bg-[#EF3A4C] mb-8" />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 {problems.map((problem, index) => (
@@ -325,7 +327,7 @@ export default function PitchEvolutionDetail() {
                 ))}
               </div>
 
-              <div className="border-l-4 border-[#E84040] pl-6 py-4">
+              <div className="border-l-4 border-[#EF3A4C] pl-6 py-4">
                 <p className="text-xl text-nox-white font-light italic">
                   Das eigentliche Problem ist nicht der Text – sondern fehlendes Lernen.
                 </p>
@@ -338,14 +340,14 @@ export default function PitchEvolutionDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Antworten sind das stärkste Trainingssignal
               </h2>
-              <div className="w-16 h-1 bg-[#E84040] mb-8" />
+              <div className="w-16 h-1 bg-[#EF3A4C] mb-8" />
 
               <p className="text-nox-white-muted leading-relaxed mb-6">
                 Öffnungen und Klicks sind indirekt. Antworten enthalten Einwände, Sprache,
                 Motivation und Kontext. Das System behandelt jede Antwort als Lernmaterial.
               </p>
 
-              <div className="bg-gradient-to-br from-[#E84040]/10 to-transparent border-l-4 border-[#E84040] p-8 rounded-r-xl">
+              <div className="bg-gradient-to-br from-[#EF3A4C]/10 to-transparent border-l-4 border-[#EF3A4C] p-8 rounded-r-xl">
                 <p className="text-2xl text-nox-white font-light">
                   Nicht mehr versenden – besser verstehen.
                 </p>
@@ -358,7 +360,7 @@ export default function PitchEvolutionDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Wie das System arbeitet
               </h2>
-              <div className="w-16 h-1 bg-[#E84040] mb-8" />
+              <div className="w-16 h-1 bg-[#EF3A4C] mb-8" />
 
               <div className="space-y-4">
                 {solutionSteps.map((step, index) => (
@@ -371,16 +373,16 @@ export default function PitchEvolutionDetail() {
                 ))}
               </div>
 
-              <div className="mt-8 bg-gradient-to-br from-[#2a0a0c]/40 to-transparent border border-nox-red/30 rounded-xl p-6">
+              <div className="mt-8 bg-gradient-to-br from-red-900/20 to-transparent border border-red-500/30 rounded-xl p-6">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-[#FF6B6B] flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-nox-white-muted leading-relaxed font-medium mb-2">
                       Die Antwortklassifizierung ist kein Modul – sie ist das Fundament des
                       Systems.
                     </p>
                     <p className="text-sm text-nox-white-muted">
-                      Ohne sie existiert keine Pitch-Evolution.
+                      Ohne sie existiert keine kausale Mutation.
                     </p>
                   </div>
                 </div>
@@ -393,7 +395,7 @@ export default function PitchEvolutionDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Gezielte Pitch-Mutation statt blindem Testing
               </h2>
-              <div className="w-16 h-1 bg-[#E84040] mb-8" />
+              <div className="w-16 h-1 bg-[#EF3A4C] mb-8" />
 
               <p className="text-nox-white-muted leading-relaxed mb-8">
                 Das System arbeitet mit festen Mutations-Variablen. Pro Lerniteration wird immer
@@ -410,7 +412,7 @@ export default function PitchEvolutionDetail() {
                     className="bg-gradient-to-br from-gray-900/30 to-gray-800/20 border border-white/10 rounded-lg p-5"
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="text-[#E84040] font-mono text-sm font-bold">
+                      <span className="text-[#EF3A4C] font-mono text-sm font-bold">
                         {String(index + 1).padStart(2, '0')}
                       </span>
                       <h4 className="text-nox-white font-semibold">{variable.name}</h4>
@@ -428,8 +430,8 @@ export default function PitchEvolutionDetail() {
                     className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6"
                   >
                     <div className="flex items-start gap-3 mb-2">
-                      <div className="w-6 h-6 bg-[#E84040] rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-white text-xs font-bold">{index + 1}</span>
+                      <div className="w-6 h-6 bg-[#EF3A4C] rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-black text-xs font-bold">{index + 1}</span>
                       </div>
                       <p className="text-nox-white font-medium">{item.rule}</p>
                     </div>
@@ -438,7 +440,7 @@ export default function PitchEvolutionDetail() {
                 ))}
               </div>
 
-              <div className="border-l-4 border-[#E84040] pl-6 py-4">
+              <div className="border-l-4 border-[#EF3A4C] pl-6 py-4">
                 <p className="text-lg text-nox-white font-light">
                   Ergebnis: Kausale Lernkurve, keine Zufallsoptimierung
                 </p>
@@ -455,7 +457,7 @@ export default function PitchEvolutionDetail() {
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-[#E84040] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-5 h-5 text-[#EF3A4C] flex-shrink-0 mt-0.5" />
                     <div>
                       <strong className="text-nox-white">Getrennte Versandpfade:</strong>
                       <span className="text-sm text-nox-white-muted block mt-1">
@@ -464,7 +466,7 @@ export default function PitchEvolutionDetail() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-[#E84040] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-5 h-5 text-[#EF3A4C] flex-shrink-0 mt-0.5" />
                     <div>
                       <strong className="text-nox-white">Keine Signalvermischung:</strong>
                       <span className="text-sm text-nox-white-muted block mt-1">
@@ -473,7 +475,7 @@ export default function PitchEvolutionDetail() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-[#E84040] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-5 h-5 text-[#EF3A4C] flex-shrink-0 mt-0.5" />
                     <div>
                       <strong className="text-nox-white">Höhere Lerngeschwindigkeit:</strong>
                       <span className="text-sm text-nox-white-muted block mt-1">
@@ -491,11 +493,11 @@ export default function PitchEvolutionDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Optionale Erweiterungen
               </h2>
-              <div className="w-16 h-1 bg-[#E84040] mb-8" />
+              <div className="w-16 h-1 bg-[#EF3A4C] mb-8" />
 
               <p className="text-nox-white-muted mb-8 leading-relaxed">
                 Das Basissystem ist immer enthalten. Erweiterungen können je nach Bedarf ergänzt
-                werden. Die Auswahl erfolgt im Konfigurator.
+                werden. Die Auswahl erfolgt im Solution Finder.
               </p>
 
               <div className="space-y-4">
@@ -516,7 +518,7 @@ export default function PitchEvolutionDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 System-Orchestrierung
               </h2>
-              <div className="w-16 h-1 bg-[#E84040] mb-8" />
+              <div className="w-16 h-1 bg-[#EF3A4C] mb-8" />
 
               <p className="text-nox-white-muted mb-8 leading-relaxed">
                 Optional: Verbindung mit anderen Systemen für geschlossene Lernkreisläufe.
@@ -529,13 +531,13 @@ export default function PitchEvolutionDetail() {
                     className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6"
                   >
                     <div className="flex items-start gap-3 mb-4">
-                      <Layers className="w-5 h-5 text-[#E84040] flex-shrink-0 mt-0.5" />
+                      <Layers className="w-5 h-5 text-[#EF3A4C] flex-shrink-0 mt-0.5" />
                       <h3 className="text-nox-white font-semibold">{option.title}</h3>
                     </div>
                     <ul className="space-y-2 ml-8">
                       {option.points.map((point, idx) => (
                         <li key={idx} className="flex items-start gap-3 text-sm text-nox-white-muted">
-                          <span className="text-[#E84040] mt-1">•</span>
+                          <span className="text-[#EF3A4C] mt-1">•</span>
                           <span>{point}</span>
                         </li>
                       ))}
@@ -551,11 +553,11 @@ export default function PitchEvolutionDetail() {
               <h2 className="text-3xl font-bold text-nox-white mb-6">
                 Betrieb & Weiterentwicklung
               </h2>
-              <div className="w-16 h-1 bg-[#E84040] mb-8" />
+              <div className="w-16 h-1 bg-[#EF3A4C] mb-8" />
 
-              <div className="border-l-4 border-[#E84040] pl-6 py-4 bg-gradient-to-r from-[#E84040]/10 to-transparent rounded-r-xl mb-8">
+              <div className="border-l-4 border-[#EF3A4C] pl-6 py-4 bg-gradient-to-r from-[#EF3A4C]/10 to-transparent rounded-r-xl mb-8">
                 <p className="text-xl text-nox-white font-light leading-relaxed">
-                  Das Pitch-Evolutionssystem wird nicht eingerichtet und übergeben – es wird
+                  Die Pitch Mutation Engine wird nicht eingerichtet und übergeben – sie wird
                   betrieben, überwacht und kontinuierlich weiterentwickelt.
                 </p>
               </div>
@@ -569,7 +571,7 @@ export default function PitchEvolutionDetail() {
               <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-xl p-6">
                 <div className="space-y-4 text-nox-white-muted">
                   <div className="flex items-start gap-3">
-                    <span className="text-[#E84040] mt-1">•</span>
+                    <span className="text-[#EF3A4C] mt-1">•</span>
                     <div>
                       <strong className="text-nox-white">Monatlicher Retainer:</strong>
                       <span className="text-sm text-nox-white-muted block mt-1">
@@ -578,7 +580,7 @@ export default function PitchEvolutionDetail() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="text-[#E84040] mt-1">•</span>
+                    <span className="text-[#EF3A4C] mt-1">•</span>
                     <div>
                       <strong className="text-nox-white">Laufender Betrieb:</strong>
                       <span className="text-sm text-nox-white-muted block mt-1">
@@ -587,7 +589,7 @@ export default function PitchEvolutionDetail() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="text-[#E84040] mt-1">•</span>
+                    <span className="text-[#EF3A4C] mt-1">•</span>
                     <div>
                       <strong className="text-nox-white">Aktive Weiterentwicklung:</strong>
                       <span className="text-sm text-nox-white-muted block mt-1">
@@ -603,17 +605,17 @@ export default function PitchEvolutionDetail() {
 
           <motion.div variants={itemVariants}>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#E84040]/20 to-[#FF6B6B]/20 rounded-2xl blur-xl" />
-              <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#E84040]/30 rounded-2xl p-10 text-center">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#EF3A4C]/20 to-[#FF4D5E]/20 rounded-2xl blur-xl" />
+              <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#EF3A4C]/30 rounded-2xl p-10 text-center">
                 <h2 className="text-2xl md:text-3xl font-bold text-nox-white mb-4">
-                  Bereit für strukturiertes Lernen?
+                  Pitch-Wirksamkeit ist ein System, kein Text.
                 </h2>
                 <p className="text-nox-white-muted mb-6 max-w-2xl mx-auto">
-                  Unverbindliche Erstberatung. Systemische Analyse. Transparente Einschätzung.
+                  Lass uns prüfen, ob die Pitch Mutation Engine dein Hauptsystem oder Teil einer Kombination ist.
                 </p>
-                <Link to="/contact">
+                <Link to="/solution-finder">
                   <Button variant="primary" className="text-lg px-8 py-4">
-                    Unverbindlich besprechen
+                    Setup-Vorschlag anfragen
                     <ArrowRight className="inline-block ml-2 w-5 h-5" />
                   </Button>
                 </Link>

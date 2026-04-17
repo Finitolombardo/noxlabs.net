@@ -4,29 +4,38 @@ import { ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, Puzzle } from 'lucide
 import Button from '../components/UI/Button';
 import IntegrationChip from '../components/UI/IntegrationChip';
 import { systems } from '../data/systems';
-import PitchEvolutionDetail from './PitchEvolutionDetail';
+import PitchMutationEngineDetail from './PitchMutationEngineDetail';
 import LeadforgeDetail from './LeadforgeDetail';
-import ContentEngineDetail from './ContentEngineDetail';
+import YouTubeEngineDetail from './YouTubeEngineDetail';
 import WhatsAppBookingBotDetail from './WhatsAppBookingBotDetail';
 
 export default function SystemDetail() {
   const { slug } = useParams<{ slug: string }>();
+
+  // Alt-Slug-Redirects (SEO-sicher)
+  if (slug === 'content-engine') {
+    return <Navigate to="/systems/youtube-engine" replace />;
+  }
+  if (slug === 'pitch-evolution-system') {
+    return <Navigate to="/systems/pitch-mutation-engine" replace />;
+  }
+
   const system = systems.find((s) => s.slug === slug);
 
   if (!system) {
     return <Navigate to="/systems" replace />;
   }
 
-  if (slug === 'pitch-evolution-system') {
-    return <PitchEvolutionDetail />;
+  if (slug === 'pitch-mutation-engine') {
+    return <PitchMutationEngineDetail />;
   }
 
   if (slug === 'leadforge') {
     return <LeadforgeDetail />;
   }
 
-  if (slug === 'content-engine') {
-    return <ContentEngineDetail />;
+  if (slug === 'youtube-engine') {
+    return <YouTubeEngineDetail />;
   }
 
   if (slug === 'whatsapp-booking-bot') {
@@ -77,7 +86,7 @@ export default function SystemDetail() {
           transition={{ duration: 0.6 }}
           className="relative mb-12"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-nox-red/20 to-nox-red-deep/20 rounded-3xl blur-2xl" />
+          <div className="absolute inset-0 bg-gradient-to-r from-nox-red/20 to-nox-red-hover/20 rounded-3xl blur-2xl" />
           <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-nox-red/30 rounded-3xl p-8 md:p-12">
             <div className="flex flex-wrap gap-2 mb-4">
               {system.category.map((cat) => (
@@ -99,9 +108,9 @@ export default function SystemDetail() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/configurator">
+              <Link to="/solution-finder">
                 <Button variant="primary" className="group">
-                  Konfigurieren
+                  Setup anfragen
                   <ArrowRight className="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -133,16 +142,16 @@ export default function SystemDetail() {
           <motion.section variants={itemVariants}>
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-nox-red/15 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-[#FF5A5A]" />
+                <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-green-400" />
                 </div>
                 <h2 className="text-2xl font-bold text-nox-white">Lösung / Ablauf</h2>
               </div>
               <ul className="space-y-3">
                 {system.solutionBullets.map((bullet, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-gradient-to-br from-[#E84040] to-[#9B1C1C] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    <div className="w-6 h-6 bg-gradient-to-br from-nox-red to-nox-red-hover rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-4 h-4 text-black" />
                     </div>
                     <span className="text-nox-white-muted leading-relaxed">{bullet}</span>
                   </li>
@@ -153,7 +162,7 @@ export default function SystemDetail() {
 
           {system.modules && system.modules.length > 0 && (
             <motion.section variants={itemVariants}>
-              <div className="bg-gradient-to-br from-[#E84040]/10 to-transparent border border-[#E84040]/30 rounded-2xl p-8">
+              <div className="bg-gradient-to-br from-nox-red/10 to-transparent border border-nox-red/30 rounded-2xl p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-nox-red/20 rounded-lg flex items-center justify-center">
                     <Puzzle className="w-6 h-6 text-nox-red" />
@@ -202,7 +211,7 @@ export default function SystemDetail() {
                 <ul className="space-y-3">
                   {system.outputBullets.map((bullet, index) => (
                     <li key={index} className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-[#FF5A5A] flex-shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                       <span className="text-[#E8DDE1] text-sm leading-relaxed">
                         {bullet}
                       </span>
@@ -225,11 +234,11 @@ export default function SystemDetail() {
           </motion.section>
 
           <motion.section variants={itemVariants}>
-            <div className="bg-gradient-to-br from-[#2a0a0c]/40 to-transparent border border-nox-red/30 rounded-2xl p-6">
+            <div className="bg-gradient-to-br from-red-900/20 to-transparent border border-red-500/30 rounded-2xl p-6">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[#FF6B6B] flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-sm font-semibold text-[#FF6B6B] mb-2">
+                  <h3 className="text-sm font-semibold text-red-400 mb-2">
                     Wichtiger Hinweis
                   </h3>
                   <p className="text-sm text-gray-400">
@@ -243,18 +252,17 @@ export default function SystemDetail() {
 
           <motion.section variants={itemVariants} className="pt-8">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-nox-red/20 to-nox-red-deep/20 rounded-2xl blur-xl" />
+              <div className="absolute inset-0 bg-gradient-to-r from-nox-red/20 to-nox-red-hover/20 rounded-2xl blur-xl" />
               <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-nox-red/30 rounded-2xl p-10 text-center">
                 <h2 className="text-2xl md:text-3xl font-bold text-nox-white mb-4">
                   Bereit loszulegen?
                 </h2>
                 <p className="text-nox-white-muted mb-6 max-w-2xl mx-auto">
-                  Starte den Konfigurator und erhalte ein maßgeschneidertes Angebot für
-                  dieses System.
+                  Lass uns prüfen, ob dieses System zu deinem Setup passt.
                 </p>
-                <Link to="/configurator">
+                <Link to="/solution-finder">
                   <Button variant="primary" className="text-lg px-8 py-4">
-                    Konfigurator starten
+                    Setup-Vorschlag anfragen
                     <ArrowRight className="inline-block ml-2 w-5 h-5" />
                   </Button>
                 </Link>

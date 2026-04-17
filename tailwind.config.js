@@ -10,6 +10,7 @@ export default {
         'nox-red': '#C93030',
         'nox-red-bright': '#E84040',
         'nox-red-light': '#FF6B6B',
+        'nox-red-hover': '#FF4D5E',
         'nox-red-deep': '#A02020',
         'nox-red-glow': 'rgba(201, 48, 48, 0.25)',
       },
