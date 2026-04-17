@@ -543,7 +543,7 @@ export default function Home() {
               <p className="text-nox-white-muted leading-relaxed mb-10 max-w-xl mx-auto">
                 Geführtes Intake: Situation, Stack, Bottlenecks, Ziele — Ergebnis ist die passende NOX-Engine-Kombination. In unter zwei Minuten.
               </p>
-              <Link to="/configurator">
+              <Link to="/solution-finder">
                 <button className="group relative px-8 py-4 bg-nox-red text-white font-semibold rounded-lg hover:bg-nox-red-deep transition-all duration-300 inline-flex items-center gap-2.5 shadow-[0_0_0_1px_rgba(232,64,64,0.25),0_16px_48px_-8px_rgba(201,48,48,0.6)] hover:shadow-[0_0_0_1px_rgba(232,64,64,0.4),0_20px_56px_-8px_rgba(201,48,48,0.75)] overflow-hidden">
                   <span className="relative z-10">Lösungsfinder starten</span>
                   <ArrowRight className="relative z-10 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

@@ -21,7 +21,7 @@ export interface System {
 export const systems: System[] = [
   {
     slug: 'leadforge',
-    name: 'Leadforge',
+    name: 'Leadgen Engine',
     oneLiner: 'Automatisierte Lead-Recherche + Ansprache für Recruiting & Agenturen',
     description: 'Automatisierte Lead-Recherche, Anreicherung und strukturierte Übergabe für Outreach-Systeme.',
     properties: [
@@ -58,9 +58,9 @@ export const systems: System[] = [
     isConfigurable: true
   },
   {
-    slug: 'pitch-evolution-system',
-    name: 'Pitch-Evolutionssystem',
-    oneLiner: 'Lernendes Outreach-System, das sich durch jede Antwort verbessert',
+    slug: 'pitch-mutation-engine',
+    name: 'Pitch Mutation Engine',
+    oneLiner: 'Lernendes Outreach-System mit kausaler Mutation aus realen Antworten',
     description: 'Lernendes Outreach-System, das aus echten Antworten lernt und Texte kausal verbessert.',
     properties: [
       'Antwortbasierte Lernlogik',
@@ -97,38 +97,40 @@ export const systems: System[] = [
     isConfigurable: true
   },
   {
-    slug: 'content-engine',
-    name: 'Content Engine',
-    oneLiner: 'Systematisches Lernen aus Markt- & Nutzerreaktionen',
-    description: 'Ein Content-System, das reale Marktreaktionen, Einwände und erfolgreiche Muster in skalierbare Content-Assets übersetzt – statt Inhalte zu raten.',
+    slug: 'youtube-engine',
+    name: 'YouTube Engine',
+    oneLiner: 'Authority-, Reichweiten- und Vertrauenssystem via YouTube',
+    description: 'Ein durchgehendes Research-, Ideation-, Script- und Publishing-System fuer den Aufbau echter Autoritaet, Reichweite und Nachfrage – statt Zufallsposting.',
     properties: [
-      'Lernt aus echten Markt- und Nutzer-Signalen',
-      'Extrahiert Strukturen, nicht Texte',
-      'Wandelt Erkenntnisse in wiederverwendbare Assets'
+      'Research-getriebene Themenwahl statt Guessing',
+      'Systematische Hook- und Title-Architektur',
+      'Learning Loop aus realen Performance-Daten'
     ],
-    category: ['Content', 'Ops'],
-    channel: ['Mixed'],
-    integrations: ['n8n', 'Notion', 'CRM', 'Google Sheets'],
-    problem: 'Content basiert auf Annahmen statt Marktvalidierung. Erfolg wird nicht systematisch zerlegt. Kein strukturierter Wissensaufbau.',
+    category: ['Content', 'Authority'],
+    channel: ['YouTube'],
+    integrations: ['n8n', 'Notion', 'Google Sheets', 'YouTube Analytics'],
+    problem: 'Content wird geraten statt recherchiert. Hooks und Titel werden improvisiert. Performance-Daten fliessen nicht zurueck ins System. Ergebnis: kein konsistenter Authority-Aufbau, keine kausalen Learnings, keine skalierbare Reichweite.',
     solutionBullets: [
-      'Analyse erfolgreicher Marktteilnehmer und Wettbewerber',
-      'Pattern-Erkennung in Hooks, Formaten und Tonalität',
-      'Signal-Bewertung und Korrelations-Analyse',
-      'Übersetzung in Content-Strukturen für Ihr Produkt',
-      'Integration in bestehende Content- und Outreach-Systeme'
+      'Research Layer: systematische Erfassung von Audience-Pains, Competitor-Performance und Topic-Clustern',
+      'Topic Intelligence: Bewertung von Nachfrage, Wettbewerb und Authority-Fit pro Thema',
+      'Format Layer: klare Format-Architektur (Deep Dive, Framework, System-Breakdown, Case Study)',
+      'Hook- und Title-Engine: strukturierte Varianten-Generierung statt Gefuehlsentscheidung',
+      'Script / Outline Layer: modulare Skript-Struktur mit klarer Retention-Logik',
+      'Publishing Layer: konsistente Release-Kadenz, Thumbnail- und Metadata-Standards',
+      'Learning Layer: Rueckfluss aus Views, Retention und Comments in die naechste Research-Runde'
     ],
     inputBullets: [
-      'Zielgruppe, Branche und Produkt',
-      'Gewünschte Plattformen und Formate',
-      'Content-Tonalität und Positionierung',
-      'Optional: Bestehende Content- oder Outreach-Systeme'
+      'Positionierung, Zielgruppe und Authority-Themen',
+      'Bestehende Kanalhistorie (falls vorhanden)',
+      'Produktions-Setup (Solo, Team, Ausruestung)',
+      'Release-Kadenz und Ziel-Horizont'
     ],
     outputBullets: [
-      'Strukturierte Content-Patterns und Erfolgsmechaniken',
-      'Wiederverwendbare Content-Module und Vorlagen',
-      'Plattform-spezifische Content-Strategien',
-      'Integration in Publishing- oder Outreach-Systeme',
-      'Kontinuierliche Anpassung an Marktveränderungen'
+      'Strukturierte Topic-Pipeline mit Prioritaet statt Einzel-Ideen',
+      'Recherchierte Hooks, Titel und Thumbnail-Leitlinien pro Video',
+      'Modulare Skript-Outlines mit Retention-Logik',
+      'Publishing-Kalender mit systematischer Kadenz',
+      'Performance-Learnings im Wochenrhythmus als Input fuer die naechste Runde'
     ],
     modules: [],
     isMainSystem: true,

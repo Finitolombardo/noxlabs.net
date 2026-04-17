@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, CheckCircle2, Clock, MessageSquare, FileSpreadsheet, Calendar, AlertCircle, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Clock, MessageSquare, FileSpreadsheet, AlertCircle, X } from 'lucide-react';
 import Button from '../components/UI/Button';
 
 export default function WhatsAppBookingBotDetail() {
@@ -121,8 +121,8 @@ export default function WhatsAppBookingBotDetail() {
           transition={{ duration: 0.6 }}
           className="relative mb-16"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#E84040]/20 to-[#FF6B6B]/20 rounded-3xl blur-2xl" />
-          <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#E84040]/30 rounded-3xl p-8 md:p-12">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#EF3A4C]/20 to-[#FF4D5E]/20 rounded-3xl blur-2xl" />
+          <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#EF3A4C]/30 rounded-3xl p-8 md:p-12">
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="text-xs px-3 py-1 bg-white/10 text-nox-white-muted rounded-full border border-white/10">
                 Booking
@@ -176,8 +176,8 @@ export default function WhatsAppBookingBotDetail() {
                   key={index}
                   className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border border-white/10 rounded-2xl p-8 hover:border-nox-red/30 transition-all"
                 >
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#E84040] to-[#9B1C1C] rounded-xl flex items-center justify-center mb-4">
-                    <benefit.icon className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-nox-red to-nox-red-hover rounded-xl flex items-center justify-center mb-4">
+                    <benefit.icon className="w-6 h-6 text-black" />
                   </div>
                   <h3 className="text-xl font-bold text-nox-white mb-3">{benefit.title}</h3>
                   <p className="text-nox-white-muted leading-relaxed">{benefit.description}</p>
@@ -194,13 +194,13 @@ export default function WhatsAppBookingBotDetail() {
               >
                 Was der Bot kann
               </h2>
-              <div className="w-16 h-1 bg-[#E84040] mb-8" />
+              <div className="w-16 h-1 bg-[#EF3A4C] mb-8" />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {features.map((feature, index) => (
                   <div key={index} className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-gradient-to-br from-[#E84040] to-[#9B1C1C] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    <div className="w-6 h-6 bg-gradient-to-br from-nox-red to-nox-red-hover rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-4 h-4 text-black" />
                     </div>
                     <span className="text-nox-white-muted leading-relaxed">{feature}</span>
                   </div>
@@ -217,7 +217,7 @@ export default function WhatsAppBookingBotDetail() {
               >
                 Preisgestaltung – nischenspezifisch & modular
               </h2>
-              <div className="w-16 h-1 bg-[#E84040] mb-8" />
+              <div className="w-16 h-1 bg-[#EF3A4C] mb-8" />
 
               <p className="text-nox-white-muted mb-8 leading-relaxed">
                 Die Preisgestaltung richtet sich nicht nach einem Pauschalbetrag, sondern nach Branche, Anfragevolumen und gewünschter Automatisierungstiefe. Das System wird immer an das jeweilige Geschäftsmodell angepasst.
@@ -243,7 +243,7 @@ export default function WhatsAppBookingBotDetail() {
                       <div className="space-y-2">
                         {cluster.typical.map((item, idx) => (
                           <div key={idx} className="flex items-start gap-2">
-                            <span className="text-[#E84040] mt-1">•</span>
+                            <span className="text-[#EF3A4C] mt-1">•</span>
                             <span className="text-sm text-nox-white-muted">{item}</span>
                           </div>
                         ))}
@@ -259,8 +259,8 @@ export default function WhatsAppBookingBotDetail() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {priceInfluencers.map((influencer, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <div className="w-6 h-6 bg-gradient-to-br from-[#E84040] to-[#9B1C1C] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckCircle2 className="w-4 h-4 text-white" />
+                      <div className="w-6 h-6 bg-gradient-to-br from-nox-red to-nox-red-hover rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <CheckCircle2 className="w-4 h-4 text-black" />
                       </div>
                       <span className="text-nox-white-muted leading-relaxed">{influencer}</span>
                     </div>
@@ -268,7 +268,7 @@ export default function WhatsAppBookingBotDetail() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-[#E84040]/10 to-transparent border-l-4 border-[#E84040] p-6 rounded-r-xl">
+              <div className="bg-gradient-to-br from-[#EF3A4C]/10 to-transparent border-l-4 border-[#EF3A4C] p-6 rounded-r-xl">
                 <p className="text-lg text-nox-white leading-relaxed mb-2">
                   Nach einer kurzen Bedarfsklärung erhalten Sie ein fixes Angebot. Keine versteckten Kosten.
                 </p>
@@ -330,11 +330,11 @@ export default function WhatsAppBookingBotDetail() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <div className="bg-gradient-to-br from-[#2a0a0c]/40 to-transparent border border-nox-red/30 rounded-2xl p-6">
+            <div className="bg-gradient-to-br from-red-900/20 to-transparent border border-red-500/30 rounded-2xl p-6">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[#FF6B6B] flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-sm font-semibold text-[#FF6B6B] mb-2">
+                  <h3 className="text-sm font-semibold text-red-400 mb-2">
                     Wichtiger Hinweis
                   </h3>
                   <p className="text-sm text-gray-400">
@@ -347,8 +347,8 @@ export default function WhatsAppBookingBotDetail() {
 
           <motion.div variants={itemVariants}>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#E84040]/20 to-[#FF6B6B]/20 rounded-2xl blur-xl" />
-              <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#E84040]/30 rounded-2xl p-10 text-center">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#EF3A4C]/20 to-[#FF4D5E]/20 rounded-2xl blur-xl" />
+              <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/50 border border-[#EF3A4C]/30 rounded-2xl p-10 text-center">
                 <h2
                   className="text-2xl md:text-3xl font-bold text-nox-white mb-4"
                   style={{ textShadow: '0 0 30px rgba(255, 182, 193, 0.12)' }}
