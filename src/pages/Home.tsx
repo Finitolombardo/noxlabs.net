@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import HeroOrchestration from '../components/UI/HeroOrchestration';
 import NoxBolt from '../components/UI/NoxBolt';
+import NoxSystemCore from '../components/UI/NoxSystemCore';
 
 const problems = [
   {
@@ -181,39 +182,14 @@ export default function Home() {
             </span>
           </motion.div>
 
-          {/* 2. BOLT — system heart, design: h-60 (240px), boot-in animation */}
+          {/* 2. SYSTEM CORE — operational infrastructure visual */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
-            className="relative flex justify-center items-center w-full h-60 mb-10 overflow-visible"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+            className="relative w-full mb-6 -mx-4 px-4"
           >
-            {/* Outer halo */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-[520px] h-[520px] rounded-full bg-nox-red/[0.14] blur-[130px]" />
-            </div>
-            {/* Inner breathing halo */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-[300px] h-[300px] rounded-full bg-nox-red/30 blur-[80px] animate-breath" />
-            </div>
-            {/* Hot core */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-[140px] h-[140px] rounded-full bg-[#FF4D4D]/45 blur-[44px] animate-breath" style={{ animationDelay: '0.7s' }} />
-            </div>
-
-            {/* Concentric system rings */}
-            <div className="hero-ring hero-ring-1" />
-            <div className="hero-ring hero-ring-2" />
-            <div className="hero-ring hero-ring-3" />
-
-            <motion.img
-              src="/nox_bolt_only.svg"
-              alt="NOX"
-              className="relative z-10 w-24 md:w-28 lg:w-32 object-contain"
-              style={{ filter: 'drop-shadow(0 0 60px rgba(201,48,48,0.65)) drop-shadow(0 0 12px rgba(255,160,160,0.4))' }}
-              animate={{ opacity: [0.94, 1, 0.94] }}
-              transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
-            />
+            <NoxSystemCore />
           </motion.div>
 
           {/* 3. EYEBROW */}
