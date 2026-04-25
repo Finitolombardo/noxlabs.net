@@ -186,7 +186,7 @@ export default function Home() {
             <motion.img
               src="/nox_bolt_only.svg"
               alt="NOX"
-              className="relative z-10 w-32 h-64 md:w-36 md:h-72 lg:w-44 lg:h-80 object-contain drop-shadow-[0_0_55px_rgba(201,48,48,0.6)]"
+              className="relative z-10 w-36 h-64 md:w-44 md:h-80 lg:w-52 lg:h-96 object-contain drop-shadow-[0_0_65px_rgba(201,48,48,0.72)]"
               animate={{ opacity: [0.94, 1, 0.94] }}
               transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
             />
@@ -284,7 +284,7 @@ export default function Home() {
 
       {/* ─── PROBLEMS ─── */}
       <section className="relative py-28 px-4">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-px bg-gradient-to-r from-transparent via-nox-red/25 to-transparent" />
         <div className="max-w-6xl mx-auto relative">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -338,7 +338,9 @@ export default function Home() {
 
       {/* ─── CORE SYSTEMS ─── */}
       <section className="relative py-28 px-4">
-        <div className="absolute top-1/2 left-0 w-[300px] h-[300px] rounded-full bg-nox-red/[0.04] blur-[100px] pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-px bg-gradient-to-r from-transparent via-nox-red/30 to-transparent pointer-events-none" />
+        <div className="absolute top-1/2 left-0 w-[420px] h-[420px] rounded-full bg-nox-red/[0.05] blur-[130px] pointer-events-none" />
+        <div className="absolute top-1/3 right-0 w-[380px] h-[380px] rounded-full bg-nox-red/[0.04] blur-[120px] pointer-events-none" />
         <div className="max-w-6xl mx-auto relative">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -377,6 +379,10 @@ export default function Home() {
                   boxShadow: '0 20px 60px -20px rgba(0,0,0,0.8), inset 0 1px 0 0 rgba(255,255,255,0.02)',
                 }}
               >
+                {/* Trace sweep lines — top & bottom edge on hover */}
+                <span className="engine-card-trace" />
+                {/* Inner radial bloom from top on hover */}
+                <div className="engine-card-bloom" />
                 {/* Inner edge glow on hover */}
                 <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
                   style={{ boxShadow: 'inset 0 0 40px 0 rgba(201,48,48,0.08)' }}
@@ -394,9 +400,9 @@ export default function Home() {
                   <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-nox-red/40 to-transparent" />
                 </div>
 
-                <div className="relative">
+                <div className="relative z-[1]">
                   <div className="flex items-start justify-between mb-6">
-                    <span className="text-5xl font-bold text-nox-red/20 font-mono leading-none group-hover:text-nox-red/50 transition-colors duration-500">
+                    <span className="text-[84px] font-bold text-nox-red/15 font-mono leading-none tracking-[-0.04em] group-hover:text-nox-red/45 transition-colors duration-500">
                       {system.number}
                     </span>
                     <div className="w-9 h-9 rounded-full border border-white/[0.08] bg-white/[0.02] flex items-center justify-center opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500">
@@ -457,6 +463,9 @@ export default function Home() {
             <h2 className="text-3xl md:text-5xl font-bold text-nox-white leading-[1.05] tracking-[-0.02em] text-depth-red-subtle">
               Wie NOX baut.
             </h2>
+            <p className="text-nox-white-muted max-w-lg leading-relaxed text-[15px] mt-5">
+              Kein Discovery-Chaos. Fünf Phasen — klarer Scope, messbarer Output, keine unnötige Komplexität.
+            </p>
           </motion.div>
 
           <div className="relative">
@@ -594,7 +603,7 @@ export default function Home() {
 
       {/* ─── FINAL CTA ─── */}
       <section className="relative py-40 px-4 border-t border-white/[0.04] mt-14 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] rounded-full bg-nox-red/[0.06] blur-[140px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[600px] rounded-full bg-nox-red/[0.09] blur-[160px] pointer-events-none" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-nox-red/30 to-transparent" />
 
         <div className="max-w-4xl mx-auto text-center relative">
@@ -606,11 +615,11 @@ export default function Home() {
           >
             <div className="flex justify-center mb-8">
               <div className="relative">
-                <div className="absolute inset-0 blur-2xl bg-nox-red/30 scale-150 animate-breath" />
-                <NoxBolt className="relative w-10 h-14" />
+                <div className="absolute inset-0 blur-[48px] bg-nox-red/45 scale-[2.2] animate-breath" />
+                <NoxBolt className="relative w-14 h-20" />
               </div>
             </div>
-            <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-[1] tracking-[-0.025em] text-balance">
+            <h2 className="text-5xl md:text-7xl lg:text-[92px] font-bold mb-6 leading-[1] tracking-[-0.03em] text-balance">
               <span className="text-gradient-red">Systeme,</span>
               <br />
               <span className="text-nox-red">die liefern.</span>
