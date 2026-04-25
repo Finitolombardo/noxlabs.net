@@ -54,6 +54,7 @@ const systems = [
     description:
       'Targeting, Research, Scraping, Enrichment und strukturierter Outbound — verbunden zu einem kontinuierlich lernenden Demand-System.',
     href: '/systems/leadforge',
+    flow: ['Target', 'Enrich', 'Outbound', 'Learn'],
   },
   {
     number: '02',
@@ -63,6 +64,7 @@ const systems = [
     description:
       'Mutation, Testing und gezielte Evolution der Verkaufsbotschaft — jede Iteration messbar, jede Version ein Lernzyklus.',
     href: '/systems/pitch-evolution-system',
+    flow: ['Variant', 'Test', 'Signal', 'Mutate'],
   },
   {
     number: '03',
@@ -72,6 +74,7 @@ const systems = [
     description:
       'Topic-Intelligence, Hooks, Scripting-Logik, Publishing und Learning-Loops — verbunden zu einem operativen Autoritäts-System.',
     href: '/systems/content-engine',
+    flow: ['Topic', 'Hook', 'Publish', 'Loop'],
   },
 ];
 
@@ -113,7 +116,7 @@ const differentiators = [
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
 };
 
 const stagger = {
@@ -137,7 +140,7 @@ export default function Home() {
     <div className="min-h-screen relative">
 
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex items-start justify-center px-4 pt-40 md:pt-48 lg:pt-56 pb-24 overflow-x-clip noise">
+      <section className="relative min-h-screen flex items-start justify-center px-4 pt-40 md:pt-48 lg:pt-56 pb-24 overflow-x-clip noise hero-grid">
         {/* Deep atmospheric base */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(18,8,10,1)_0%,#050505_60%,#030303_100%)]" />
 
@@ -175,13 +178,34 @@ export default function Home() {
               <div className="w-[160px] h-[160px] rounded-full bg-[#FF4D4D]/40 blur-[46px] animate-breath" style={{ animationDelay: '0.7s' }} />
             </div>
 
+            {/* Concentric system rings */}
+            <div className="hero-ring hero-ring-1" />
+            <div className="hero-ring hero-ring-2" />
+            <div className="hero-ring hero-ring-3" />
+
             <motion.img
               src="/nox_bolt_only.svg"
               alt="NOX"
-              className="relative w-32 h-64 md:w-36 md:h-72 lg:w-44 lg:h-80 object-contain drop-shadow-[0_0_55px_rgba(201,48,48,0.6)]"
+              className="relative z-10 w-32 h-64 md:w-36 md:h-72 lg:w-44 lg:h-80 object-contain drop-shadow-[0_0_55px_rgba(201,48,48,0.6)]"
               animate={{ opacity: [0.94, 1, 0.94] }}
               transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
             />
+          </motion.div>
+
+          {/* Status pill */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.7 }}
+            className="flex justify-center mb-4"
+          >
+            <span className="inline-flex items-center gap-2.5 text-[11px] font-mono font-semibold tracking-[0.32em] text-white/78 uppercase px-4 py-2 border border-white/[0.10] rounded-full bg-white/[0.025] backdrop-blur-sm">
+              <span className="relative w-1.5 h-1.5 flex-shrink-0">
+                <span className="status-dot-pulse absolute inset-[-3px] rounded-full bg-nox-red/55" />
+                <span className="absolute inset-0 rounded-full bg-nox-red-fire" style={{ boxShadow: '0 0 8px rgba(255,90,90,0.9)' }} />
+              </span>
+              Systeme online
+            </span>
           </motion.div>
 
           {/* Eyebrow */}
@@ -192,7 +216,7 @@ export default function Home() {
             className="flex justify-center mb-5"
           >
             <span className="text-[12px] font-mono font-semibold tracking-[0.32em] text-white/80 uppercase px-5 py-2.5 border border-white/[0.14] rounded-full bg-white/[0.035] backdrop-blur-sm">
-              <span className="text-[#FF5A5A]">NOX</span> <span className="text-white/40 mx-1">·</span> High-End Learning Systems
+              <span className="text-nox-red-fire">NOX</span> <span className="text-white/40 mx-1">·</span> High-End Learning Systems
             </span>
           </motion.div>
 
@@ -390,7 +414,20 @@ export default function Home() {
                       <span className="text-sm text-nox-white font-medium">{system.result}</span>
                     </div>
                   </div>
-                  <p className="text-sm text-nox-white-muted leading-relaxed mb-7 flex-grow">{system.description}</p>
+                  <p className="text-sm text-nox-white-muted leading-relaxed mb-6 flex-grow">{system.description}</p>
+                  {/* Flow diagram */}
+                  <div className="flex items-center gap-2 pt-5 border-t border-white/[0.06] mb-5">
+                    {system.flow.map((node, ni) => (
+                      <div key={ni} className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono font-semibold tracking-[0.16em] uppercase px-2.5 py-1 rounded border border-white/[0.07] bg-white/[0.025] text-white/55 group-hover:border-nox-red/35 group-hover:bg-nox-red/[0.07] group-hover:text-nox-white-muted transition-all duration-500" style={{ transitionDelay: `${ni * 60}ms` }}>
+                          {node}
+                        </span>
+                        {ni < system.flow.length - 1 && (
+                          <span className="w-3.5 h-px flex-shrink-0 bg-white/15 group-hover:bg-nox-red/50 transition-colors duration-500" style={{ transitionDelay: `${ni * 60 + 30}ms` }} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                   <span className="relative text-sm text-nox-white-muted group-hover:text-nox-white inline-flex items-center gap-2 transition-colors w-fit">
                     <span className="relative">
                       Details ansehen

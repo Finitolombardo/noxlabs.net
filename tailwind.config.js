@@ -12,7 +12,12 @@ export default {
         'nox-red-light': '#FF6B6B',
         'nox-red-hover': '#FF4D5E',
         'nox-red-deep': '#A02020',
+        'nox-red-fire': '#FF5A5A',
         'nox-red-glow': 'rgba(201, 48, 48, 0.25)',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'SF Mono', 'Menlo', 'monospace'],
       },
     },
   },
