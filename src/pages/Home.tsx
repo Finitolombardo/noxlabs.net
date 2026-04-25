@@ -555,36 +555,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── GETVOIDRA BRIDGE ─── */}
-      <section className="py-14 px-4">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-8 p-8 rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.015] to-transparent overflow-hidden group hover:border-white/[0.1] transition-all duration-500"
-          >
-            <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-nox-red/[0.03] blur-[60px] pointer-events-none" />
-            <div className="relative">
-              <p className="text-[14px] font-mono font-bold tracking-[0.24em] text-[#FF6B6B] uppercase mb-3">Entry Layer <span className="text-white/40">·</span> GetVoidra</p>
-              <h3 className="text-lg font-bold text-nox-white mb-2 tracking-tight">Der produktisierte NOX-Layer.</h3>
-              <p className="text-nox-white-muted text-sm max-w-md leading-relaxed">
-                Ready-to-deploy Add-Ons und kleinere Systeme — schnelle Deployments, schmaler Scope, klarer Einstieg in die NOX-Architektur.
-              </p>
-            </div>
-            <div className="relative flex-shrink-0">
-              <Link to="/systems">
-                <button className="px-6 py-3 text-sm font-semibold text-nox-white border border-white/[0.15] rounded-lg hover:border-white/[0.3] hover:bg-white/[0.04] transition-all duration-300 inline-flex items-center gap-2 group/btn">
-                  Entry-Systeme ansehen
-                  <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
-                </button>
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
       {/* ─── FINAL CTA ─── */}
       <section className="relative py-40 px-4 border-t border-white/[0.04] mt-14 overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] rounded-full bg-nox-red/[0.06] blur-[140px] pointer-events-none" />
