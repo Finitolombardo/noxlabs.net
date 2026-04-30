@@ -10,6 +10,7 @@ import {
   Gauge,
 } from 'lucide-react';
 import NoxBolt from '../components/UI/NoxBolt';
+import NoxJourney from '../components/UI/NoxJourney';
 
 const problems = [
   {
@@ -138,117 +139,8 @@ export default function Home() {
   return (
     <div className="min-h-screen relative">
 
-      {/* ─── HERO ─── */}
-      {/* Gap 1: items-center + symmetric padding = vertically centered like design */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 pt-28 pb-24 overflow-x-clip">
-
-        {/* Deep atmospheric base */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_38%,rgba(28,10,12,1)_0%,#050505_55%,#020202_100%)]" />
-
-        {/* Calm ambient red bloom — single, static */}
-        <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[520px] rounded-full bg-nox-red/[0.09] blur-[160px] pointer-events-none" />
-
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#070707] via-[#070707]/60 to-transparent z-10 pointer-events-none" />
-
-        {/* Content — Gap 1: reordered to Status pill → Bolt → Eyebrow → Headline → Subline → CTAs */}
-        <div className="relative z-10 max-w-[1024px] mx-auto w-full text-center flex flex-col items-center">
-
-          {/* 1. STATUS PILL — above the bolt (design order) */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
-            className="mb-8"
-          >
-            <span className="inline-flex items-center gap-2.5 text-[11px] font-mono font-semibold tracking-[0.32em] text-white/78 uppercase px-4 py-2 border border-white/[0.10] rounded-full bg-white/[0.025] backdrop-blur-sm">
-              <span className="relative w-1.5 h-1.5 flex-shrink-0">
-                <span className="status-dot-pulse absolute inset-[-3px] rounded-full bg-nox-red/55" />
-                <span className="absolute inset-0 rounded-full bg-nox-red-fire" style={{ boxShadow: '0 0 8px rgba(255,90,90,0.9)' }} />
-              </span>
-              Systeme online
-            </span>
-          </motion.div>
-
-          {/* 3. EYEBROW */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.14, duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
-            className="mb-6"
-          >
-            <span className="inline-flex items-center gap-3 text-[12px] font-mono font-semibold tracking-[0.32em] text-white/85 uppercase px-5 py-2.5 border border-white/[0.12] rounded-full bg-white/[0.03] backdrop-blur-sm">
-              <span className="text-nox-red-fire font-bold tracking-[0.36em]">NOX</span>
-              <span className="text-white/30">·</span>
-              <span>High-End Learning Systems</span>
-            </span>
-          </motion.div>
-
-          {/* 4. HEADLINE — design: clamp(44px, 7.6vw, 96px), lineHeight 0.98 */}
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.22, duration: 1.1, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
-            className="font-bold mb-7 leading-[0.98] tracking-[-0.028em] text-balance"
-            style={{ fontSize: 'clamp(44px, 7.6vw, 96px)' }}
-          >
-            <span className="text-gradient-red">KI-Systeme.</span>
-            <br />
-            <span className="text-nox-red relative inline-block">
-              Gebaut für Wachstum.
-              <span className="absolute -bottom-1.5 left-0 right-0 h-px bg-gradient-to-r from-transparent via-nox-red/70 to-transparent" />
-            </span>
-          </motion.h1>
-
-          {/* 5. SUBLINE — design: clamp(16px, 1.3vw, 19px), maxWidth 640 */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.32, duration: 0.9, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
-            className="text-nox-white-muted/92 mb-11 max-w-[640px] leading-relaxed text-balance"
-            style={{ fontSize: 'clamp(16px, 1.3vw, 19px)' }}
-          >
-            NOX Labs baut operative KI-Infrastruktur für Lead-Generierung, Qualifizierung und Workflow — strukturiert, messbar, produktionsreif.
-          </motion.p>
-
-          {/* 6. CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.42, duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3.5 flex-wrap"
-          >
-            <Link to="/contact">
-              <button className="group relative px-8 py-4 bg-nox-red text-white font-semibold rounded-lg hover:bg-nox-red-deep transition-all duration-300 inline-flex items-center gap-2.5 shadow-[0_0_0_1px_rgba(232,64,64,0.25),0_12px_40px_-8px_rgba(201,48,48,0.55)] hover:shadow-[0_0_0_1px_rgba(232,64,64,0.4),0_18px_48px_-8px_rgba(201,48,48,0.7)] overflow-hidden">
-                <span className="relative z-10">Gespräch buchen</span>
-                <ArrowRight className="relative z-10 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-              </button>
-            </Link>
-            <Link to="/systems">
-              <button className="px-8 py-4 bg-white/[0.02] backdrop-blur-sm text-nox-white font-semibold rounded-lg border border-white/[0.12] hover:border-white/[0.28] hover:bg-white/[0.05] transition-all duration-300 inline-flex items-center gap-2.5">
-                Systeme ansehen
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* Scroll indicator — absolute to section (design: bottom 36px) */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.8, duration: 1 }}
-          className="absolute bottom-9 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2.5"
-        >
-          <span className="text-[10px] font-mono font-semibold tracking-[0.34em] text-white/42 uppercase">Scroll</span>
-          <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-px h-9 bg-gradient-to-b from-white/32 to-transparent"
-          />
-        </motion.div>
-      </section>
+      {/* ─── NOX JOURNEY ─── */}
+      <NoxJourney />
 
       {/* ─── PROBLEMS ─── */}
       <section className="relative py-28 px-4">
