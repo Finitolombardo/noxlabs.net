@@ -9,9 +9,7 @@ import {
   MailX,
   Gauge,
 } from 'lucide-react';
-import HeroOrchestration from '../components/UI/HeroOrchestration';
 import NoxBolt from '../components/UI/NoxBolt';
-import NoxCommandCore from '../components/UI/NoxCommandCore';
 
 const problems = [
   {
@@ -142,23 +140,13 @@ export default function Home() {
 
       {/* ─── HERO ─── */}
       {/* Gap 1: items-center + symmetric padding = vertically centered like design */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 pt-28 pb-24 overflow-x-clip noise hero-grid">
+      <section className="relative min-h-screen flex items-center justify-center px-6 pt-28 pb-24 overflow-x-clip">
 
-        {/* Deep atmospheric base — design: radial at 50% 38% */}
+        {/* Deep atmospheric base */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_38%,rgba(28,10,12,1)_0%,#050505_55%,#020202_100%)]" />
 
-        {/* Orchestration network */}
-        <div className="absolute inset-0 mask-radial-fade">
-          <HeroOrchestration />
-        </div>
-
-        {/* Vertical light spine — anchored through the bolt */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-[48%] bg-gradient-to-b from-transparent via-nox-red/30 to-nox-red/60 pointer-events-none" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-px h-[52%] bg-gradient-to-t from-transparent via-nox-red/15 to-nox-red/50 pointer-events-none" />
-
-        {/* Ambient core glow — design: top 46%, 680px, 0.16 opacity */}
-        <div className="absolute top-[46%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[680px] h-[680px] rounded-full bg-nox-red/[0.16] blur-[140px] pointer-events-none animate-glow-pulse" />
-        <div className="absolute top-[52%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[560px] rounded-full bg-red-950/22 blur-[180px] pointer-events-none" />
+        {/* Calm ambient red bloom — single, static */}
+        <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[520px] rounded-full bg-nox-red/[0.09] blur-[160px] pointer-events-none" />
 
         {/* Bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#070707] via-[#070707]/60 to-transparent z-10 pointer-events-none" />
@@ -180,16 +168,6 @@ export default function Home() {
               </span>
               Systeme online
             </span>
-          </motion.div>
-
-          {/* 2. SYSTEM CORE — operational infrastructure visual */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
-            className="relative w-full mb-6 -mx-4 px-4"
-          >
-            <NoxCommandCore />
           </motion.div>
 
           {/* 3. EYEBROW */}
