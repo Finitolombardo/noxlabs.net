@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import HeroOrchestration from '../components/UI/HeroOrchestration';
 import NoxBolt from '../components/UI/NoxBolt';
-import NoxSystemCore from '../components/UI/NoxSystemCore';
+import NoxCommandCore from '../components/UI/NoxCommandCore';
 
 const problems = [
   {
@@ -189,7 +189,7 @@ export default function Home() {
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
             className="relative w-full mb-6 -mx-4 px-4"
           >
-            <NoxSystemCore />
+            <NoxCommandCore />
           </motion.div>
 
           {/* 3. EYEBROW */}
