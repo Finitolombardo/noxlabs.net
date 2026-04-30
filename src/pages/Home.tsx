@@ -9,7 +9,6 @@ import {
   MailX,
   Gauge,
 } from 'lucide-react';
-import HeroOrchestration from '../components/UI/HeroOrchestration';
 import NoxBolt from '../components/UI/NoxBolt';
 import NoxSystemCore from '../components/UI/NoxSystemCore';
 
@@ -146,11 +145,6 @@ export default function Home() {
 
         {/* Deep atmospheric base — design: radial at 50% 38% */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_38%,rgba(28,10,12,1)_0%,#050505_55%,#020202_100%)]" />
-
-        {/* Orchestration network */}
-        <div className="absolute inset-0 mask-radial-fade">
-          <HeroOrchestration />
-        </div>
 
         {/* Vertical light spine — anchored through the bolt */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-[48%] bg-gradient-to-b from-transparent via-nox-red/30 to-nox-red/60 pointer-events-none" />
