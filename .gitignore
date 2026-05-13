@@ -21,3 +21,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Audit artifacts (reproducible via scripts/audit-shopify.mjs)
+docs/audit-screenshots/
+docs/shopify-winter2026-audit-raw.json
