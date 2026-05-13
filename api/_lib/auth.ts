@@ -14,8 +14,8 @@
 //   - `x-nox-operator-key: <secret>`
 //   - `Authorization: Bearer <secret>`
 
-import type { ApiRequest, ApiResponse } from './handler';
-import { sendError } from './handler';
+import type { ApiRequest, ApiResponse } from './handler.js';
+import { sendError } from './handler.js';
 
 const HEADER_PRIMARY = 'x-nox-operator-key';
 const HEADER_BEARER = 'authorization';

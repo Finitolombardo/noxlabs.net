@@ -3,12 +3,12 @@
 // `execute` is always locked (HTTP 423) until backend proxy, HMAC secret,
 // approval gate and operator confirmation are wired up.
 
-import type { ApiHandler } from '../../../_lib/handler';
-import { badRequest, locked, methodAllowed, notFound, readBodyAsObject, readQueryString, sendError } from '../../../_lib/handler';
-import { requireOperatorAuth } from '../../../_lib/auth';
-import { isAllowedAction, optionalIdempotencyKey, requireString } from '../../../_lib/validation';
-import { getCommand, nextAuditId, saveCommand } from '../../../_lib/store';
-import type { CommandAction, DryRunResult, OperatorCommand } from '../../../_lib/types';
+import type { ApiHandler } from '../../../_lib/handler.js';
+import { badRequest, locked, methodAllowed, notFound, readBodyAsObject, readQueryString, sendError } from '../../../_lib/handler.js';
+import { requireOperatorAuth } from '../../../_lib/auth.js';
+import { isAllowedAction, optionalIdempotencyKey, requireString } from '../../../_lib/validation.js';
+import { getCommand, nextAuditId, saveCommand } from '../../../_lib/store.js';
+import type { CommandAction, DryRunResult, OperatorCommand } from '../../../_lib/types.js';
 
 const handler: ApiHandler = async (req, res) => {
   if (!requireOperatorAuth(req, res)) return;
