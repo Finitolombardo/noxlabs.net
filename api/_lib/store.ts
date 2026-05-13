@@ -3,7 +3,7 @@
 // Real implementation requires persistent storage with an audit log
 // (Postgres / Supabase / KV) and an idempotency-key index.
 
-import type { OperatorCommand } from './types';
+import type { OperatorCommand } from './types.js';
 
 const store: Map<string, OperatorCommand> = new Map();
 let counter = 0;

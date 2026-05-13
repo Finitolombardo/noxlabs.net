@@ -1,9 +1,9 @@
 // APP-X-BRIDGE-01 — POST /api/operator/commands (create) + GET (list).
 // Skeleton only. No external calls. No persistent storage. No live execution.
 
-import type { ApiHandler } from '../_lib/handler';
-import { badRequest, methodAllowed, readBodyAsObject } from '../_lib/handler';
-import { requireOperatorAuth } from '../_lib/auth';
+import type { ApiHandler } from '../_lib/handler.js';
+import { badRequest, methodAllowed, readBodyAsObject } from '../_lib/handler.js';
+import { requireOperatorAuth } from '../_lib/auth.js';
 import {
   isAllowedCommandType,
   isAllowedRiskLevel,
@@ -11,9 +11,9 @@ import {
   optionalIdempotencyKey,
   optionalString,
   requireString,
-} from '../_lib/validation';
-import type { OperatorCommand, RiskLevel } from '../_lib/types';
-import { listCommands, nextAuditId, nextCommandId, saveCommand } from '../_lib/store';
+} from '../_lib/validation.js';
+import type { OperatorCommand, RiskLevel } from '../_lib/types.js';
+import { listCommands, nextAuditId, nextCommandId, saveCommand } from '../_lib/store.js';
 
 const handler: ApiHandler = async (req, res) => {
   if (!requireOperatorAuth(req, res)) return;

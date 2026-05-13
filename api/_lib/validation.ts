@@ -7,7 +7,7 @@ import {
   CommandType,
   RiskLevel,
   CommandAction,
-} from './types';
+} from './types.js';
 
 export type Validated<T> = { ok: true; value: T } | { ok: false; error: string };
 

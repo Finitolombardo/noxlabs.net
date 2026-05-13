@@ -1,10 +1,10 @@
 // APP-X-BRIDGE-01 — GET /api/operator/commands/:id
 // Skeleton only.
 
-import type { ApiHandler } from '../../_lib/handler';
-import { methodAllowed, notFound, readQueryString } from '../../_lib/handler';
-import { requireOperatorAuth } from '../../_lib/auth';
-import { getCommand } from '../../_lib/store';
+import type { ApiHandler } from '../../_lib/handler.js';
+import { methodAllowed, notFound, readQueryString } from '../../_lib/handler.js';
+import { requireOperatorAuth } from '../../_lib/auth.js';
+import { getCommand } from '../../_lib/store.js';
 
 const handler: ApiHandler = async (req, res) => {
   if (!requireOperatorAuth(req, res)) return;

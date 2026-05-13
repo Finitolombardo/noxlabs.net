@@ -2,7 +2,7 @@
 // Avoids pulling @vercel/node as a hard dependency. Compatible with the
 // runtime objects Vercel injects into Node serverless functions.
 
-import type { ApiErrorBody } from './types';
+import type { ApiErrorBody } from './types.js';
 
 export interface ApiRequest {
   method?: string;
