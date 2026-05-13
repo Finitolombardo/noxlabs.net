@@ -517,3 +517,101 @@ Reines Bootstrap-Gate, das die Stub-Endpunkte inert haelt, solange der Operator 
 - Andromeda-Upstream-Allowlist + getrennte Env-Variable `ANDROMEDA_DISPATCH_URL`
 - Replay-Schutz via Timestamp + Nonce auf jedem Upstream-Call
 - `execute`-Unlock nur durch explizite Server-Config UND vorhandene Freigabe UND HMAC-Verifikation
+
+## 12. APP-X-BRIDGE-03 — Abuse Guard + Audit Skeleton
+
+Status: In-Memory-Skeleton fuer Rate-Limit und Audit-Log. Beide Layer liegen
+serverseitig vor Auth und Handler-Logik, damit auch 503/401-Spam wenigstens
+in-process gedrosselt wird. Buffer und Counter ueberleben keinen Vercel-Cold-Start.
+
+### Pipeline-Reihenfolge je Endpoint
+
+1. **Rate Limit** (`api/_lib/rateLimit.ts`)
+2. **Auth Gate** (`api/_lib/auth.ts` — neu: `checkOperatorAuth` + `respondAuthFailure`)
+3. **Method Allowlist** (`methodAllowed`)
+4. **Body Validation / Handler-Logic** (inkl. Audit-Hooks an Erfolg/Misserfolg)
+
+### Rate Limit
+
+- 60 Requests pro 60 Sekunden Sliding-Window pro Client-Key.
+- Client-Key abgeleitet aus `x-forwarded-for[0]` -> `x-real-ip` -> `'unknown'`.
+- Raw-IP wird **nicht** gespeichert oder geantwortet. Stattdessen 8-stelliges
+  FNV-1a-Hex-Label (nicht-reversibel) als `clientKeyLabel` im Audit.
+- Bei Ueberschreitung:
+  - HTTP **429**
+  - Header `Retry-After: <Sekunden>`
+  - JSON `{"error":"rate_limited","message":"Too many operator API requests. Try again later."}`
+- Limits sind **process-local** auf einer Vercel-Instance. Andere Instanzen sehen
+  ihren eigenen Bucket. Echte Production braucht einen geteilten Store.
+
+### Audit Log
+
+- In-Memory Ring-Buffer, max **200 Events**, FIFO-Eviction.
+- Reine Lesefunktion `GET /api/operator/audit` (siehe unten).
+- Felder pro Event:
+  - `id` (`AUD-<base36 time>-<base36 counter>`)
+  - `timestamp` ISO-8601
+  - `eventType` (siehe Liste)
+  - `route`, `method`, `statusCode?`, `outcome` (`success | attempt | blocked | failure`)
+  - `clientKeyLabel` (8-stelliger Hash, nie raw IP)
+  - `commandId?`, `action?`, `detailsSummary?` (kurz, kein Body, kein Secret)
+
+EventType-Liste:
+
+```text
+COMMAND_CREATE_ATTEMPT  COMMAND_CREATED          COMMAND_LIST
+COMMAND_READ            COMMAND_ACTION_ATTEMPT   COMMAND_DRY_RUN
+COMMAND_APPROVAL_REQUESTED                       COMMAND_APPROVED
+COMMAND_REJECTED        COMMAND_EXECUTE_BLOCKED  AUTH_NOT_CONFIGURED
+AUTH_FAILED             RATE_LIMITED             VALIDATION_FAILED
+NOT_FOUND               AUDIT_LIST
+```
+
+Privacy-Regeln (Code enforced):
+
+- Keine vollstaendigen IPs im Event-Body.
+- Keine Request-Bodies komplett — nur Feldname / commandType / action / outcome.
+- Keine Secrets (das Operator-Key wird vom Audit-Modul nie gelesen).
+
+### Neue Endpoint
+
+```
+GET /api/operator/audit
+```
+
+- Gleicher Rate-Limit + Auth-Gate wie alle anderen Operator-Routen.
+- Solange `NOX_OPERATOR_API_KEY` unset ist: **503**, kein Event-Leak.
+- Bei autorisierter Anfrage: `{ events: [...], meta: { skeleton: true, ringBufferMax: 200, count, liveExecution: 'locked' } }`
+- Neueste Events zuerst.
+
+### Bestehendes Verhalten unveraendert
+
+- **503** wenn `NOX_OPERATOR_API_KEY` nicht gesetzt (Auth-Layer, vor Method).
+- **401** bei falschem/fehlendem Key wenn Env gesetzt waere.
+- **423** `execute` bleibt hart locked, jetzt zusaetzlich mit Audit-Event
+  `COMMAND_EXECUTE_BLOCKED` (Sichtbarkeit fuer Spam-Versuche).
+- **400** bei unknown action / Validierungsfehler, jetzt mit `VALIDATION_FAILED` Audit.
+- **404** bei fehlendem Command, jetzt mit `NOT_FOUND` Audit.
+
+### Nicht-Ziele
+
+- **Kein echtes User-Audit**: clientKeyLabel ist Hash der Vercel-Edge-Client-IP,
+  nicht eine Operator-Identitaet.
+- **Keine persistente DB**: Ring-Buffer und Bucket-Map sterben beim Cold-Start.
+- **Kein WAF**: Vercel-Edge macht nichts Zusaetzliches; das hier ist ein
+  In-Process-Drossel, kein DDoS-Schutz.
+- **Kein Upstream-Call**: Andromeda/Notion/Telegram werden weiterhin nicht
+  beruehrt.
+- **Kein `execute`-Unlock**: bleibt hartcodiert auf 423.
+
+### Vor echter Integration weiterhin noetig
+
+- **Persistenter Audit-Store** (Vercel KV / Supabase / Postgres) inkl. Index
+  und Retention-Policy.
+- **Geteilter Rate-Limit-Store** quer ueber Serverless-Instances (Upstash /
+  Vercel KV).
+- **Per-User-Auth** statt eines gemeinsamen Schluessels.
+- **HMAC-Upstream** zwischen Backend-Proxy und Andromeda inkl. Timestamp +
+  Nonce.
+- **Replay-Schutz** auf Idempotency-Keys mit TTL.
+- **Persistente Idempotency-Liste** statt nur In-Memory-Map.

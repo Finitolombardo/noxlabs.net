@@ -48,6 +48,11 @@ export function locked(res: ApiResponse, message: string): void {
   sendError(res, 423, 'locked', message);
 }
 
+export function tooManyRequests(res: ApiResponse, retryAfterSec: number, message: string): void {
+  res.setHeader('Retry-After', String(Math.max(1, Math.floor(retryAfterSec))));
+  sendError(res, 429, 'rate_limited', message);
+}
+
 export function readBodyAsObject(req: ApiRequest): Record<string, unknown> {
   const b = req.body;
   if (b && typeof b === 'object' && !Array.isArray(b)) {
