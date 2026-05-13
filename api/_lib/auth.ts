@@ -1,4 +1,6 @@
 // APP-X-BRIDGE-02 — Operator API auth gate.
+// APP-X-BRIDGE-03 — Split into pure check + response helper so callers can
+// audit before responding.
 //
 // Server-side only. The configured secret is never written to logs, responses,
 // or error details. This module is NOT a user/session login — it is a single
@@ -6,9 +8,9 @@
 // operator explicitly sets it.
 //
 // Behaviour summary:
-//   - NOX_OPERATOR_API_KEY unset/empty -> 503 service_unavailable
-//   - Header missing or wrong          -> 401 unauthorized
-//   - Header matches                   -> returns true (request may proceed)
+//   - NOX_OPERATOR_API_KEY unset/empty -> 503 service_unavailable, reason: not_configured
+//   - Header missing or wrong          -> 401 unauthorized,         reason: unauthorized
+//   - Header matches                   -> { ok: true }
 //
 // Accepted headers (case-insensitive, primary wins):
 //   - `x-nox-operator-key: <secret>`
@@ -19,6 +21,12 @@ import { sendError } from './handler.js';
 
 const HEADER_PRIMARY = 'x-nox-operator-key';
 const HEADER_BEARER = 'authorization';
+
+export type AuthFailure =
+  | { ok: false; statusCode: 503; reason: 'not_configured' }
+  | { ok: false; statusCode: 401; reason: 'unauthorized' };
+
+export type AuthResult = { ok: true } | AuthFailure;
 
 function readHeader(req: ApiRequest, name: string): string | undefined {
   const v = req.headers[name];
@@ -53,32 +61,34 @@ function constantTimeEqual(a: string, b: string): boolean {
 }
 
 /**
- * Gate every /api/operator/* endpoint. Returns true when the request may
- * proceed; otherwise the response has already been ended and the caller MUST
- * return immediately.
+ * Pure check — no response side-effects. Use this when you need to audit
+ * before sending the response.
  */
-export function requireOperatorAuth(req: ApiRequest, res: ApiResponse): boolean {
+export function checkOperatorAuth(req: ApiRequest): AuthResult {
   const configured = (process.env.NOX_OPERATOR_API_KEY ?? '').trim();
   if (configured.length === 0) {
+    return { ok: false, statusCode: 503, reason: 'not_configured' };
+  }
+  const presented = extractPresentedKey(req);
+  if (!presented || !constantTimeEqual(presented, configured)) {
+    return { ok: false, statusCode: 401, reason: 'unauthorized' };
+  }
+  return { ok: true };
+}
+
+/**
+ * Write the standard auth-failure response. The configured secret is never
+ * referenced in the body or headers.
+ */
+export function respondAuthFailure(res: ApiResponse, failure: AuthFailure): void {
+  if (failure.reason === 'not_configured') {
     sendError(
       res,
       503,
       'service_unavailable',
       'Operator API is not configured. Set NOX_OPERATOR_API_KEY server-side.',
     );
-    return false;
+    return;
   }
-
-  const presented = extractPresentedKey(req);
-  if (!presented) {
-    sendError(res, 401, 'unauthorized', 'Unauthorized operator API request.');
-    return false;
-  }
-
-  if (!constantTimeEqual(presented, configured)) {
-    sendError(res, 401, 'unauthorized', 'Unauthorized operator API request.');
-    return false;
-  }
-
-  return true;
+  sendError(res, 401, 'unauthorized', 'Unauthorized operator API request.');
 }
