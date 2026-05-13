@@ -172,6 +172,19 @@ export interface ProjectContextProject {
   title: string;
   summary?: string;
   status?: string;
+  // APP-X-BRIDGE-04c — optional metadata from the Projects DB
+  // (`🧭 Projects / System Map`). All fields stay optional so other
+  // mapping modes (`none`, `title-prefix`) can omit them safely.
+  typ?: string;
+  priority?: string;
+  vision?: string;
+  andromedaContext?: string;
+  currentState?: string;
+  nextAction?: string;
+  allowedActions?: string;
+  forbiddenActions?: string;
+  artifactLinks?: string;
+  primaryUrl?: string;
 }
 
 export interface ProjectContextQuest {
@@ -182,6 +195,12 @@ export interface ProjectContextQuest {
   result?: string;
   lastEditedAt?: string;
   url?: string;
+  // APP-X-BRIDGE-04c — extra read-only fields from Master Tasks.
+  blocker?: string;
+  approved?: boolean;
+  approvalNeeded?: boolean;
+  questStarten?: boolean;
+  questAbgeschlossen?: boolean;
 }
 
 export interface ProjectContextApproval {

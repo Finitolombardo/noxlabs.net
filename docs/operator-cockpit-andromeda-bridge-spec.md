@@ -811,3 +811,142 @@ Default in APP-X-BRIDGE-04a: **`none`** — keine Mapping-Annahmen, leere
 Quest-Liste, klarer Hinweis im `contextSummary`. So vermeidet der Endpoint
 „fantasierte" Projekt-Zuordnungen, bis der Operator eine Strategie wahrgewaehlt
 hat.
+
+## 15. APP-X-BRIDGE-04c — Notion Project Relation Mapping
+
+Preflight (siehe `_appx_preflight_*.py` in dem Recon-Worktree) hat ergeben,
+dass es bereits eine kanonische Mapping-Schicht in Notion gibt:
+
+- **Projects-DB** `🧭 Projects / System Map`
+- Property `Project ID` (rich_text) als human-readable Projekt-Code
+  (z. B. `APP-X`)
+- Master Tasks Property `Project` (relation, dual_property) als kanonische
+  Quest-Zuordnung — bereits aktiv, 4 Quests fuer `APP-X` bestehend
+
+BRIDGE-04c implementiert diese kanonische Schicht als neuen Mapping-Mode.
+
+### Implementiert
+
+- `api/_lib/notion.ts`
+  - `queryProjectsByProjectId(token, projectsDbId, projectId)` — filtert
+    Projects-DB nach `Project ID rich_text equals <projectId>` (page_size 5).
+  - `queryMasterTasksByProjectRelation(token, masterTasksDbId, projectPageId)` —
+    filtert Master Tasks nach `Project relation contains <page-uuid>`,
+    sortiert nach `last_edited_time desc`, max 100.
+  - `extractProjectFields(props)` — defensiver Extraktor fuer alle
+    Projects-DB-Felder (`title`, `projectId`, `status`, `typ`, `priority`,
+    `vision`, `andromedaContext`, `currentState`, `nextAction`,
+    `allowedActions`, `forbiddenActions`, `artifactLinks`, `primaryUrl`).
+  - `propRelationIds`, `propUrl` — zusaetzliche Property-Extraktoren.
+  - `queryDatabase` akzeptiert jetzt ein optionales `filter`-Argument.
+- `api/_lib/types.ts` — `ProjectContextProject` + `ProjectContextQuest`
+  bekommen optionale Felder fuer die reichere Projektion. Alle Zusatzfelder
+  sind optional, damit `none` und `title-prefix` Modi weiter funktionieren.
+- `api/_lib/audit.ts` — neue Event-Typen:
+  - `PROJECT_CONTEXT_PROJECT_LOOKUP`
+  - `PROJECT_CONTEXT_PROJECT_NOT_FOUND`
+  - `PROJECT_CONTEXT_RELATION_READ`
+- `api/operator/projects/[projectId]/context.ts` — neuer Mapping-Mode
+  `notion-relation`.
+
+### Mapping-Modes (Zusammenfassung)
+
+| Mode             | Verhalten                                              | Coverage |
+| ---------------- | ------------------------------------------------------ | -------- |
+| `none` (default) | leere Projektion + erklaerender `contextSummary`       | 0%       |
+| `title-prefix`   | matcht `[id]…`, `id:…`, `id —…`, `id -…` im Titel       | partial  |
+| `notion-relation` | Projects-DB-Lookup + `Project`-Relation-Filter         | 100%     |
+
+### Server-Konfiguration (additiv)
+
+| Env Var                       | Pflicht                                | Beschreibung                                            |
+| ----------------------------- | -------------------------------------- | ------------------------------------------------------- |
+| `NOX_OPERATOR_API_KEY`        | ja                                     | Auth-Gate (BRIDGE-02).                                  |
+| `NOX_NOTION_READONLY_TOKEN`   | ja                                     | Read-only Notion-Integration-Token.                     |
+| `NOX_MASTER_TASKS_DB_ID`      | ja                                     | DB-ID der Master Tasks.                                 |
+| `NOX_PROJECTS_DB_ID`          | **nur bei mode=notion-relation**       | DB-ID der Projects/System-Map-DB.                       |
+| `NOX_PROJECT_MAPPING_MODE`    | nein (`none` default)                  | `none` \| `title-prefix` \| `notion-relation`           |
+
+Die Notion-Integration muss **beide** Datenbanken (Master Tasks + Projects)
+explizit in Notion angeschlossen haben, sonst antworten Notion-Endpoints
+mit 4xx — der Adapter uebersetzt das zu generischem `502
+notion_upstream_error` ohne Token-Leak.
+
+### Flow `notion-relation`
+
+```
+GET /api/operator/projects/APP-X/context
+  -> rate limit
+  -> auth gate
+  -> method GET
+  -> projectId regex
+  -> readNotionConfig
+  -> mode == notion-relation
+  -> NOX_PROJECTS_DB_ID set?
+       no  -> 503 project_mapping_not_configured
+       yes -> POST Projects DB /query  filter: Project ID equals 'APP-X'
+              0 hits -> 404 project_not_found
+              1+ hits -> take first
+                -> POST Master Tasks /query  filter: Project contains <page-uuid>
+                -> 200 ProjectContextResponse
+                   project: { projectId, title, status, typ, priority, vision,
+                              andromedaContext, currentState, nextAction,
+                              allowedActions, forbiddenActions, artifactLinks,
+                              primaryUrl }
+                   quests: [...]  with status, agent, result, blocker, approved,
+                                  approvalNeeded, questStarten, questAbgeschlossen
+                   openApprovals, blockers, recentEvents derived from quests
+                   artifacts: []  (kept empty — see Section 14 ReferenceArtifact)
+```
+
+### Verhalten je Bedingung
+
+| Bedingung                                                                | Antwort                                                       |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| `NOX_OPERATOR_API_KEY` fehlt                                             | 503 `service_unavailable`                                     |
+| `NOX_NOTION_READONLY_TOKEN` oder `NOX_MASTER_TASKS_DB_ID` fehlt          | 503 `notion_not_configured`                                   |
+| `mode=notion-relation` aber `NOX_PROJECTS_DB_ID` fehlt                   | 503 `project_mapping_not_configured`                          |
+| projectId-Param invalid                                                  | 400 `bad_request`                                             |
+| Projects-DB-Lookup findet 0 Treffer                                      | 404 `project_not_found`                                       |
+| Notion-Upstream-Fehler in irgendeinem Query                              | 502 `notion_upstream_error` (ohne Token/Body-Leak)            |
+| Erfolgreich                                                              | 200 `ProjectContextResponse` mit voller Projects-Metadata     |
+
+### Audit-Events (neu in BRIDGE-04c)
+
+- `PROJECT_CONTEXT_PROJECT_LOOKUP` — vor dem Projects-DB-Query
+- `PROJECT_CONTEXT_PROJECT_NOT_FOUND` — bei 0 Treffer im Lookup
+- `PROJECT_CONTEXT_RELATION_READ` — nach erfolgreichem Relation-Query
+- `PROJECT_CONTEXT_READ` — final 200 (bestehend)
+- `PROJECT_CONTEXT_UPSTREAM_FAILED` — bei jedem Notion-Fehler in der Kette
+
+Keine Raw-Notion-Payloads, keine Tokens, keine vollstaendigen Bodies im
+Audit-Eintrag — nur kurze `detailsSummary`-Strings.
+
+### Sicherheitsgrenzen (unveraendert)
+
+- Kein Notion-Write (kein PATCH, kein Page-Update, kein Block-Append).
+- Kein Andromeda/n8n-Aufruf.
+- Kein Telegram.
+- Kein Upload, kein Drive-/Miro-OAuth.
+- `execute` bleibt 423.
+- Token nur im `Authorization`-Header, niemals im Response-Body.
+
+### Nicht-Ziele
+
+- Artefakt-Ingestion (OCR/VLM) — bleibt Downstream.
+- Cockpit-Frontend-Integration — eigene Quest BRIDGE-05.
+- Server-side Cache — eigene Folge-Quest.
+- Pagination — nicht benoetigt, solange < 100 Quests pro Projekt.
+
+### Vor produktivem Einsatz weiterhin noetig
+
+- Eigene **read-only** Notion-Integration mit minimalem Scope (Master Tasks
+  + Projects DB connected).
+- Vercel Production Env-Set:
+  - `NOX_OPERATOR_API_KEY=<32-byte secret>`
+  - `NOX_NOTION_READONLY_TOKEN=<read-only Notion token>`
+  - `NOX_MASTER_TASKS_DB_ID=82e74706fe8143218938da0da91433d2`
+  - `NOX_PROJECTS_DB_ID=643a4be0e92c45a3befca0a1118d14b4`
+  - `NOX_PROJECT_MAPPING_MODE=notion-relation`
+- Cache-Layer (ETag, TTL ≥ 30 s) sobald Cockpit-Frontend regelmaessig pollt.
+- Cockpit-Frontend-Loader, der diesen Endpoint serverseitig konsumiert.
