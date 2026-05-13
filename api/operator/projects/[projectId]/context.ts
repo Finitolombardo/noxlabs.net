@@ -36,7 +36,7 @@
 //     never echoed into the JSON response or audit events.
 
 import type { ApiHandler } from '../../../_lib/handler.js';
-import { methodAllowed, sendError } from '../../../_lib/handler.js';
+import { methodAllowed, sendError, setNoStore } from '../../../_lib/handler.js';
 import { checkOperatorAuth, respondAuthFailure } from '../../../_lib/auth.js';
 import { checkRateLimit, respondRateLimited } from '../../../_lib/rateLimit.js';
 import { appendAuditEvent } from '../../../_lib/audit.js';
@@ -201,6 +201,10 @@ function summarise(quests: ProjectContextQuest[], blockers: ProjectContextBlocke
 const handler: ApiHandler = async (req, res) => {
   const method = req.method ?? '?';
   const route = ROUTE_LABEL;
+
+  // APP-X-BRIDGE-04d — every response on this route is dynamic operator data.
+  // Set Cache-Control once at the top so it applies to all branches below.
+  setNoStore(res);
 
   // 1. Rate limit.
   const rl = checkRateLimit(req);

@@ -3,7 +3,7 @@
 // Skeleton only.
 
 import type { ApiHandler } from '../../_lib/handler.js';
-import { methodAllowed, notFound, readQueryString } from '../../_lib/handler.js';
+import { methodAllowed, notFound, readQueryString, setNoStore } from '../../_lib/handler.js';
 import { checkOperatorAuth, respondAuthFailure } from '../../_lib/auth.js';
 import { checkRateLimit, respondRateLimited } from '../../_lib/rateLimit.js';
 import { appendAuditEvent } from '../../_lib/audit.js';
@@ -13,6 +13,8 @@ const ROUTE = '/api/operator/commands/:id';
 
 const handler: ApiHandler = async (req, res) => {
   const method = req.method ?? '?';
+
+  setNoStore(res);
 
   const rl = checkRateLimit(req);
   if (!rl.ok) {

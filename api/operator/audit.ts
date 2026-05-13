@@ -4,7 +4,7 @@
 // Skeleton only — buffer resets on every Vercel cold start.
 
 import type { ApiHandler } from '../_lib/handler.js';
-import { methodAllowed } from '../_lib/handler.js';
+import { methodAllowed, setNoStore } from '../_lib/handler.js';
 import { checkOperatorAuth, respondAuthFailure } from '../_lib/auth.js';
 import { checkRateLimit, respondRateLimited } from '../_lib/rateLimit.js';
 import { appendAuditEvent, getAuditBufferStats, listAuditEvents } from '../_lib/audit.js';
@@ -13,6 +13,8 @@ const ROUTE = '/api/operator/audit';
 
 const handler: ApiHandler = async (req, res) => {
   const method = req.method ?? '?';
+
+  setNoStore(res);
 
   const rl = checkRateLimit(req);
   if (!rl.ok) {
