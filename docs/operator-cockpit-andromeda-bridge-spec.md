@@ -382,3 +382,79 @@ Sicherheitsanforderungen:
 - Keine Secrets liegen im Frontend.
 - Build bleibt gruen.
 - Project-X-Live-Ausfuehrung bleibt im Cockpit gesperrt, bis Backend Proxy, Secret-Schutz und Freigabe-Gate vorhanden sind.
+
+## 10. APP-X-BRIDGE-01 — Skeleton-Implementierung
+
+Status: Skeleton-Endpunkte angelegt, keine Live-Ausfuehrung, keine externen Calls.
+Frontend bleibt unveraendert auf lokalem Demo-State (Phase 1 des Migration Plans).
+
+### Implementiert
+
+```text
+api/
+  _lib/
+    types.ts        // CommandType, CommandStatus, RiskLevel, Action, Allowlists
+    validation.ts   // requireString, optionalString, optionalIdempotencyKey, type guards
+    store.ts        // In-Memory-Map, resettet bei jedem Cold Start (kein echter Persistenzlayer)
+    handler.ts      // ApiRequest/ApiResponse, methodAllowed, badRequest, notFound, locked
+  operator/
+    commands.ts                  // GET (list) + POST (create)
+    commands/[id].ts             // GET (single)
+    commands/[id]/[action].ts    // POST (dry-run, request-approval, approve, reject, execute)
+```
+
+`vercel.json` schliesst `/api/*` aus der SPA-Rewrite aus (`/((?!api/).*)`).
+`tsconfig.api.json` ergaenzt die Node-tsconfig fuer den `api/`-Ordner.
+
+### Endpunkt-Verhalten (Skeleton)
+
+| Endpoint                                                | Methode | Verhalten                                                             |
+|---------------------------------------------------------|---------|-----------------------------------------------------------------------|
+| `/api/operator/commands`                                | GET     | Liefert Commands aus In-Memory-Store (Cold-Start-Reset).              |
+| `/api/operator/commands`                                | POST    | Validiert Body, schreibt Command in Memory, gibt 201 + auditEventId.  |
+| `/api/operator/commands/:id`                            | GET     | Liefert ein Command oder 404.                                         |
+| `/api/operator/commands/:id/dry-run`                    | POST    | Stub-DryRunResult, kein externer Call.                                |
+| `/api/operator/commands/:id/request-approval`           | POST    | Stub-Approval-Event, kein Telegram-/Notion-Call.                      |
+| `/api/operator/commands/:id/approve`                    | POST    | Statuswechsel auf `Freigegeben`, kein Trigger nach upstream.          |
+| `/api/operator/commands/:id/reject`                     | POST    | Statuswechsel auf `Gesperrt`.                                         |
+| `/api/operator/commands/:id/execute`                    | POST    | **HTTP 423 Locked** — Live-Ausfuehrung ist permanent gesperrt.        |
+
+`execute` antwortet immer mit:
+
+```json
+{
+  "error": "locked",
+  "message": "Live execution is locked. Backend proxy, HMAC secret, approval gate and operator confirmation required."
+}
+```
+
+### Sicherheitsgrenzen im Code
+
+- Kein `fetch`, kein `http.request`, kein `node-fetch`-Import in `api/`.
+- Keine Umgebungsvariablen werden gelesen (`process.env` taucht nicht auf).
+- Kein Notion-, Telegram-, n8n- oder Andromeda-Call.
+- `commandType` wird serverseitig gegen `ALLOWED_COMMAND_TYPES` validiert.
+- `riskLevel` wird serverseitig gegen `ALLOWED_RISK_LEVELS` validiert.
+- `action` wird serverseitig gegen `ALLOWED_ACTIONS` validiert.
+- `idempotencyKey` wird Regex-validiert (`/^[A-Za-z0-9_:.\-]{4,128}$/`), aber noch nicht persistiert.
+- Alle String-Felder haben harte Max-Laengen (64-2000 chars).
+- `execute` ist hartcodiert auf 423 — nicht ueber Config abschaltbar.
+
+### Was noch fehlt fuer echte Integration
+
+- **HMAC-Signatur** zwischen Backend-Proxy und Andromeda-Upstream (Replay-Schutz via Timestamp + Nonce).
+- **Echte Auth** auf den Endpunkten (z.B. Operator-Session-Cookie / Vercel OIDC / Supabase Row-Level-Security).
+- **Persistenz-Layer mit Audit-Log** (Supabase / Postgres / Vercel KV). Aktueller Store ist In-Memory und ueberlebt keinen Cold-Start.
+- **Andromeda-Upstream-URL** als serverseitige Env-Variable (`ANDROMEDA_DISPATCH_URL` + `ANDROMEDA_HMAC_SECRET`), nie im Frontend.
+- **Notion-Callback-/Read-Write-Safety** mit getrennten Tokens und Field-Allowlist.
+- **Telegram-Approval-Integration** als separater eingehender Webhook, niemals direkter Browser-Call.
+- **Rate Limits** pro Operator-Identitaet (z.B. Upstash Ratelimit oder Vercel KV).
+- **Idempotency-Key-Index** mit TTL, damit Wiederholungen sicher dedupliziert werden.
+- **`execute`-Unlock** nur durch explizite Server-Config UND vorhandene Freigabe UND vorhandene HMAC-Verifikation. Niemals via Frontend-Flag.
+
+### Phase 1 Status
+
+- Backend-Proxy-Skeleton: vorhanden.
+- Live-Calls aus dem Cockpit: weiterhin deaktiviert.
+- OperatorCockpit-Frontend: unveraendert auf lokalem Demo-State (kein `fetch`-Call zu `/api/operator/commands`).
+- Naechster Schritt waere Phase 2: read-only `GET /api/operator/commands` aus dem Cockpit lesen, immer noch keine Mutation.
