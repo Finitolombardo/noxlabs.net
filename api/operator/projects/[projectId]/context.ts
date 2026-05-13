@@ -1,4 +1,4 @@
-// APP-X-BRIDGE-04a — GET /api/operator/projects/:projectId/context
+// APP-X-BRIDGE-04a + APP-X-BRIDGE-04c — GET /api/operator/projects/:projectId/context
 //
 // Read-only Notion projection. No writes. No Andromeda upstream calls.
 // No uploads. No Drive/Miro. No Telegram.
@@ -9,16 +9,31 @@
 //   3. method allowlist   (GET only)
 //   4. projectId validation (path-injected, sanitised)
 //   5. notion read-only adapter (NOX_NOTION_READONLY_TOKEN + DB id)
-//   6. project mapping heuristic (currently `none` or `title-prefix`)
+//   6. project mapping mode
 //
-// Project mapping:
-//   APP-X has no Projects DB. Master Tasks is flat. Until a real mapping
-//   exists, this endpoint runs in one of two modes:
-//     - default (`none`)         → empty quests, contextSummary explains it
-//     - `title-prefix`           → match `[<projectId>] ...` or `<projectId>:`
+// Project mapping modes (env NOX_PROJECT_MAPPING_MODE):
+//   - `none` (default)
+//        Empty quest projection. Safe baseline. contextSummary explains
+//        that no mapping is configured. Use when the operator has not yet
+//        chosen a strategy.
 //
-//   Selected via env NOX_PROJECT_MAPPING_MODE (`none` | `title-prefix`).
-//   Anything else falls back to `none`. No client-controllable mapping.
+//   - `title-prefix`
+//        Match `[<projectId>] ...`, `<projectId>:`, `<projectId> —`,
+//        `<projectId> -` in the quest title. Cheap fallback; only partial
+//        coverage. No Projects DB needed.
+//
+//   - `notion-relation`  (APP-X-BRIDGE-04c — canonical)
+//        Look up the project page in the Projects DB by the human-readable
+//        `Project ID` rich_text. Then filter Master Tasks by the `Project`
+//        relation. Requires NOX_PROJECTS_DB_ID. Returns rich project metadata
+//        (Andromeda Kontext, Erlaubte/Verbotene Aktionen, Vision, etc.).
+//
+// Strict invariants:
+//   - The handler never mutates Notion. The only Notion HTTP verbs used are
+//     POST /v1/databases/{id}/query (read-only semantic) and GET /v1/pages/*
+//     (none used in this file today).
+//   - The Notion token is read only by the adapter, only per-request, and is
+//     never echoed into the JSON response or audit events.
 
 import type { ApiHandler } from '../../../_lib/handler.js';
 import { methodAllowed, sendError } from '../../../_lib/handler.js';
@@ -26,17 +41,22 @@ import { checkOperatorAuth, respondAuthFailure } from '../../../_lib/auth.js';
 import { checkRateLimit, respondRateLimited } from '../../../_lib/rateLimit.js';
 import { appendAuditEvent } from '../../../_lib/audit.js';
 import {
+  extractProjectFields,
   propCheckbox,
   propRichText,
   propSelect,
   propTitle,
   queryDatabase,
+  queryMasterTasksByProjectRelation,
+  queryProjectsByProjectId,
   readNotionConfig,
 } from '../../../_lib/notion.js';
+import type { NotionPage } from '../../../_lib/notion.js';
 import type {
   ProjectContextApproval,
   ProjectContextBlocker,
   ProjectContextEvent,
+  ProjectContextProject,
   ProjectContextQuest,
   ProjectContextResponse,
 } from '../../../_lib/types.js';
@@ -47,11 +67,32 @@ const ROUTE_LABEL = '/api/operator/projects/:projectId/context';
 // Keeps the value safe to echo back into JSON without injection risk.
 const PROJECT_ID_RE = /^[A-Za-z0-9._-]{1,64}$/;
 
-type MappingMode = 'none' | 'title-prefix';
+type MappingMode = 'none' | 'title-prefix' | 'notion-relation';
 
 function readMappingMode(): MappingMode {
   const v = (process.env.NOX_PROJECT_MAPPING_MODE ?? '').trim().toLowerCase();
-  return v === 'title-prefix' ? 'title-prefix' : 'none';
+  if (v === 'title-prefix') return 'title-prefix';
+  if (v === 'notion-relation') return 'notion-relation';
+  return 'none';
+}
+
+function readProjectsDbId(): string {
+  return (process.env.NOX_PROJECTS_DB_ID ?? '').trim();
+}
+
+function readProjectIdParam(query: Record<string, string | string[] | undefined>): string | undefined {
+  const v = query.projectId;
+  if (Array.isArray(v)) return v[0];
+  if (typeof v === 'string') return v;
+  return undefined;
+}
+
+function getQuestTitle(p: NotionPage): string {
+  return (
+    propTitle(p.properties, 'Titel') ||
+    propTitle(p.properties, 'Title') ||
+    propTitle(p.properties, 'Name')
+  );
 }
 
 function titleMatchesProject(title: string, projectId: string): boolean {
@@ -66,11 +107,95 @@ function titleMatchesProject(title: string, projectId: string): boolean {
   );
 }
 
-function readProjectIdParam(query: Record<string, string | string[] | undefined>): string | undefined {
-  const v = query.projectId;
-  if (Array.isArray(v)) return v[0];
-  if (typeof v === 'string') return v;
-  return undefined;
+// Shared projection: turn a list of Master Task pages into the
+// quest/approval/blocker/event arrays.
+function projectQuests(pages: NotionPage[]): {
+  quests: ProjectContextQuest[];
+  openApprovals: ProjectContextApproval[];
+  blockers: ProjectContextBlocker[];
+  recentEvents: ProjectContextEvent[];
+} {
+  const quests: ProjectContextQuest[] = pages.map((p) => {
+    const title = getQuestTitle(p);
+    const status = propSelect(p.properties, '🤖 Bearbeitungsstatus');
+    const agent =
+      propSelect(p.properties, 'Agent') || propSelect(p.properties, '🤖 Nächster Agent');
+    const result = propRichText(p.properties, '🤖 Ergebnis');
+    const blocker = propRichText(p.properties, '🤖 Was fehlt noch');
+    const approved = propCheckbox(p.properties, 'Freigegeben');
+    const approvalNeeded = propCheckbox(p.properties, 'Freigabe nötig');
+    const questStarten = propCheckbox(p.properties, 'Quest starten');
+    const questAbgeschlossen = propCheckbox(p.properties, 'Quest abgeschlossen');
+    return {
+      questId: p.id,
+      title,
+      status,
+      agent,
+      ...(result ? { result: result.slice(0, 500) } : {}),
+      ...(blocker ? { blocker: blocker.slice(0, 500) } : {}),
+      ...(p.last_edited_time ? { lastEditedAt: p.last_edited_time } : {}),
+      ...(p.url ? { url: p.url } : {}),
+      approved,
+      approvalNeeded,
+      questStarten,
+      questAbgeschlossen,
+    };
+  });
+
+  const openApprovals: ProjectContextApproval[] = pages
+    .filter(
+      (p) =>
+        propCheckbox(p.properties, 'Freigabe nötig') ||
+        propSelect(p.properties, '🤖 Bearbeitungsstatus') === 'Review nötig',
+    )
+    .map((p) => ({
+      questId: p.id,
+      title: getQuestTitle(p),
+      reason:
+        propRichText(p.properties, '🤖 Was fehlt noch') ||
+        propRichText(p.properties, 'Freigabe-Notiz') ||
+        'Approval flag or review status set',
+    }));
+
+  const blockers: ProjectContextBlocker[] = pages
+    .filter((p) => propSelect(p.properties, '🤖 Bearbeitungsstatus') === 'Blockiert')
+    .map((p) => ({
+      questId: p.id,
+      title: getQuestTitle(p),
+      blocker:
+        propRichText(p.properties, '🤖 Was fehlt noch') || 'No blocker text recorded',
+    }));
+
+  const recentEvents: ProjectContextEvent[] = pages
+    .slice(0, 20)
+    .filter((p) => Boolean(p.last_edited_time))
+    .map<ProjectContextEvent>((p) => ({
+      at: p.last_edited_time as string,
+      type: 'edited',
+      summary: `Quest "${getQuestTitle(p).slice(0, 80)}" edited.`,
+      questId: p.id,
+    }));
+
+  return { quests, openApprovals, blockers, recentEvents };
+}
+
+function emptyResponse(projectId: string, contextSummary: string, nextSuggested: string[]): ProjectContextResponse {
+  return {
+    project: { projectId, title: projectId, summary: 'No project mapping configured.' },
+    quests: [],
+    openApprovals: [],
+    blockers: [],
+    recentEvents: [],
+    artifacts: [],
+    contextSummary,
+    nextSuggestedReadOnlyActions: nextSuggested,
+    meta: { skeleton: true, readOnly: true, projectMappingConfigured: false, liveExecution: 'locked' },
+  };
+}
+
+function summarise(quests: ProjectContextQuest[], blockers: ProjectContextBlocker[], approvals: ProjectContextApproval[], mode: MappingMode, projectTitle: string): string {
+  const head = mode === 'notion-relation' ? `Project "${projectTitle}" (mode=notion-relation)` : `Project mapping mode=${mode}`;
+  return `${head}. ${quests.length} linked quest(s), ${approvals.length} open approval(s), ${blockers.length} blocker(s).`;
 }
 
 const handler: ApiHandler = async (req, res) => {
@@ -122,7 +247,6 @@ const handler: ApiHandler = async (req, res) => {
   }
   const projectId = projectIdRaw;
 
-  // Attempt — recorded before upstream call.
   appendAuditEvent({
     eventType: 'PROJECT_CONTEXT_READ_ATTEMPT', route, method,
     outcome: 'attempt', clientKeyLabel,
@@ -144,7 +268,123 @@ const handler: ApiHandler = async (req, res) => {
     return;
   }
 
-  // 6. Read-only Notion query.
+  const mode = readMappingMode();
+
+  // ---- mode: notion-relation (canonical, APP-X-BRIDGE-04c) ----
+  if (mode === 'notion-relation') {
+    const projectsDbId = readProjectsDbId();
+    if (!projectsDbId) {
+      appendAuditEvent({
+        eventType: 'PROJECT_CONTEXT_NOT_CONFIGURED', route, method, statusCode: 503,
+        outcome: 'blocked', clientKeyLabel, detailsSummary: 'missing=NOX_PROJECTS_DB_ID',
+      });
+      sendError(
+        res, 503, 'project_mapping_not_configured',
+        'Project relation mapping is not configured server-side.',
+      );
+      return;
+    }
+
+    appendAuditEvent({
+      eventType: 'PROJECT_CONTEXT_PROJECT_LOOKUP', route, method,
+      outcome: 'attempt', clientKeyLabel, detailsSummary: `projectId=${projectId}`,
+    });
+
+    const projectLookup = await queryProjectsByProjectId(notion.token, projectsDbId, projectId);
+    if (!projectLookup.ok) {
+      appendAuditEvent({
+        eventType: 'PROJECT_CONTEXT_UPSTREAM_FAILED', route, method, statusCode: 502,
+        outcome: 'failure', clientKeyLabel,
+        detailsSummary: `projects_lookup: ${projectLookup.summary.slice(0, 150)}`,
+      });
+      sendError(res, 502, 'notion_upstream_error', 'Notion read-only query failed.');
+      return;
+    }
+
+    if (projectLookup.results.length === 0) {
+      appendAuditEvent({
+        eventType: 'PROJECT_CONTEXT_PROJECT_NOT_FOUND', route, method, statusCode: 404,
+        outcome: 'blocked', clientKeyLabel, detailsSummary: `projectId=${projectId}`,
+      });
+      sendError(
+        res, 404, 'project_not_found',
+        `No project with Project ID '${projectId}' found in the Projects DB.`,
+      );
+      return;
+    }
+
+    const projectPage = projectLookup.results[0] as NotionPage;
+    const proj = extractProjectFields(projectPage.properties);
+
+    const relationLookup = await queryMasterTasksByProjectRelation(
+      notion.token,
+      notion.dbId,
+      projectPage.id,
+    );
+    if (!relationLookup.ok) {
+      appendAuditEvent({
+        eventType: 'PROJECT_CONTEXT_UPSTREAM_FAILED', route, method, statusCode: 502,
+        outcome: 'failure', clientKeyLabel,
+        detailsSummary: `relation_query: ${relationLookup.summary.slice(0, 150)}`,
+      });
+      sendError(res, 502, 'notion_upstream_error', 'Notion read-only query failed.');
+      return;
+    }
+
+    const { quests, openApprovals, blockers, recentEvents } = projectQuests(relationLookup.results);
+
+    appendAuditEvent({
+      eventType: 'PROJECT_CONTEXT_RELATION_READ', route, method, statusCode: 200,
+      outcome: 'success', clientKeyLabel,
+      detailsSummary: `projectId=${projectId} quests=${quests.length} blockers=${blockers.length} approvals=${openApprovals.length}`,
+    });
+
+    const project: ProjectContextProject = {
+      projectId: proj.projectId || projectId,
+      title: proj.title || projectId,
+      ...(proj.status ? { status: proj.status } : {}),
+      ...(proj.typ ? { typ: proj.typ } : {}),
+      ...(proj.priority ? { priority: proj.priority } : {}),
+      ...(proj.vision ? { vision: proj.vision.slice(0, 1000) } : {}),
+      ...(proj.andromedaContext ? { andromedaContext: proj.andromedaContext.slice(0, 2000) } : {}),
+      ...(proj.currentState ? { currentState: proj.currentState.slice(0, 2000) } : {}),
+      ...(proj.nextAction ? { nextAction: proj.nextAction.slice(0, 1000) } : {}),
+      ...(proj.allowedActions ? { allowedActions: proj.allowedActions.slice(0, 2000) } : {}),
+      ...(proj.forbiddenActions ? { forbiddenActions: proj.forbiddenActions.slice(0, 2000) } : {}),
+      ...(proj.artifactLinks ? { artifactLinks: proj.artifactLinks.slice(0, 2000) } : {}),
+      ...(proj.primaryUrl ? { primaryUrl: proj.primaryUrl } : {}),
+    };
+
+    const body: ProjectContextResponse = {
+      project,
+      quests,
+      openApprovals,
+      blockers,
+      recentEvents,
+      artifacts: [],
+      contextSummary: summarise(quests, blockers, openApprovals, mode, project.title),
+      nextSuggestedReadOnlyActions: [
+        'Review open approvals before any execute unlock.',
+        'Inspect blocked quests and refresh their `🤖 Folgeprompt` via the leitstelle.',
+        'Decide the next Project X handoff using the project metadata.',
+      ],
+      meta: { skeleton: true, readOnly: true, projectMappingConfigured: true, liveExecution: 'locked' },
+    };
+
+    appendAuditEvent({
+      eventType: 'PROJECT_CONTEXT_READ', route, method, statusCode: 200,
+      outcome: 'success', clientKeyLabel,
+      detailsSummary: `projectId=${projectId} mode=${mode} quests=${quests.length}`,
+    });
+
+    res.status(200).json(body);
+    return;
+  }
+
+  // ---- mode: title-prefix or none ----
+  // Both share a flat Master-Tasks query (no filter). title-prefix filters in
+  // the handler; none keeps the result empty.
+
   const query = await queryDatabase(notion.token, notion.dbId, {
     page_size: 100,
     sorts: [{ timestamp: 'last_edited_time', direction: 'descending' }],
@@ -156,96 +396,49 @@ const handler: ApiHandler = async (req, res) => {
       outcome: 'failure', clientKeyLabel,
       detailsSummary: query.summary.slice(0, 200),
     });
-    sendError(
-      res, 502, 'notion_upstream_error',
-      'Notion read-only query failed.',
-    );
+    sendError(res, 502, 'notion_upstream_error', 'Notion read-only query failed.');
     return;
   }
 
-  const mode = readMappingMode();
-  const matchedPages =
+  const matchedPages: NotionPage[] =
     mode === 'title-prefix'
-      ? query.results.filter((p) => titleMatchesProject(propTitle(p.properties, 'Titel') || propTitle(p.properties, 'Title') || propTitle(p.properties, 'Name'), projectId))
+      ? query.results.filter((p) => titleMatchesProject(getQuestTitle(p), projectId))
       : [];
-
-  const quests: ProjectContextQuest[] = matchedPages.map((p) => {
-    const title = propTitle(p.properties, 'Titel') || propTitle(p.properties, 'Title') || propTitle(p.properties, 'Name');
-    const status = propSelect(p.properties, '🤖 Bearbeitungsstatus');
-    const agent = propSelect(p.properties, 'Agent') || propSelect(p.properties, '🤖 Nächster Agent');
-    const result = propRichText(p.properties, '🤖 Ergebnis');
-    return {
-      questId: p.id,
-      title,
-      status,
-      agent,
-      ...(result ? { result: result.slice(0, 500) } : {}),
-      ...(p.last_edited_time ? { lastEditedAt: p.last_edited_time } : {}),
-      ...(p.url ? { url: p.url } : {}),
-    };
-  });
-
-  const openApprovals: ProjectContextApproval[] = matchedPages
-    .filter((p) => propCheckbox(p.properties, 'Freigabe nötig'))
-    .map((p) => ({
-      questId: p.id,
-      title: propTitle(p.properties, 'Titel') || propTitle(p.properties, 'Title') || propTitle(p.properties, 'Name'),
-      reason: propRichText(p.properties, '🤖 Was fehlt noch') || 'Freigabe nötig flag set',
-    }));
-
-  const blockers: ProjectContextBlocker[] = matchedPages
-    .filter((p) => propSelect(p.properties, '🤖 Bearbeitungsstatus') === 'Blockiert')
-    .map((p) => ({
-      questId: p.id,
-      title: propTitle(p.properties, 'Titel') || propTitle(p.properties, 'Title') || propTitle(p.properties, 'Name'),
-      blocker: propRichText(p.properties, '🤖 Was fehlt noch') || 'No blocker text recorded',
-    }));
-
-  const recentEvents: ProjectContextEvent[] = matchedPages
-    .slice(0, 20)
-    .filter((p) => Boolean(p.last_edited_time))
-    .map<ProjectContextEvent>((p) => ({
-      at: p.last_edited_time as string,
-      type: 'edited',
-      summary: `Quest "${(propTitle(p.properties, 'Titel') || propTitle(p.properties, 'Title') || propTitle(p.properties, 'Name')).slice(0, 80)}" edited.`,
-      questId: p.id,
-    }));
 
   const projectMappingConfigured = mode !== 'none';
 
-  const contextSummary = projectMappingConfigured
-    ? `Project mapping mode=${mode}. Matched ${quests.length} quest(s). Blockers=${blockers.length}, openApprovals=${openApprovals.length}.`
-    : 'No project mapping is configured yet. Set NOX_PROJECT_MAPPING_MODE=title-prefix or define a Project field on Master Tasks.';
+  if (!projectMappingConfigured) {
+    const summary =
+      'No project mapping is configured yet. Set NOX_PROJECT_MAPPING_MODE=notion-relation (preferred) or =title-prefix.';
+    const next = [
+      'Decide a project mapping strategy: notion-relation (canonical), title-prefix (degraded), or none.',
+      'Set NOX_PROJECT_MAPPING_MODE + NOX_PROJECTS_DB_ID server-side once chosen.',
+    ];
+    const body = emptyResponse(projectId, summary, next);
+    appendAuditEvent({
+      eventType: 'PROJECT_CONTEXT_READ', route, method, statusCode: 200,
+      outcome: 'success', clientKeyLabel,
+      detailsSummary: `projectId=${projectId} mode=none quests=0`,
+    });
+    return void res.status(200).json(body);
+  }
 
-  const nextSuggestedReadOnlyActions: string[] = projectMappingConfigured
-    ? [
-        'Review open approvals before any execute unlock.',
-        'Triage blockers and refresh their `🤖 Folgeprompt` via the leitstelle.',
-      ]
-    : [
-        'Decide a project mapping strategy: title-prefix, Notion Project field, or separate Projects DB.',
-        'Set NOX_PROJECT_MAPPING_MODE server-side once chosen.',
-      ];
-
+  // title-prefix path.
+  const { quests, openApprovals, blockers, recentEvents } = projectQuests(matchedPages);
   const body: ProjectContextResponse = {
-    project: {
-      projectId,
-      title: projectId,
-      ...(projectMappingConfigured ? {} : { summary: 'No project mapping configured.' }),
-    },
+    project: { projectId, title: projectId },
     quests,
     openApprovals,
     blockers,
     recentEvents,
     artifacts: [],
-    contextSummary,
-    nextSuggestedReadOnlyActions,
-    meta: {
-      skeleton: true,
-      readOnly: true,
-      projectMappingConfigured,
-      liveExecution: 'locked',
-    },
+    contextSummary: summarise(quests, blockers, openApprovals, mode, projectId),
+    nextSuggestedReadOnlyActions: [
+      'Review open approvals before any execute unlock.',
+      'Triage blockers and refresh their `🤖 Folgeprompt` via the leitstelle.',
+      'Switch to NOX_PROJECT_MAPPING_MODE=notion-relation for full coverage.',
+    ],
+    meta: { skeleton: true, readOnly: true, projectMappingConfigured: true, liveExecution: 'locked' },
   };
 
   appendAuditEvent({

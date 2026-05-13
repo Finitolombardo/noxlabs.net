@@ -66,12 +66,18 @@ export function readNotionConfig(): NotionReadonlyStatus {
 export async function queryDatabase(
   token: string,
   dbId: string,
-  body: { page_size?: number; start_cursor?: string; sorts?: unknown[] } = {},
+  body: {
+    page_size?: number;
+    start_cursor?: string;
+    sorts?: unknown[];
+    filter?: unknown;
+  } = {},
 ): Promise<NotionQueryResult> {
   const safeBody = {
     page_size: typeof body.page_size === 'number' ? Math.min(100, Math.max(1, body.page_size)) : 50,
     ...(body.start_cursor ? { start_cursor: body.start_cursor } : {}),
     ...(body.sorts ? { sorts: body.sorts } : {}),
+    ...(body.filter ? { filter: body.filter } : {}),
   };
 
   let resp: Response;
@@ -191,4 +197,106 @@ export function propCheckbox(props: Record<string, unknown>, name: string): bool
   const p = props[name];
   if (!p || typeof p !== 'object') return false;
   return Boolean((p as { checkbox?: unknown }).checkbox);
+}
+
+// `relation`-typed Notion property — returns the list of related page IDs.
+export function propRelationIds(props: Record<string, unknown>, name: string): string[] {
+  const p = props[name];
+  if (!p || typeof p !== 'object') return [];
+  const arr = (p as { relation?: unknown }).relation;
+  if (!Array.isArray(arr)) return [];
+  const out: string[] = [];
+  for (const r of arr) {
+    if (r && typeof r === 'object') {
+      const id = (r as { id?: unknown }).id;
+      if (typeof id === 'string') out.push(id);
+    }
+  }
+  return out;
+}
+
+// `url`-typed Notion property — returns the trimmed URL or empty string.
+export function propUrl(props: Record<string, unknown>, name: string): string {
+  const p = props[name];
+  if (!p || typeof p !== 'object') return '';
+  const u = (p as { url?: unknown }).url;
+  return typeof u === 'string' ? u.trim() : '';
+}
+
+// ---- APP-X-BRIDGE-04c — Notion Project Relation Mapping helpers ----
+
+/**
+ * Look up a project page in the Projects DB by its human-readable
+ * `Project ID` rich_text field. Returns the first match (page_size=5,
+ * defensive against duplicates) or an empty result. No mutation.
+ */
+export async function queryProjectsByProjectId(
+  token: string,
+  projectsDbId: string,
+  projectId: string,
+): Promise<NotionQueryResult> {
+  return queryDatabase(token, projectsDbId, {
+    page_size: 5,
+    filter: {
+      property: 'Project ID',
+      rich_text: { equals: projectId },
+    },
+  });
+}
+
+/**
+ * Filter Master Tasks by the `Project` relation, returning quests linked to
+ * the given project page id. Sorted by last_edited_time descending.
+ */
+export async function queryMasterTasksByProjectRelation(
+  token: string,
+  masterTasksDbId: string,
+  projectPageId: string,
+): Promise<NotionQueryResult> {
+  return queryDatabase(token, masterTasksDbId, {
+    page_size: 100,
+    sorts: [{ timestamp: 'last_edited_time', direction: 'descending' }],
+    filter: {
+      property: 'Project',
+      relation: { contains: projectPageId },
+    },
+  });
+}
+
+/**
+ * Defensive extractor for the `🧭 Projects / System Map` DB. Every field is
+ * optional — Notion schema drift returns empty strings, never throws.
+ */
+export interface ExtractedProject {
+  title: string;
+  projectId: string;
+  status: string;
+  typ: string;
+  priority: string;
+  vision: string;
+  andromedaContext: string;
+  currentState: string;
+  nextAction: string;
+  allowedActions: string;
+  forbiddenActions: string;
+  artifactLinks: string;
+  primaryUrl: string;
+}
+
+export function extractProjectFields(props: Record<string, unknown>): ExtractedProject {
+  return {
+    title: propTitle(props, 'Projekt') || propTitle(props, 'Project') || propTitle(props, 'Name') || propTitle(props, 'Titel'),
+    projectId: propRichText(props, 'Project ID'),
+    status: propSelect(props, 'Status'),
+    typ: propSelect(props, 'Typ'),
+    priority: propSelect(props, 'Priorität') || propSelect(props, 'Priority'),
+    vision: propRichText(props, 'Vision'),
+    andromedaContext: propRichText(props, 'Andromeda Kontext'),
+    currentState: propRichText(props, 'Aktueller Stand'),
+    nextAction: propRichText(props, 'Nächste Aktion'),
+    allowedActions: propRichText(props, 'Erlaubte Aktionen'),
+    forbiddenActions: propRichText(props, 'Verbotene Aktionen'),
+    artifactLinks: propRichText(props, 'Artifact Links'),
+    primaryUrl: propUrl(props, 'Primary URL'),
+  };
 }
