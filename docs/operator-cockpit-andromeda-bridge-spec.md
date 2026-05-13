@@ -615,3 +615,199 @@ GET /api/operator/audit
   Nonce.
 - **Replay-Schutz** auf Idempotency-Keys mit TTL.
 - **Persistente Idempotency-Liste** statt nur In-Memory-Map.
+
+## 13. APP-X-BRIDGE-04a — Notion Read-Only Projection
+
+Neuer Endpoint, der erstmals eine externe Quelle anbindet: die Notion
+Master-Tasks-DB. Strikt **read-only**. Kein Schreiben, kein Anlegen, keine
+Schema-Mutation. Kein Andromeda-Upstream. Keine Uploads.
+
+### Implementiert
+
+- `api/_lib/notion.ts` — minimaler Notion-Read-Only-Adapter (nur global
+  `fetch`, keine neue Dependency)
+- `api/_lib/types.ts` — `ProjectContextResponse` + Unterstuetzungstypen
+- `api/operator/projects/[projectId]/context.ts` — neuer Endpoint
+- `api/_lib/audit.ts` — neue Event-Typen `PROJECT_CONTEXT_*`
+
+### Endpunkt
+
+```
+GET /api/operator/projects/:projectId/context
+```
+
+Pipeline je Request:
+
+1. **Rate Limit** (BRIDGE-03)
+2. **Auth Gate** (BRIDGE-02, `NOX_OPERATOR_API_KEY`)
+3. **Method allowlist** (`GET`)
+4. **projectId-Validierung** (Regex `[A-Za-z0-9._-]{1,64}`)
+5. **Notion Read-Only** via `NOX_NOTION_READONLY_TOKEN` + `NOX_MASTER_TASKS_DB_ID`
+
+### Server-Konfiguration
+
+| Env Var                       | Pflicht | Beschreibung                                            |
+| ----------------------------- | ------- | ------------------------------------------------------- |
+| `NOX_OPERATOR_API_KEY`        | ja      | Auth-Gate (BRIDGE-02). Ohne Wert → 503.                 |
+| `NOX_NOTION_READONLY_TOKEN`   | ja      | Notion-Integration mit **read-only**-Scope. Server-side only. |
+| `NOX_MASTER_TASKS_DB_ID`      | ja      | Database-ID der Master Tasks.                           |
+| `NOX_PROJECT_MAPPING_MODE`    | nein    | `none` (Default) oder `title-prefix`. Siehe Section 14. |
+
+Der Notion-Token wird ausschliesslich im `Authorization: Bearer`-Header an
+`https://api.notion.com/v1/...` gesendet, niemals an den Client zurueckgegeben
+und nie in Audit-Eintraegen geloggt.
+
+### Read-Only-Semantik
+
+Notion verlangt fuer Database-Queries technisch `POST /v1/databases/{id}/query`.
+Diese Operation ist **read-only**: sie liefert Zeilen, mutiert nichts. Der
+Adapter implementiert ausschliesslich diesen einen Endpunkt — keine `PATCH`,
+keine Page-Updates, kein Block-Append, keine Schema-Mutation.
+
+Optionales spaeteres Lesen einzelner Seiten (`GET /v1/pages/{id}`) bleibt im
+gleichen Modul gekapselt und gilt ebenfalls read-only.
+
+### Response-Format
+
+`ProjectContextResponse` (siehe `api/_lib/types.ts`):
+
+```json
+{
+  "project": { "projectId": "...", "title": "...", "summary": "..." },
+  "quests":      [],
+  "openApprovals": [],
+  "blockers":      [],
+  "recentEvents":  [],
+  "artifacts":     [],
+  "contextSummary": "...",
+  "nextSuggestedReadOnlyActions": [],
+  "meta": { "skeleton": true, "readOnly": true, "projectMappingConfigured": false, "liveExecution": "locked" }
+}
+```
+
+### Verhalten bei fehlender Konfiguration
+
+| Bedingung                                   | Antwort                                                     |
+| ------------------------------------------- | ----------------------------------------------------------- |
+| `NOX_OPERATOR_API_KEY` fehlt                | 503 `service_unavailable` (BRIDGE-02 Verhalten)             |
+| `NOX_NOTION_READONLY_TOKEN` oder DB-ID fehlt | 503 `notion_not_configured`                                 |
+| projectId-Param invalid                     | 400 `bad_request` mit erlaubter Regex                       |
+| Notion API-Fehler                           | 502 `notion_upstream_error` (ohne Token/Body-Leak)          |
+| Mapping `none`                              | 200 mit leerem `quests`/`blockers`/... + erklaerendem Summary |
+
+### Audit-Events
+
+Neue `AuditEventType`-Werte:
+
+- `PROJECT_CONTEXT_READ_ATTEMPT`
+- `PROJECT_CONTEXT_READ`
+- `PROJECT_CONTEXT_NOT_CONFIGURED`
+- `PROJECT_CONTEXT_VALIDATION_FAILED`
+- `PROJECT_CONTEXT_UPSTREAM_FAILED`
+
+### Sicherheitsgrenzen
+
+- Kein Schreibzugriff auf Notion (kein PATCH, kein POST ausser dem
+  read-only Query-Endpoint, kein Block-Append).
+- Kein Andromeda/n8n-Aufruf.
+- Kein Telegram-Send.
+- Token wird je Request aus `process.env` gelesen — kein Modul-State.
+- Notion-Body-Errors landen nicht im Response-Body — nur ein kurzer Code.
+- `projectId` ist Regex-validiert vor jedem Echo in JSON.
+
+### Nicht-Ziele
+
+- Keine Notion-Schreibzugriffe (auch nicht „nur Status").
+- Kein Andromeda-Trigger.
+- Kein Cockpit-Frontend-Connect (eigene Quest BRIDGE-05).
+- Kein Caching-Layer (eigene Quest, sobald Lasttests es rechtfertigen).
+- Keine Cursor-Pagination (eine Page mit 100 Tasks reicht im MVP).
+
+### Vor echter Integration weiterhin noetig
+
+- **Eigene read-only Notion-Integration** mit minimalem DB-Scope
+  (separat vom Bridge-/Worker-Write-Token).
+- **Cache-Layer** (ETag, TTL ≥ 30 s) sobald mehrere Operator-Sessions
+  gleichzeitig denselben Project-Context abfragen.
+- **Pagination** sobald Master Tasks > 100 aktive Eintraege hat.
+- **Cockpit-Frontend-Hook**: liest diesen Endpoint serverseitig (Next/Vercel
+  serverless oder dedizierter Frontend-Loader), niemals direkt im Browser.
+
+## 14. ReferenceArtifact Contract + Open Project Mapping Decision
+
+### ReferenceArtifact (definiert, **nicht implementiert**)
+
+`ReferenceArtifact` ist die geteilte Struktur, mit der Andromeda und APP-X
+spaeter visuelle/dokumentarische Referenzen an Commands, Quests oder
+ganze Projekte anhaengen. Aktuell **nur als Type** in `api/_lib/types.ts` —
+keine Storage-Logik, keine Upload-Pipeline, keine Ingestion.
+
+Felder (TypeScript):
+
+```ts
+interface ReferenceArtifact {
+  artifactId: string;
+  projectId: string;
+  commandId?: string;
+  questId?: string;
+
+  sourceType: 'upload' | 'notion' | 'drive' | 'miro'
+            | 'excalidraw' | 'url' | 'screenshot' | 'file';
+
+  mimeType: string;
+  storageRef: string;       // URL or logical ref: 'notion:<page>/<block>', 'drive:<fileId>'
+  checksum?: string;        // sha256 — de-dupe + integrity
+  sizeBytes?: number;
+
+  title: string;
+  summary: string;
+  usageHint: string;        // 'design-reference' | 'ui-screenshot' | 'spec' | 'inspiration'
+
+  createdBy: string;
+  createdAt: string;
+  expiresAt?: string;       // Drive/Miro/sharing-link TTL
+
+  visibility: 'private' | 'team' | 'project';   // default: 'private'
+  ingestionStatus: 'pending' | 'indexed' | 'failed' | 'skipped';
+
+  // Ingestion outputs (filled by downstream worker, never by APP-X):
+  extractedText?: string;
+  imageSummary?: string;
+  safetyNotes?: string;
+}
+```
+
+Bewusst **nicht** Teil dieser Quest:
+
+- Datei-Upload (kein Storage angefasst — kein S3, R2, Blob, Drive).
+- OAuth zu Drive / Miro / Excalidraw.
+- OCR / VLM / Transkription — Ingestion ist Downstream.
+- Speicherung im Cockpit-Backend — Persistenzschicht fehlt noch.
+
+`artifacts: ReferenceArtifact[]` ist im `ProjectContextResponse` bereits als
+leeres Array enthalten, damit Frontends gegen den finalen Vertrag bauen
+koennen, ohne dass APP-X heute schon Artefakte liefert.
+
+### Open Project Mapping Decision
+
+Master Tasks ist heute flach — kein `Project`-Feld, keine Projects-DB. Drei
+moegliche Strategien fuer die Zuordnung Quest → Projekt:
+
+1. **`title-prefix`** *(default-faehig, kein Notion-Schema-Touch)*
+   Quest-Titel beginnt mit `[projectId] …` oder `projectId: …`. Aktuell
+   per `NOX_PROJECT_MAPPING_MODE=title-prefix` aktivierbar.
+   Vorteil: Null-Migration. Nachteil: brueckig (Tippfehler im Titel
+   == verlorene Zuordnung).
+
+2. **Notion `Project`-Multi-Select**
+   Neues Feld auf Master Tasks. Sauberer, erlaubt mehrere Projekte je Quest.
+   Erfordert Notion-DB-Schema-Aenderung (manuell, **nicht** durch APP-X).
+
+3. **Separate Projects-DB** *(sauberste Loesung, hoechste Investition)*
+   Eigene DB mit Relation zu Master Tasks. Erlaubt Projekt-Metadaten,
+   Status, Owner, Lifecycle. Operator-Entscheid noetig.
+
+Default in APP-X-BRIDGE-04a: **`none`** — keine Mapping-Annahmen, leere
+Quest-Liste, klarer Hinweis im `contextSummary`. So vermeidet der Endpoint
+„fantasierte" Projekt-Zuordnungen, bis der Operator eine Strategie wahrgewaehlt
+hat.

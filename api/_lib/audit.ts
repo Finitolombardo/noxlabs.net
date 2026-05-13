@@ -30,7 +30,12 @@ export type AuditEventType =
   | 'RATE_LIMITED'
   | 'VALIDATION_FAILED'
   | 'NOT_FOUND'
-  | 'AUDIT_LIST';
+  | 'AUDIT_LIST'
+  | 'PROJECT_CONTEXT_READ_ATTEMPT'
+  | 'PROJECT_CONTEXT_READ'
+  | 'PROJECT_CONTEXT_NOT_CONFIGURED'
+  | 'PROJECT_CONTEXT_VALIDATION_FAILED'
+  | 'PROJECT_CONTEXT_UPSTREAM_FAILED';
 
 export type AuditOutcome = 'success' | 'attempt' | 'blocked' | 'failure';
 
