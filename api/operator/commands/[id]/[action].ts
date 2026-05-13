@@ -5,11 +5,13 @@
 
 import type { ApiHandler } from '../../../_lib/handler';
 import { badRequest, locked, methodAllowed, notFound, readBodyAsObject, readQueryString, sendError } from '../../../_lib/handler';
+import { requireOperatorAuth } from '../../../_lib/auth';
 import { isAllowedAction, optionalIdempotencyKey, requireString } from '../../../_lib/validation';
 import { getCommand, nextAuditId, saveCommand } from '../../../_lib/store';
 import type { CommandAction, DryRunResult, OperatorCommand } from '../../../_lib/types';
 
 const handler: ApiHandler = async (req, res) => {
+  if (!requireOperatorAuth(req, res)) return;
   if (!methodAllowed(req, res, ['POST'])) return;
 
   const id = readQueryString(req, 'id');

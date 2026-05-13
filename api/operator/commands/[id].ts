@@ -3,9 +3,11 @@
 
 import type { ApiHandler } from '../../_lib/handler';
 import { methodAllowed, notFound, readQueryString } from '../../_lib/handler';
+import { requireOperatorAuth } from '../../_lib/auth';
 import { getCommand } from '../../_lib/store';
 
 const handler: ApiHandler = async (req, res) => {
+  if (!requireOperatorAuth(req, res)) return;
   if (!methodAllowed(req, res, ['GET'])) return;
 
   const id = readQueryString(req, 'id');

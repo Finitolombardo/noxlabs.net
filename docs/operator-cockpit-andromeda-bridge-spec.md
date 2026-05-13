@@ -458,3 +458,62 @@ api/
 - Live-Calls aus dem Cockpit: weiterhin deaktiviert.
 - OperatorCockpit-Frontend: unveraendert auf lokalem Demo-State (kein `fetch`-Call zu `/api/operator/commands`).
 - Naechster Schritt waere Phase 2: read-only `GET /api/operator/commands` aus dem Cockpit lesen, immer noch keine Mutation.
+
+## 11. APP-X-BRIDGE-02 — Auth Gate fuer Operator API
+
+Status: Server-seitiges Auth-Gate vor jedem `/api/operator/*` Endpunkt.
+Frontend unveraendert. Kein User-Login, kein Session-Layer, kein OAuth.
+Reines Bootstrap-Gate, das die Stub-Endpunkte inert haelt, solange der Operator das Secret serverseitig nicht setzt.
+
+### Verhalten
+
+| Bedingung                                         | Antwort                                                                                                                          |
+|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `NOX_OPERATOR_API_KEY` nicht gesetzt oder leer    | **503 service_unavailable** mit Message `Operator API is not configured. Set NOX_OPERATOR_API_KEY server-side.`                  |
+| Header fehlt oder Wert stimmt nicht               | **401 unauthorized** mit Message `Unauthorized operator API request.`                                                            |
+| Header korrekt                                    | Request laeuft weiter (Method-/Body-Validierung wie zuvor)                                                                       |
+
+### Akzeptierte Header
+
+- `x-nox-operator-key: <secret>` (bevorzugt)
+- `Authorization: Bearer <secret>` (Fallback)
+
+### Server-Konfiguration
+
+- Env-Variable: `NOX_OPERATOR_API_KEY`
+- Kein `VITE_`-Prefix (sonst wuerde Vite den Wert ins Frontend-Bundle inlinen)
+- Wird ausschliesslich in `api/_lib/auth.ts` gelesen
+- Vergleich in konstanter Zeit (`constantTimeEqual`) gegen den praesentierten Wert
+- `.env.example` zeigt nur einen leeren Placeholder
+
+### Sicherheitsgrenzen
+
+- Secret wird nie in Response-Body, Logs oder Error-Details ausgeschrieben
+- Kein Lookup auf den Wert ausserhalb von `auth.ts`
+- 503 vor 401: ohne konfigurierten Server-State entstehen keine `401`-Probes, die einen Brute-Force-Versuch begruenden koennten
+- Konstantzeit-Vergleich verhindert Timing-Leaks der Schluessellaenge
+- Auth-Check wird vor Method-Check ausgefuehrt, damit unautorisierte Clients nicht einmal die `Allow`-Liste lernen
+
+### Geschuetzte Endpunkte
+
+- `GET  /api/operator/commands`
+- `POST /api/operator/commands`
+- `GET  /api/operator/commands/:id`
+- `POST /api/operator/commands/:id/:action` (alle 5 Actions, inkl. `execute` -> bleibt zusaetzlich 423)
+
+### Was Auth Gate **nicht** ist
+
+- **Kein User-Login**: ein einziger gemeinsamer Schluessel ist keine Operator-Identitaet.
+- **Kein Session-Management**: kein Refresh, kein Logout, kein Replay-Schutz.
+- **Kein Rate-Limit**: 100 Requests/Sekunde rauschen ungehemmt durch.
+- **Kein Audit pro Identitaet**: alle erfolgreichen Requests sehen serverseitig gleich aus.
+
+### Vor echter Integration weiterhin noetig
+
+- User/Session-Auth (Vercel OIDC, Supabase Auth, oder mind. Cloudflare-Access vor der Route)
+- Rate Limits pro Identitaet (Upstash, Vercel KV) inkl. Burst-Limit
+- Persistenz-Layer fuer Commands + Audit Log
+- HMAC-Signatur Backend Proxy <-> Andromeda Upstream
+- Andromeda-Upstream-Allowlist + getrennte Env-Variable `ANDROMEDA_DISPATCH_URL`
+- Replay-Schutz via Timestamp + Nonce auf jedem Upstream-Call
+- `execute`-Unlock nur durch explizite Server-Config UND vorhandene Freigabe UND HMAC-Verifikation

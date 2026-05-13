@@ -3,6 +3,7 @@
 
 import type { ApiHandler } from '../_lib/handler';
 import { badRequest, methodAllowed, readBodyAsObject } from '../_lib/handler';
+import { requireOperatorAuth } from '../_lib/auth';
 import {
   isAllowedCommandType,
   isAllowedRiskLevel,
@@ -15,6 +16,7 @@ import type { OperatorCommand, RiskLevel } from '../_lib/types';
 import { listCommands, nextAuditId, nextCommandId, saveCommand } from '../_lib/store';
 
 const handler: ApiHandler = async (req, res) => {
+  if (!requireOperatorAuth(req, res)) return;
   if (!methodAllowed(req, res, ['GET', 'POST'])) return;
 
   if (req.method === 'GET') {
