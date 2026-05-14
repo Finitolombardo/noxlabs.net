@@ -1014,3 +1014,98 @@ Secret).
 - Echte Env-Aktivierung (`NOX_OPERATOR_API_KEY` + Notion-Env) in Vercel
   Production — separat, nicht Teil dieser Quest.
 - Cache-Layer mit ETag/TTL kommt erst mit Cockpit-Frontend-Polling.
+
+## 17. APP-X-BRIDGE-04e — Safe Notion Upstream Diagnostics
+
+### Problem
+
+Vor 04e antwortete `/api/operator/projects/:projectId/context` bei jedem
+Notion-Read-Fehler mit einem generischen `502 notion_upstream_error`. Welcher
+Read fehlschlug (Projects DB Lookup, Master Tasks Relation Query oder
+Master Tasks Flat Query) und welcher Notion-Code/Message dahintersteckte,
+war fuer den Operator unsichtbar. Der Audit-Ringpuffer ist in-memory und
+verliert die Spur bei Cold-Start oder Function-Instanz-Wechsel — Production
+Runtime Logs zeigen nur Statuscode + Pfad. Diagnose erforderte lokale
+Reproduktion mit Live-Token. Genau das soll 04e wegnehmen.
+
+### Scope
+
+Nur Diagnose-Sichtbarkeit. Kein Verhaltenswechsel, keine neue Notion-Call,
+keine Notion-Writes, keine Schema-Aenderung an der Erfolgs-Response, keine
+neue Dependency.
+
+### Mechanik
+
+1. **Adapter-Schicht** (`api/_lib/notion.ts`) liest bei `!resp.ok` den
+   Notion-Response-Body sanitised (`UPSTREAM_MESSAGE_MAX=300`,
+   `UPSTREAM_CODE_MAX=80`), versucht JSON.parse, und extrahiert nur `code`
+   + `message` aus Notions eigenem Error-Envelope (`{object:"error", code,
+   message, request_id}`). Schlaegt der Parse fehl, bleiben die Felder
+   `undefined`. Der Body wird nie verbatim weitergegeben.
+2. **NotionQueryResult.error** erhaelt drei optionale Felder:
+   `upstreamStatus`, `upstreamCode`, `upstreamMessage`.
+3. **Context-Handler** mappt jeden Failure-Pfad auf einen `step` und ruft
+   `notionUpstream502(res, step, failure)`:
+
+| Schritt                          | step-Wert                        |
+| -------------------------------- | -------------------------------- |
+| `queryProjectsByProjectId`       | `projects_lookup`                |
+| `queryMasterTasksByProjectRelation` | `master_tasks_relation_query` |
+| Flat-Query (title-prefix mode)   | `master_tasks_query`             |
+
+### Antwort-Format
+
+Authenticated-only (hinter `NOX_OPERATOR_API_KEY` + Rate-Limit + Method-Gate):
+
+```json
+{
+  "error": "notion_upstream_error",
+  "message": "Notion read-only query failed.",
+  "diagnostic": {
+    "step": "projects_lookup",
+    "upstreamStatus": 404,
+    "upstreamCode": "object_not_found",
+    "upstreamMessage": "Could not find database with ID: ..."
+  }
+}
+```
+
+Felder `upstreamStatus`, `upstreamCode`, `upstreamMessage` sind individuell
+optional. Wenn Notion keinen JSON-Body schickt (z.B. Netzwerk-Abort durch
+`AbortController`-Timeout aus 04d), erscheint nur `step` plus optional
+`upstreamStatus` aus `resp.status`.
+
+### Secret-Leak-Schutz (Invarianten)
+
+- Adapter liest **nur** `resp.text()` und Notions JSON-Envelope. Authorization-
+  Header, Bearer-Token, Request-Body, DB-IDs, Env-Werte werden **niemals**
+  in den Diagnostic-Block kopiert.
+- `upstreamMessage` ist auf 300 Zeichen, `upstreamCode` auf 80 Zeichen
+  begrenzt. Notion-Error-Messages sind kurz und enthalten weder Token
+  noch Header.
+- Der Diagnose-Block erscheint nur in Antworten, die das Auth-Gate
+  passiert haben — kein Public-Surface.
+- Audit-Log fasst dieselben Felder im `detailsSummary` zusammen
+  (`projects_lookup: notion query returned HTTP 404 object_not_found`)
+  und bleibt damit konsistent.
+
+### Was 04e nicht macht
+
+- Keine Persistenz fuer das Audit-Log (das bleibt Vercel-Cold-Start-fluechtig).
+  Persistenz ist eigenes Quest-Scope (KV/Upstash).
+- Kein Behavioural Change in Success-Pfaden — `ProjectContextResponse`
+  unveraendert.
+- Keine zusaetzliche Notion-API-Verb-Surface. Weiterhin nur
+  `POST /v1/databases/{id}/query`.
+- Kein Telegram, kein Andromeda, kein Execute-Unlock.
+
+### Erwartete Diagnose-Use-Cases
+
+| Symptom in Production       | Diagnostic-Output                                           | Wahrscheinliche Ursache                                |
+| --------------------------- | ----------------------------------------------------------- | ------------------------------------------------------ |
+| `step=projects_lookup` 404  | `object_not_found`, "Could not find database..."            | Integration fehlt auf Projects DB Connection-Liste     |
+| `step=projects_lookup` 401  | `unauthorized`                                              | `NOX_NOTION_READONLY_TOKEN` ungueltig oder rotiert     |
+| `step=projects_lookup` 400  | `validation_error`, "property Project ID is not a rich_text"| Property `Project ID` umbenannt oder Typ geaendert     |
+| `step=master_tasks_relation_query` 400 | `validation_error`, "Project is not a relation property" | Property `Project` in Master Tasks geaendert         |
+| `step=master_tasks_relation_query` 404 | `object_not_found`                                   | Integration fehlt auf Master Tasks Connection-Liste    |
+| upstreamMessage `notion_timeout after Xms` | (kein upstreamStatus)                            | Notion lahm, AbortController hat zugeschlagen          |

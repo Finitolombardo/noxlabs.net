@@ -93,6 +93,23 @@ export interface ApiErrorBody {
   error: string;
   message: string;
   details?: unknown;
+  // APP-X-BRIDGE-04e — authenticated-only Notion upstream diagnostic.
+  // Populated only on 502 `notion_upstream_error` after the auth gate.
+  // All fields are sanitized at the adapter layer (no header, no token,
+  // no request body, no env value); `upstreamMessage` capped at 300 chars.
+  diagnostic?: NotionUpstreamDiagnostic;
+}
+
+export type NotionUpstreamStep =
+  | 'projects_lookup'
+  | 'master_tasks_relation_query'
+  | 'master_tasks_query';
+
+export interface NotionUpstreamDiagnostic {
+  step: NotionUpstreamStep;
+  upstreamStatus?: number;
+  upstreamCode?: string;
+  upstreamMessage?: string;
 }
 
 // APP-X-BRIDGE-04a — ReferenceArtifact contract (skeleton only).
