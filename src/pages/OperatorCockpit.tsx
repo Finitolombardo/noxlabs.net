@@ -6,6 +6,23 @@ import type {
   NotionUpstreamDiagnostic,
   ProjectContextResponse,
 } from '../types/operatorContext';
+import {
+  FACTORY_APPROVAL,
+  FACTORY_DRIVE_FILES,
+  FACTORY_DRY_RUNS,
+  FACTORY_LEADGEN_SETUP_FIELDS,
+  FACTORY_MODULES,
+  FACTORY_PITCH_EXPERIMENT,
+  FACTORY_WORKFLOWS,
+} from '../data/projectXFactoryDemo';
+import type {
+  FactoryDriveFile,
+  FactoryDryRun,
+  FactoryModuleEntry,
+  FactoryPitchVariant,
+  FactorySetupField,
+  FactoryWorkflowEntry,
+} from '../data/projectXFactoryDemo';
 
 type Project = {
   id: string;
@@ -2454,6 +2471,448 @@ function ProjectXSummary({ commands }: { commands: AndromedaCommand[] }) {
   );
 }
 
+// PROJECT-X-UI-02 — Workflow-Fabrik demo section.
+//
+// Mounted from `ProjectsDeepDive` only when the picked project is
+// PROJECT-X. All data is mock (from `src/data/projectXFactoryDemo.ts`).
+// No fetches, no Notion/Drive/n8n calls, no mutation handlers.
+// Operator-facing buttons (approve / promote / save setup) are `disabled`
+// so the section visually communicates Phase 1 ("UI/IA only") without
+// allowing accidental writes.
+function WorkflowFactorySection() {
+  const totalWorkflows = FACTORY_WORKFLOWS.length;
+  const totalModules = FACTORY_MODULES.length;
+  const runningExperiments = 1; // single demo experiment in Phase 1
+  const lockedApprovals = 1;    // single demo approval card
+
+  return (
+    <div className="space-y-5">
+      {/* Section header */}
+      <Card className="!p-5 md:!p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/85">Project X</div>
+            <h2 className="mt-1 text-2xl font-black leading-tight text-[#fff7fb] md:text-3xl">Workflow-Fabrik</h2>
+            <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#eadbe2]">
+              Workflows analysieren, modularisieren, testen und als verkaufbare Automation-Produkte weiterentwickeln.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill tone="gold">Demo / read-only</Pill>
+            <Pill tone="red">execute locked</Pill>
+            <Pill>Phase 1</Pill>
+          </div>
+        </div>
+
+        {/* KPI tiles row. */}
+        <div className="mt-5 grid grid-cols-2 gap-2 lg:grid-cols-4">
+          <FactoryKpiTile label="Demo Workflows" value={String(totalWorkflows)} tone="gold" />
+          <FactoryKpiTile label="Product Modules" value={String(totalModules)} />
+          <FactoryKpiTile label="Running Experiments" value={String(runningExperiments)} tone="gold" />
+          <FactoryKpiTile label="Locked Approvals" value={String(lockedApprovals)} tone="red" />
+        </div>
+      </Card>
+
+      {/* A — Workflow Catalog */}
+      <FactoryWorkflowCatalog />
+
+      {/* B — Product Modules / AI-Systeme */}
+      <FactoryModuleRegistry />
+
+      {/* C — PitchMutation Experiments */}
+      <FactoryPitchExperimentCard />
+
+      {/* D — Customer Setup Wizard */}
+      <FactoryCustomerSetupWizard />
+
+      {/* E — Drive / ReferenceArtifact Intake */}
+      <FactoryDriveIntake />
+
+      {/* F — Dry Runs */}
+      <FactoryDryRuns />
+
+      {/* G — Approval Gate */}
+      <FactoryApprovalGate />
+    </div>
+  );
+}
+
+function FactoryKpiTile({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'gold' | 'red' }) {
+  const ring =
+    tone === 'red'
+      ? 'border-red-500/35 bg-red-500/8 text-red-100'
+      : tone === 'gold'
+        ? 'border-amber-300/30 bg-amber-300/8 text-amber-50'
+        : 'border-[#4a101b]/55 bg-[#0c0507]/55 text-[#eadbe2]';
+  return (
+    <div className={cx('rounded-xl border px-3 py-2.5', ring)}>
+      <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] opacity-80">{label}</div>
+      <div className="mt-0.5 text-xl font-black leading-tight">{value}</div>
+    </div>
+  );
+}
+
+// ---- A) Workflow Catalog -----------------------------------------------------
+
+function FactoryWorkflowCatalog() {
+  return (
+    <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Workflow Catalog</div>
+          <div className="mt-0.5 text-[13px] font-bold text-[#eadbe2]">
+            Inventar der n8n-Workflows · {FACTORY_WORKFLOWS.length} Demo-Einträge
+          </div>
+        </div>
+        <Pill tone="gold">read-only</Pill>
+      </div>
+      <ul className="mt-3 divide-y divide-[#4a101b]/35">
+        {FACTORY_WORKFLOWS.map((wf) => (
+          <FactoryWorkflowRow key={wf.workflowId} wf={wf} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function FactoryWorkflowRow({ wf }: { wf: FactoryWorkflowEntry }) {
+  const driftTone: 'default' | 'gold' | 'red' =
+    wf.driftStatus === 'synced' ? 'gold' : wf.driftStatus === 'needs-review' ? 'red' : 'default';
+  const activityLabel = wf.activity === 'active' ? 'active' : wf.activity === 'inactive' ? 'inactive' : 'mock';
+  return (
+    <li className="py-3 first:pt-0 last:pb-0">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[13px] font-black leading-snug text-[#fff7fb]">{wf.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9f8d95]">
+            <span>{wf.workflowId}</span>
+            <span>{wf.productModule}</span>
+            <span>{wf.nodeCount} Nodes</span>
+            <span>{wf.lastCheckedLabel}</span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Pill>{activityLabel}</Pill>
+          <Pill tone={wf.riskLevel === 'Hoch' ? 'red' : wf.riskLevel === 'Mittel' ? 'gold' : 'default'}>
+            risk: {wf.riskLevel.toLowerCase()}
+          </Pill>
+          <Pill tone={driftTone}>{wf.driftStatus}</Pill>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+// ---- B) Product Modules / AI-Systeme -----------------------------------------
+
+function FactoryModuleRegistry() {
+  return (
+    <div className="rounded-2xl border border-amber-300/22 bg-[#120609]/55 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200/80">AI-Systeme · Product Modules</div>
+          <div className="mt-0.5 text-[13px] font-bold text-[#eadbe2]">
+            Module-Registry · {FACTORY_MODULES.length} Demo-Einträge
+          </div>
+        </div>
+        <Pill tone="gold">read-only</Pill>
+      </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {FACTORY_MODULES.map((mod) => (
+          <FactoryModuleCard key={mod.moduleId} mod={mod} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FactoryModuleCard({ mod }: { mod: FactoryModuleEntry }) {
+  const statusTone: 'default' | 'gold' | 'red' =
+    mod.status === 'sellable' ? 'gold' : mod.status === 'validated' ? 'gold' : mod.status === 'prototype' ? 'default' : 'default';
+  return (
+    <div className="rounded-2xl border border-[#4a101b]/45 bg-[#0c0507]/60 p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate text-[13px] font-black text-[#fff7fb]">{mod.name}</div>
+          <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">{mod.moduleId}</div>
+        </div>
+        <Pill tone={statusTone}>{mod.status}</Pill>
+      </div>
+      <p className="mt-2 text-[12px] font-semibold leading-5 text-[#eadbe2]">{mod.valueProposition}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9f8d95]">
+        <span>Inputs {mod.requiredInputsCount}</span>
+        <span>Setup {mod.setupFieldsCount}</span>
+        <span>Templates {mod.linkedTemplatesCount}</span>
+        <span>risk: {mod.riskLevel.toLowerCase()}</span>
+      </div>
+    </div>
+  );
+}
+
+// ---- C) PitchMutation Experiments --------------------------------------------
+
+function FactoryPitchExperimentCard() {
+  const exp = FACTORY_PITCH_EXPERIMENT;
+  const winner = exp.variants.find((v) => v.variantId === exp.winnerCandidateId);
+  return (
+    <div className="rounded-2xl border border-amber-300/25 bg-[#120609]/65 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200/85">PitchMutation Experiment</div>
+          <h3 className="mt-1 text-lg font-black leading-tight text-[#fff7fb]">{exp.title}</h3>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9f8d95]">
+            <span>{exp.templateId}</span>
+            <span>slot: {exp.slot}</span>
+            <span>primary: {exp.primaryMetric}</span>
+            <span>min n: {exp.minimumSampleSize}</span>
+            <span>{exp.startedLabel}</span>
+          </div>
+        </div>
+        {winner ? <Pill tone="gold">Winner-Candidate: {winner.label.split(' — ')[0]}</Pill> : null}
+      </div>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-3">
+        {exp.variants.map((variant) => (
+          <FactoryPitchVariantCard
+            key={variant.variantId}
+            variant={variant}
+            isWinnerCandidate={variant.variantId === exp.winnerCandidateId}
+          />
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300/25 bg-[#0c0507]/60 p-3">
+        <p className="text-[12px] font-semibold leading-5 text-[#eadbe2]">
+          Promotion zur neuen Default-Variante nur mit Operator-Freigabe.
+        </p>
+        <Button tone="gold" disabled>
+          Als Gewinner übernehmen — locked
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function FactoryPitchVariantCard({ variant, isWinnerCandidate }: { variant: FactoryPitchVariant; isWinnerCandidate: boolean }) {
+  const border = isWinnerCandidate ? 'border-amber-300/55 bg-amber-300/8' : 'border-[#4a101b]/55 bg-[#0c0507]/60';
+  return (
+    <div className={cx('rounded-2xl border p-3', border)}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[13px] font-black leading-snug text-[#fff7fb]">{variant.label}</div>
+          <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">{variant.hookKind}</div>
+        </div>
+        <Pill tone={variant.status === 'winner-candidate' ? 'gold' : 'default'}>{variant.status}</Pill>
+      </div>
+      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-semibold leading-5 text-[#eadbe2]">
+        <dt className="text-[#9f8d95]">sample</dt><dd className="text-right">{variant.sampleSize}</dd>
+        <dt className="text-[#9f8d95]">reply %</dt><dd className="text-right">{variant.replyRatePct.toFixed(1)}</dd>
+        <dt className="text-[#9f8d95]">pos. reply %</dt><dd className="text-right">{variant.positiveReplyRatePct.toFixed(1)}</dd>
+        <dt className="text-[#9f8d95]">booked calls</dt><dd className="text-right">{variant.bookedCalls}</dd>
+        <dt className="text-[#9f8d95]">bounce/spam %</dt><dd className="text-right">{variant.bounceOrSpamPct.toFixed(1)}</dd>
+        <dt className="text-[#9f8d95]">CPL €</dt><dd className="text-right">{variant.costPerQualifiedLead}</dd>
+        <dt className="text-[#9f8d95]">time-to-reply h</dt><dd className="text-right">{variant.timeToFirstReplyHours.toFixed(1)}</dd>
+      </dl>
+    </div>
+  );
+}
+
+// ---- D) Customer Setup Wizard ------------------------------------------------
+
+function FactoryCustomerSetupWizard() {
+  return (
+    <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/60 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Customer Setup Wizard</div>
+          <div className="mt-0.5 text-[13px] font-bold text-[#eadbe2]">Demo: Leadgen Template</div>
+        </div>
+        <Pill>Demo / disabled</Pill>
+      </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {FACTORY_LEADGEN_SETUP_FIELDS.map((field) => (
+          <FactorySetupFieldRow key={field.key} field={field} />
+        ))}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#4a101b]/55 bg-[#120609]/60 p-3">
+        <p className="text-[12px] font-semibold leading-5 text-[#9f8d95]">
+          Setup-Felder sind read-only Demo. Credentials werden später als Server-Refs aufgelöst, nie im Frontend.
+        </p>
+        <Button tone="gold" disabled>
+          Workflow-Instanz vorbereiten — locked
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function FactorySetupFieldRow({ field }: { field: FactorySetupField }) {
+  return (
+    <div>
+      <FieldLabel>
+        {field.label}
+        {field.required ? <span className="ml-1 text-red-300">*</span> : null}
+        <span className="ml-2 text-[9px] font-bold uppercase tracking-[0.2em] text-[#9f8d95]">{field.kind}</span>
+      </FieldLabel>
+      <input
+        type="text"
+        value=""
+        readOnly
+        disabled
+        placeholder={field.placeholder}
+        className="w-full cursor-not-allowed rounded-2xl border border-[#4a101b]/45 bg-[#0a0405]/70 px-4 py-2.5 text-sm font-bold tracking-wide text-[#9f8d95] opacity-70 outline-none"
+      />
+      {field.helpText ? (
+        <p className="mt-1 text-[10px] font-semibold leading-4 text-[#9f8d95]/80">{field.helpText}</p>
+      ) : null}
+    </div>
+  );
+}
+
+// ---- E) Drive / ReferenceArtifact Intake ------------------------------------
+
+function FactoryDriveIntake() {
+  return (
+    <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/60 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Drive / ReferenceArtifact Intake</div>
+          <div className="mt-0.5 text-[13px] font-bold text-[#eadbe2]">{FACTORY_DRIVE_FILES.length} Demo-Dateien</div>
+        </div>
+        <Pill>Phase ≥ 7</Pill>
+      </div>
+      <ul className="mt-3 divide-y divide-[#4a101b]/35">
+        {FACTORY_DRIVE_FILES.map((file) => (
+          <FactoryDriveRow key={file.refName} file={file} />
+        ))}
+      </ul>
+      <p className="mt-3 text-[12px] font-semibold leading-5 text-[#9f8d95]">
+        Drive/ReferenceArtifact Intake ist später server-side. Keine Browser-OAuth, keine Secrets im Frontend.
+      </p>
+    </div>
+  );
+}
+
+function FactoryDriveRow({ file }: { file: FactoryDriveFile }) {
+  const statusTone: 'default' | 'gold' | 'red' =
+    file.status === 'extracted' ? 'gold' : file.status === 'failed' ? 'red' : 'default';
+  return (
+    <li className="py-3 first:pt-0 last:pb-0">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[13px] font-black leading-snug text-[#fff7fb]">{file.refName}</div>
+          {file.summaryHint ? (
+            <div className="mt-1 text-[11px] font-semibold leading-5 text-[#eadbe2]">{file.summaryHint}</div>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Pill>{file.kind}</Pill>
+          <Pill tone={statusTone}>{file.status}</Pill>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+// ---- F) Dry Runs -------------------------------------------------------------
+
+function FactoryDryRuns() {
+  return (
+    <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/60 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Dry Runs</div>
+          <div className="mt-0.5 text-[13px] font-bold text-[#eadbe2]">{FACTORY_DRY_RUNS.length} Demo-Ergebnisse</div>
+        </div>
+        <Pill>read-only</Pill>
+      </div>
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        {FACTORY_DRY_RUNS.map((dr) => (
+          <FactoryDryRunCard key={dr.draftId} dr={dr} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FactoryDryRunCard({ dr }: { dr: FactoryDryRun }) {
+  const tone: 'gold' | 'red' = dr.passed ? 'gold' : 'red';
+  return (
+    <div className={cx(
+      'rounded-2xl border p-3',
+      dr.passed ? 'border-amber-300/30 bg-[#120609]/55' : 'border-red-500/35 bg-red-500/8',
+    )}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate text-[13px] font-black text-[#fff7fb]">{dr.templateLabel}</div>
+          <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
+            {dr.draftId} · Kunde: {dr.customerLabel} · sample {dr.testInputSampleCount}
+          </div>
+        </div>
+        <Pill tone={tone}>{dr.passed ? 'passed' : 'failed'}</Pill>
+      </div>
+      <p className="mt-2 text-[12px] font-semibold leading-5 text-[#eadbe2]">{dr.expectedOutputSummary}</p>
+      {dr.detectedRisks.length > 0 ? (
+        <div className="mt-2 rounded-xl border border-red-500/25 bg-red-500/8 p-2.5">
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-red-200/80">detected risks</div>
+          <ul className="mt-1 space-y-0.5">
+            {dr.detectedRisks.map((risk) => (
+              <li key={risk} className="text-[12px] font-semibold leading-5 text-red-100/90">• {risk}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {dr.detectedMissingSetupFields.length > 0 ? (
+        <div className="mt-2 text-[11px] font-semibold leading-5 text-[#9f8d95]">
+          fehlende Setup-Felder: {dr.detectedMissingSetupFields.join(', ')}
+        </div>
+      ) : null}
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9f8d95]">
+        {dr.estimatedRunCost ? <span>{dr.estimatedRunCost}</span> : null}
+        {dr.estimatedRuntimeLabel ? <span>{dr.estimatedRuntimeLabel}</span> : null}
+      </div>
+      <div className="mt-3">
+        <Button tone="ghost" disabled>
+          Erneut dry-runnen — locked
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ---- G) Approval Gate --------------------------------------------------------
+
+function FactoryApprovalGate() {
+  const apr = FACTORY_APPROVAL;
+  return (
+    <div className="rounded-2xl border border-red-500/35 bg-red-500/8 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-red-200/80">Approval Gate</div>
+          <h3 className="mt-1 text-lg font-black leading-tight text-[#fff7fb]">{apr.action}</h3>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9f8d95]">
+            <span>{apr.approvalId}</span>
+            <span>{apr.templateId}</span>
+            <span>required: {apr.requiredApprover}</span>
+          </div>
+        </div>
+        <Pill tone={apr.risk === 'Hoch' ? 'red' : apr.risk === 'Mittel' ? 'gold' : 'default'}>
+          risk: {apr.risk.toLowerCase()}
+        </Pill>
+      </div>
+      <p className="mt-2 text-[13px] font-semibold leading-6 text-red-100/90">{apr.rationale}</p>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <Button tone="gold" disabled>Approve — locked</Button>
+        <Button tone="red" disabled>Reject — locked</Button>
+        <Button tone="ghost" disabled>Request changes — locked</Button>
+      </div>
+      <p className="mt-3 text-[11px] font-semibold leading-5 text-[#9f8d95]">
+        Approval persistence kommt später. execute bleibt locked.
+      </p>
+    </div>
+  );
+}
+
 function ProjectsDeepDive({
   project,
   selectedProjectId,
@@ -2624,6 +3083,9 @@ function ProjectsDeepDive({
       <DecisionBlockers project={project} />
 
       {project.id === 'PROJECT-X' ? <ProjectXSummary commands={projectCommands} /> : null}
+
+      {/* PROJECT-X-UI-02 — Workflow-Fabrik demo, only for the Project X project. */}
+      {project.id === 'PROJECT-X' ? <WorkflowFactorySection /> : null}
 
       <LinkedQuests quests={projectQuests} openQuest={openQuest} />
 
