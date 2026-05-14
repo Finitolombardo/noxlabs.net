@@ -6,7 +6,7 @@
 // approval gate and operator confirmation are wired up.
 
 import type { ApiHandler, ApiResponse } from '../../../_lib/handler.js';
-import { badRequest, locked, methodAllowed, notFound, readBodyAsObject, readQueryString, sendError } from '../../../_lib/handler.js';
+import { badRequest, locked, methodAllowed, notFound, readBodyAsObject, readQueryString, sendError, setNoStore } from '../../../_lib/handler.js';
 import { checkOperatorAuth, respondAuthFailure } from '../../../_lib/auth.js';
 import { checkRateLimit, respondRateLimited } from '../../../_lib/rateLimit.js';
 import { appendAuditEvent } from '../../../_lib/audit.js';
@@ -18,6 +18,8 @@ const ROUTE = '/api/operator/commands/:id/:action';
 
 const handler: ApiHandler = async (req, res) => {
   const method = req.method ?? '?';
+
+  setNoStore(res);
 
   const rl = checkRateLimit(req);
   if (!rl.ok) {

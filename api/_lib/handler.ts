@@ -67,3 +67,12 @@ export function readQueryString(req: ApiRequest, key: string): string | undefine
   if (typeof v === 'string') return v;
   return undefined;
 }
+
+/**
+ * APP-X-BRIDGE-04d — disallow downstream caching for operator/API responses.
+ * Operator-context data is dynamic and may contain near-realtime project state;
+ * never let edges or browsers reuse a stale snapshot. Idempotent.
+ */
+export function setNoStore(res: ApiResponse): void {
+  res.setHeader('Cache-Control', 'no-store');
+}

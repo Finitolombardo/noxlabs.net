@@ -23,6 +23,24 @@
 const NOTION_API = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
 
+// APP-X-BRIDGE-04d — fetch timeout to avoid hanging Vercel functions on slow
+// Notion responses. Operator can override via NOX_NOTION_FETCH_TIMEOUT_MS,
+// clamped to [1000, 15000] ms. Default 8000 ms keeps headroom under the
+// 10s Vercel Hobby function timeout.
+const FETCH_TIMEOUT_DEFAULT_MS = 8000;
+const FETCH_TIMEOUT_MIN_MS = 1000;
+const FETCH_TIMEOUT_MAX_MS = 15000;
+
+function resolveFetchTimeoutMs(): number {
+  const raw = (process.env.NOX_NOTION_FETCH_TIMEOUT_MS ?? '').trim();
+  if (!raw) return FETCH_TIMEOUT_DEFAULT_MS;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n)) return FETCH_TIMEOUT_DEFAULT_MS;
+  if (n < FETCH_TIMEOUT_MIN_MS) return FETCH_TIMEOUT_MIN_MS;
+  if (n > FETCH_TIMEOUT_MAX_MS) return FETCH_TIMEOUT_MAX_MS;
+  return n;
+}
+
 export type NotionReadonlyStatus =
   | { ok: true; token: string; dbId: string }
   | { ok: false; reason: 'not_configured'; missing: string[] };
@@ -80,6 +98,10 @@ export async function queryDatabase(
     ...(body.filter ? { filter: body.filter } : {}),
   };
 
+  const timeoutMs = resolveFetchTimeoutMs();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   let resp: Response;
   try {
     resp = await fetch(`${NOTION_API}/databases/${encodeURIComponent(dbId)}/query`, {
@@ -90,13 +112,19 @@ export async function queryDatabase(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(safeBody),
+      signal: controller.signal,
     });
   } catch (err) {
+    const aborted = err instanceof Error && err.name === 'AbortError';
     return {
       ok: false,
       reason: 'upstream_error',
-      summary: `notion fetch failed: ${err instanceof Error ? err.name : 'unknown'}`,
+      summary: aborted
+        ? `notion_timeout after ${timeoutMs}ms`
+        : `notion fetch failed: ${err instanceof Error ? err.name : 'unknown'}`,
     };
+  } finally {
+    clearTimeout(timer);
   }
 
   if (!resp.ok) {

@@ -950,3 +950,67 @@ Audit-Eintrag — nur kurze `detailsSummary`-Strings.
   - `NOX_PROJECT_MAPPING_MODE=notion-relation`
 - Cache-Layer (ETag, TTL ≥ 30 s) sobald Cockpit-Frontend regelmaessig pollt.
 - Cockpit-Frontend-Loader, der diesen Endpoint serverseitig konsumiert.
+
+## 16. APP-X-BRIDGE-04d — Context Endpoint Hardening
+
+Defensive Erweiterungen ohne neues externes Verhalten. Kein Env wird gesetzt,
+keine Secrets im Repo, keine Code-Pfade geaendert, die nicht schon read-only
+sind.
+
+### Implementiert
+
+- **Notion-fetch Abort-Timeout**
+  `api/_lib/notion.ts` wickelt jeden Notion-Aufruf in einen `AbortController`
+  mit Timer. Default 8000 ms, ueberschreibbar via `NOX_NOTION_FETCH_TIMEOUT_MS`
+  (clamped `[1000, 15000]`). Bei Timeout: kontrolliertes
+  `{ ok: false, reason: 'upstream_error', summary: 'notion_timeout after Xms' }`,
+  das im Endpoint als 502 `notion_upstream_error` (ohne Token-Leak) returnt
+  wird. Damit kann eine langsame Notion-Antwort die Vercel-Function nicht mehr
+  bis zum Vercel-Default-Timeout (10 s Hobby) blockieren.
+
+- **`Cache-Control: no-store` auf allen Operator/API-Responses**
+  Neuer Helper `setNoStore(res)` in `api/_lib/handler.ts`. Wird einmal am
+  Handler-Eingang aufgerufen, gilt fuer alle Response-Pfade
+  (200/4xx/5xx). Angewendet auf:
+  - `api/operator/projects/[projectId]/context.ts`
+  - `api/operator/commands.ts`
+  - `api/operator/commands/[id].ts`
+  - `api/operator/commands/[id]/[action].ts`
+  - `api/operator/audit.ts`
+
+  Verhindert, dass Vercel-Edge-Cache oder Browser-Cache stale Operator-State
+  ausliefern. Idempotent.
+
+- **`.env.example` Placeholder fuer alle Bridge-Env-Vars**
+  Erweitert um `NOX_NOTION_READONLY_TOKEN`, `NOX_MASTER_TASKS_DB_ID`,
+  `NOX_PROJECTS_DB_ID`, `NOX_PROJECT_MAPPING_MODE`, `NOX_NOTION_FETCH_TIMEOUT_MS`
+  — alle leer, mit Erklaerungskommentaren. **Keine echten Werte.**
+
+### Sicherheitsgrenzen (unveraendert)
+
+- Kein Notion-Write.
+- Keine neuen Dependencies (`AbortController` ist Web-/Node-Standard).
+- `fetch` weiterhin nur in `api/_lib/notion.ts`.
+- Einzige externe URL bleibt `https://api.notion.com`.
+- Kein Andromeda-/n8n-/Telegram-Aufruf.
+- Token wird je Request aus `process.env` gelesen, niemals geloggt, niemals
+  in Response oder Audit-Detail eingebettet.
+- `execute` bleibt 423.
+
+### Konfigurations-Verhalten
+
+| Env Var                          | Default          | Effekt                                              |
+| -------------------------------- | ---------------- | --------------------------------------------------- |
+| `NOX_NOTION_FETCH_TIMEOUT_MS`    | `8000`           | clamped `[1000, 15000]`; `notion_timeout` bei Abort |
+
+Bei Abbruch durch Timeout: das Endpoint-Verhalten ist identisch zu jedem
+anderen Notion-Upstream-Fehler — **502 `notion_upstream_error`** mit
+generischer Message. Audit-Event: `PROJECT_CONTEXT_UPSTREAM_FAILED` mit
+`detailsSummary` der `notion_timeout after Xms` enthaelt (read-only, kein
+Secret).
+
+### Vor produktivem Einsatz weiterhin noetig
+
+- Echte Env-Aktivierung (`NOX_OPERATOR_API_KEY` + Notion-Env) in Vercel
+  Production — separat, nicht Teil dieser Quest.
+- Cache-Layer mit ETag/TTL kommt erst mit Cockpit-Frontend-Polling.

@@ -3,7 +3,7 @@
 // Skeleton only. No external calls. No persistent storage. No live execution.
 
 import type { ApiHandler } from '../_lib/handler.js';
-import { badRequest, methodAllowed, readBodyAsObject } from '../_lib/handler.js';
+import { badRequest, methodAllowed, readBodyAsObject, setNoStore } from '../_lib/handler.js';
 import { checkOperatorAuth, respondAuthFailure } from '../_lib/auth.js';
 import { checkRateLimit, respondRateLimited } from '../_lib/rateLimit.js';
 import { appendAuditEvent } from '../_lib/audit.js';
@@ -22,6 +22,8 @@ const ROUTE = '/api/operator/commands';
 
 const handler: ApiHandler = async (req, res) => {
   const method = req.method ?? '?';
+
+  setNoStore(res);
 
   // 1. Rate limit (before auth so 503/401 spam also gets throttled).
   const rl = checkRateLimit(req);
