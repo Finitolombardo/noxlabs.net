@@ -53,6 +53,8 @@ import {
 } from '../../../_lib/notion.js';
 import type { NotionPage } from '../../../_lib/notion.js';
 import type {
+  NotionUpstreamDiagnostic,
+  NotionUpstreamStep,
   ProjectContextApproval,
   ProjectContextBlocker,
   ProjectContextEvent,
@@ -60,6 +62,8 @@ import type {
   ProjectContextQuest,
   ProjectContextResponse,
 } from '../../../_lib/types.js';
+import type { ApiResponse } from '../../../_lib/handler.js';
+import type { NotionQueryResult } from '../../../_lib/notion.js';
 
 const ROUTE_LABEL = '/api/operator/projects/:projectId/context';
 
@@ -193,6 +197,29 @@ function emptyResponse(projectId: string, contextSummary: string, nextSuggested:
   };
 }
 
+// APP-X-BRIDGE-04e — authenticated-only diagnostic on 502 notion_upstream_error.
+// Token, Authorization header, request body and env values never reach this
+// function. Only `upstreamStatus` / `upstreamCode` / `upstreamMessage` from
+// the adapter (which itself only reads Notion's own error envelope) are
+// echoed, all sanitized + length-capped at the adapter layer.
+function notionUpstream502(
+  res: ApiResponse,
+  step: NotionUpstreamStep,
+  failure: Extract<NotionQueryResult, { ok: false }>,
+): void {
+  const diagnostic: NotionUpstreamDiagnostic = {
+    step,
+    ...(typeof failure.upstreamStatus === 'number' ? { upstreamStatus: failure.upstreamStatus } : {}),
+    ...(failure.upstreamCode ? { upstreamCode: failure.upstreamCode } : {}),
+    ...(failure.upstreamMessage ? { upstreamMessage: failure.upstreamMessage } : {}),
+  };
+  res.status(502).json({
+    error: 'notion_upstream_error',
+    message: 'Notion read-only query failed.',
+    diagnostic,
+  });
+}
+
 function summarise(quests: ProjectContextQuest[], blockers: ProjectContextBlocker[], approvals: ProjectContextApproval[], mode: MappingMode, projectTitle: string): string {
   const head = mode === 'notion-relation' ? `Project "${projectTitle}" (mode=notion-relation)` : `Project mapping mode=${mode}`;
   return `${head}. ${quests.length} linked quest(s), ${approvals.length} open approval(s), ${blockers.length} blocker(s).`;
@@ -301,7 +328,7 @@ const handler: ApiHandler = async (req, res) => {
         outcome: 'failure', clientKeyLabel,
         detailsSummary: `projects_lookup: ${projectLookup.summary.slice(0, 150)}`,
       });
-      sendError(res, 502, 'notion_upstream_error', 'Notion read-only query failed.');
+      notionUpstream502(res, 'projects_lookup', projectLookup);
       return;
     }
 
@@ -331,7 +358,7 @@ const handler: ApiHandler = async (req, res) => {
         outcome: 'failure', clientKeyLabel,
         detailsSummary: `relation_query: ${relationLookup.summary.slice(0, 150)}`,
       });
-      sendError(res, 502, 'notion_upstream_error', 'Notion read-only query failed.');
+      notionUpstream502(res, 'master_tasks_relation_query', relationLookup);
       return;
     }
 
@@ -400,7 +427,7 @@ const handler: ApiHandler = async (req, res) => {
       outcome: 'failure', clientKeyLabel,
       detailsSummary: query.summary.slice(0, 200),
     });
-    sendError(res, 502, 'notion_upstream_error', 'Notion read-only query failed.');
+    notionUpstream502(res, 'master_tasks_query', query);
     return;
   }
 

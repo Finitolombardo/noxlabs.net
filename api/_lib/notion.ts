@@ -47,7 +47,19 @@ export type NotionReadonlyStatus =
 
 export type NotionQueryResult =
   | { ok: true; results: NotionPage[]; hasMore: boolean }
-  | { ok: false; reason: 'upstream_error'; statusCode?: number; summary: string };
+  | {
+      ok: false;
+      reason: 'upstream_error';
+      statusCode?: number;
+      summary: string;
+      // APP-X-BRIDGE-04e — sanitized diagnostic fields. Populated only from
+      // Notion's own JSON error envelope ({object:"error", code, message}).
+      // Never includes Authorization header, token, request body, or env
+      // values. `upstreamMessage` is capped at 300 chars before storage.
+      upstreamStatus?: number;
+      upstreamCode?: string;
+      upstreamMessage?: string;
+    };
 
 export interface NotionPage {
   id: string;
@@ -128,11 +140,21 @@ export async function queryDatabase(
   }
 
   if (!resp.ok) {
+    // APP-X-BRIDGE-04e — safe Notion upstream diagnostics.
+    // We read the response body (capped) and try to extract the
+    // `{object:"error", code, message}` envelope Notion returns on 4xx/5xx.
+    // No header, no token, no request body is ever touched here; the
+    // upstream payload is the only source.
+    const diag = await readNotionErrorDiagnostics(resp);
+    const codePart = diag.upstreamCode ? ` ${diag.upstreamCode}` : '';
     return {
       ok: false,
       reason: 'upstream_error',
       statusCode: resp.status,
-      summary: `notion query returned HTTP ${resp.status}`,
+      summary: `notion query returned HTTP ${resp.status}${codePart}`,
+      upstreamStatus: resp.status,
+      ...(diag.upstreamCode ? { upstreamCode: diag.upstreamCode } : {}),
+      ...(diag.upstreamMessage ? { upstreamMessage: diag.upstreamMessage } : {}),
     };
   }
 
@@ -164,6 +186,55 @@ export async function queryDatabase(
     }
   }
   return { ok: true, results: pages, hasMore: Boolean(obj.has_more) };
+}
+
+// ---- APP-X-BRIDGE-04e — safe Notion upstream error diagnostics ----
+//
+// Notion's HTTP error envelope is documented as:
+//   { "object": "error", "status": <number>, "code": "<string>",
+//     "message": "<string>", "request_id": "<string>" }
+//
+// We only extract `code` + `message`, cap them in length, and never include
+// the response body verbatim. The Authorization header, the integration
+// token, and the request body never enter this function — they live in the
+// outer `fetch` call site and are not on `resp`.
+
+const UPSTREAM_MESSAGE_MAX = 300;
+const UPSTREAM_CODE_MAX = 80;
+
+interface NotionErrorDiagnostics {
+  upstreamCode?: string;
+  upstreamMessage?: string;
+}
+
+async function readNotionErrorDiagnostics(resp: Response): Promise<NotionErrorDiagnostics> {
+  let raw: string;
+  try {
+    raw = await resp.text();
+  } catch {
+    return {};
+  }
+  if (!raw) return {};
+  const slice = raw.slice(0, UPSTREAM_MESSAGE_MAX);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(slice);
+  } catch {
+    return {};
+  }
+  if (!parsed || typeof parsed !== 'object') return {};
+  const env = parsed as { object?: unknown; code?: unknown; message?: unknown };
+  // Defensive: Notion sends `object:"error"`, but we don't require it — any
+  // JSON body with a `code` or `message` string still gives the operator
+  // signal. Both fields are individually optional.
+  const out: NotionErrorDiagnostics = {};
+  if (typeof env.code === 'string' && env.code.length > 0) {
+    out.upstreamCode = env.code.slice(0, UPSTREAM_CODE_MAX);
+  }
+  if (typeof env.message === 'string' && env.message.length > 0) {
+    out.upstreamMessage = env.message.slice(0, UPSTREAM_MESSAGE_MAX);
+  }
+  return out;
 }
 
 // ---- Property extractors (defensive; tolerate missing/wrong-shaped fields) ----
