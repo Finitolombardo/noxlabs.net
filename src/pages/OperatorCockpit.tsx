@@ -1,6 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
+import { fetchOperatorProjectContext } from '../lib/operatorContextClient';
+import type {
+  NotionUpstreamDiagnostic,
+  ProjectContextResponse,
+} from '../types/operatorContext';
 
 type Project = {
   id: string;
@@ -1561,6 +1566,415 @@ function PitchCenter({ registerDemoAction }: { registerDemoAction: (title: strin
   );
 }
 
+// APP-X-BRIDGE-05a — Live Projektkontext loader card.
+//
+// Read-only consumer of GET /api/operator/projects/:projectId/context.
+// The operator API key lives ONLY in this component's React state for
+// the current page-session. There is no persistence (no localStorage,
+// no sessionStorage, no cookie, no env-baked key). Reload empties the
+// state. The key never lands in console.log nor in any rendered surface.
+//
+// No auto-fetch on mount — the operator must click "Kontext laden".
+// All UI labels stay in German per the cockpit's existing copy.
+type LiveContextStateData = {
+  loadedAt: string;
+  data: ProjectContextResponse;
+};
+
+type LiveContextStateError = {
+  status: number;
+  errorCode?: string;
+  errorMessage?: string;
+  diagnostic?: NotionUpstreamDiagnostic;
+  loadedAt: string;
+};
+
+function LiveProjectContext() {
+  const [projectId, setProjectId] = useState<string>('APP-X');
+  const [apiKey, setApiKey] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [resultData, setResultData] = useState<LiveContextStateData | null>(null);
+  const [resultError, setResultError] = useState<LiveContextStateError | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const hasKey = apiKey.trim().length > 0;
+  const hasResult = resultData !== null || resultError !== null;
+
+  const handleLoad = async () => {
+    // Cancel any in-flight request before starting a fresh one.
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setIsLoading(true);
+    setResultData(null);
+    setResultError(null);
+    const result = await fetchOperatorProjectContext({
+      projectId,
+      apiKey,
+      signal: controller.signal,
+    });
+    if (abortRef.current !== controller) {
+      // Superseded by a newer request; drop this one's result.
+      return;
+    }
+    abortRef.current = null;
+    const stamp = new Date().toISOString();
+    if (result.ok) {
+      setResultData({ loadedAt: stamp, data: result.data });
+    } else {
+      setResultError({
+        status: result.status,
+        errorCode: result.errorCode,
+        errorMessage: result.errorMessage,
+        diagnostic: result.diagnostic,
+        loadedAt: stamp,
+      });
+    }
+    setIsLoading(false);
+  };
+
+  const handleClearKey = () => {
+    if (abortRef.current) abortRef.current.abort();
+    abortRef.current = null;
+    setApiKey('');
+  };
+
+  return (
+    <Card>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <SectionTitle eyebrow="Notion read-only" title="Live Projektkontext" />
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill tone="gold">read-only</Pill>
+          <Pill tone="red">execute locked</Pill>
+        </div>
+      </div>
+      <p className="text-sm font-semibold leading-6 text-[#eadbe2]">
+        Ruft <code className="rounded bg-black/40 px-1.5 py-0.5 text-[12px] text-amber-200/90">GET /api/operator/projects/:projectId/context</code>
+        {' '}auf. Der Operator-Key bleibt nur in dieser Page-Session im Browser-RAM — kein Storage, kein Cookie, kein Env-Bake. Beim Reload ist er weg.
+      </p>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div>
+          <FieldLabel>Project ID</FieldLabel>
+          <input
+            type="text"
+            inputMode="text"
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+            autoComplete="off"
+            value={projectId}
+            onChange={(event) => setProjectId(event.target.value)}
+            placeholder="APP-X"
+            className="w-full rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 px-4 py-3 text-sm font-extrabold tracking-wide text-[#fff7fb] outline-none transition focus:border-amber-300/60"
+          />
+        </div>
+        <div>
+          <FieldLabel>Operator API Key (nur für diese Session)</FieldLabel>
+          <input
+            type="password"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            value={apiKey}
+            onChange={(event) => setApiKey(event.target.value)}
+            placeholder="x-nox-operator-key"
+            className="w-full rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 px-4 py-3 text-sm font-extrabold tracking-wide text-[#fff7fb] outline-none transition focus:border-amber-300/60"
+          />
+        </div>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <Button onClick={handleLoad} disabled={isLoading || !hasKey || projectId.trim().length === 0}>
+          {isLoading ? 'Lädt…' : hasResult ? 'Neu laden' : 'Kontext laden'}
+        </Button>
+        <Button tone="ghost" onClick={handleClearKey} disabled={!hasKey && !isLoading}>
+          Key löschen
+        </Button>
+        {resultData ? (
+          <span className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">
+            Geladen: <span className="text-[#eadbe2]">{resultData.loadedAt}</span>
+          </span>
+        ) : null}
+      </div>
+
+      <div className="mt-6">
+        {isLoading ? (
+          <div className="rounded-2xl border border-[#4a101b]/55 bg-[#120609]/60 p-5 text-sm font-bold text-[#eadbe2]">
+            Lade Projektkontext aus Notion (read-only)…
+          </div>
+        ) : null}
+
+        {resultError ? <LiveContextErrorView error={resultError} /> : null}
+        {resultData ? <LiveContextDataView data={resultData.data} /> : null}
+
+        {!isLoading && !resultData && !resultError ? (
+          <div className="rounded-2xl border border-[#4a101b]/40 bg-[#0c0507]/60 p-5 text-sm font-semibold leading-6 text-[#9f8d95]">
+            Noch nichts geladen. Operator-Key einsetzen und <b className="text-[#eadbe2]">Kontext laden</b> klicken.
+          </div>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
+
+function LiveContextErrorView({ error }: { error: LiveContextStateError }) {
+  const isUnauthorized = error.status === 401;
+  const isNotionNotConfigured = error.status === 503 && error.errorCode === 'notion_not_configured';
+  const isMappingNotConfigured = error.status === 503 && error.errorCode === 'project_mapping_not_configured';
+  const isProjectNotFound = error.status === 404 && error.errorCode === 'project_not_found';
+  const isUpstream = error.status === 502 && error.errorCode === 'notion_upstream_error';
+
+  let headline = `HTTP ${error.status}${error.errorCode ? ` · ${error.errorCode}` : ''}`;
+  let description = error.errorMessage ?? 'Unbekannter Fehler.';
+  if (isUnauthorized) {
+    headline = 'Unauthorized';
+    description = 'Operator Key fehlt oder ist falsch.';
+  } else if (isNotionNotConfigured) {
+    headline = 'Notion Adapter nicht konfiguriert';
+    description = error.errorMessage ?? 'Server-Env fehlt — siehe Operator-Dokumentation.';
+  } else if (isMappingNotConfigured) {
+    headline = 'Project Mapping nicht konfiguriert';
+    description = error.errorMessage ?? 'Server-Env NOX_PROJECTS_DB_ID fehlt.';
+  } else if (isProjectNotFound) {
+    headline = 'Project ID nicht gefunden';
+    description = error.errorMessage ?? 'Kein Notion-Eintrag mit dieser Project ID.';
+  }
+
+  return (
+    <div className="rounded-2xl border border-red-500/35 bg-red-500/8 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-[12px] font-extrabold uppercase tracking-[0.24em] text-red-200/80">Fehler</div>
+        <Pill tone="red">{`HTTP ${error.status || '?'}`}</Pill>
+      </div>
+      <h4 className="mt-3 text-lg font-black text-red-100">{headline}</h4>
+      <p className="mt-2 text-sm font-semibold leading-6 text-red-100/85">{description}</p>
+
+      {isUpstream && error.diagnostic ? (
+        <div className="mt-4 rounded-2xl border border-red-500/25 bg-[#120609]/70 p-4">
+          <div className="text-[12px] font-extrabold uppercase tracking-[0.2em] text-red-200/75">Notion Upstream Diagnostic</div>
+          <dl className="mt-3 grid gap-3 text-sm font-semibold leading-6 text-[#eadbe2] md:grid-cols-2">
+            <div>
+              <dt className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">step</dt>
+              <dd className="mt-1 text-[#fff7fb]">{error.diagnostic.step}</dd>
+            </div>
+            {typeof error.diagnostic.upstreamStatus === 'number' ? (
+              <div>
+                <dt className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">upstreamStatus</dt>
+                <dd className="mt-1 text-[#fff7fb]">{error.diagnostic.upstreamStatus}</dd>
+              </div>
+            ) : null}
+            {error.diagnostic.upstreamCode ? (
+              <div>
+                <dt className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">upstreamCode</dt>
+                <dd className="mt-1 text-[#fff7fb]">{error.diagnostic.upstreamCode}</dd>
+              </div>
+            ) : null}
+            {error.diagnostic.upstreamMessage ? (
+              <div className="md:col-span-2">
+                <dt className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">upstreamMessage</dt>
+                <dd className="mt-1 text-[#fff7fb]">{error.diagnostic.upstreamMessage}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function LiveContextField({ label, value }: { label: string; value?: string }) {
+  if (!value) return null;
+  return (
+    <div>
+      <dt className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#9f8d95]">{label}</dt>
+      <dd className="mt-1 whitespace-pre-wrap text-sm font-semibold leading-6 text-[#fff7fb]">{value}</dd>
+    </div>
+  );
+}
+
+function LiveContextDataView({ data }: { data: ProjectContextResponse }) {
+  const meta = data.meta ?? {};
+  const project = data.project;
+  const questCount = data.quests?.length ?? 0;
+  const approvalCount = data.openApprovals?.length ?? 0;
+  const blockerCount = data.blockers?.length ?? 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Summary chips */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Pill tone="gold">{`Quests: ${questCount}`}</Pill>
+        <Pill tone={approvalCount > 0 ? 'red' : 'default'}>{`Freigaben offen: ${approvalCount}`}</Pill>
+        <Pill tone={blockerCount > 0 ? 'red' : 'default'}>{`Blocker: ${blockerCount}`}</Pill>
+        <Pill tone={meta.projectMappingConfigured ? 'gold' : 'default'}>
+          {meta.projectMappingConfigured ? 'projectMappingConfigured=true' : 'projectMappingConfigured=false'}
+        </Pill>
+        <Pill tone={meta.liveExecution === 'locked' ? 'red' : 'default'}>
+          {meta.liveExecution ? `liveExecution=${meta.liveExecution}` : 'liveExecution=?'}
+        </Pill>
+      </div>
+      {data.contextSummary ? (
+        <p className="text-sm font-semibold leading-6 text-[#eadbe2]">{data.contextSummary}</p>
+      ) : null}
+
+      {/* Project Card */}
+      <div className="rounded-2xl border border-amber-300/25 bg-[#120609]/70 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-amber-200/75">Projekt</div>
+            <h3 className="mt-1 text-xl font-black text-[#fff7fb]">{project.title}</h3>
+            <div className="mt-1 text-[12px] font-bold text-[#9f8d95]">{project.projectId}</div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {project.status ? <Pill tone="gold">{`Status: ${project.status}`}</Pill> : null}
+            {project.typ ? <Pill>{`Typ: ${project.typ}`}</Pill> : null}
+            {project.priority ? <Pill>{`Priority: ${project.priority}`}</Pill> : null}
+          </div>
+        </div>
+        <dl className="mt-5 grid gap-4 md:grid-cols-2">
+          <LiveContextField label="Vision" value={project.vision} />
+          <LiveContextField label="Andromeda Kontext" value={project.andromedaContext} />
+          <LiveContextField label="Aktueller Stand" value={project.currentState} />
+          <LiveContextField label="Nächste Aktion" value={project.nextAction} />
+          <LiveContextField label="Erlaubte Aktionen" value={project.allowedActions} />
+          <LiveContextField label="Verbotene Aktionen" value={project.forbiddenActions} />
+        </dl>
+        {project.primaryUrl ? (
+          <div className="mt-5">
+            <a
+              href={project.primaryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded-2xl border border-amber-300/40 bg-amber-300/10 px-4 py-2 text-[12px] font-extrabold uppercase tracking-[0.2em] text-amber-100 transition hover:bg-amber-300/15"
+            >
+              Primary URL öffnen
+            </a>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Quests */}
+      <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Verknüpfte Quests</div>
+          <Pill tone="gold">{questCount}</Pill>
+        </div>
+        {questCount === 0 ? (
+          <p className="mt-3 text-sm font-semibold leading-6 text-[#9f8d95]">Keine Quests verknüpft.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {data.quests.map((quest) => (
+              <li key={quest.questId} className="rounded-2xl border border-[#4a101b]/45 bg-[#120609]/70 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-black leading-snug text-[#fff7fb]">{quest.title}</div>
+                    <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
+                      {quest.agent ? `${quest.agent}` : 'Agent unbekannt'}
+                      {quest.lastEditedAt ? ` · ${quest.lastEditedAt}` : ''}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {quest.status ? <Pill>{quest.status}</Pill> : null}
+                    {quest.approved ? <Pill tone="gold">freigegeben</Pill> : null}
+                    {quest.approvalNeeded ? <Pill tone="red">Freigabe nötig</Pill> : null}
+                    {quest.questStarten ? <Pill tone="gold">Quest starten</Pill> : null}
+                    {quest.questAbgeschlossen ? <Pill>abgeschlossen</Pill> : null}
+                  </div>
+                </div>
+                {quest.blocker ? (
+                  <div className="mt-3 rounded-xl border border-red-500/25 bg-red-500/8 p-3 text-sm font-semibold leading-6 text-red-100/85">
+                    <b className="mr-1 text-red-200">Blocker:</b>
+                    {quest.blocker.slice(0, 280)}
+                    {quest.blocker.length > 280 ? '…' : ''}
+                  </div>
+                ) : null}
+                {quest.url ? (
+                  <div className="mt-3">
+                    <a
+                      href={quest.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[12px] font-extrabold uppercase tracking-[0.2em] text-amber-200 hover:underline"
+                    >
+                      In Notion öffnen
+                    </a>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Open approvals */}
+      <div className="rounded-2xl border border-red-500/30 bg-red-500/8 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-red-200/80">Offene Freigaben</div>
+          <Pill tone="red">{approvalCount}</Pill>
+        </div>
+        {approvalCount === 0 ? (
+          <p className="mt-3 text-sm font-semibold leading-6 text-[#9f8d95]">Keine offenen Freigaben.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {data.openApprovals.map((approval) => (
+              <li key={`apr-${approval.questId}`} className="rounded-2xl border border-red-500/25 bg-[#120609]/70 p-4">
+                <div className="text-sm font-black text-[#fff7fb]">{approval.title}</div>
+                <p className="mt-2 text-sm font-semibold leading-6 text-red-100/85">
+                  {approval.reason.slice(0, 280)}
+                  {approval.reason.length > 280 ? '…' : ''}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Recent events */}
+      <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Recent Events</div>
+          <Pill>{data.recentEvents?.length ?? 0}</Pill>
+        </div>
+        {!data.recentEvents || data.recentEvents.length === 0 ? (
+          <p className="mt-3 text-sm font-semibold leading-6 text-[#9f8d95]">Keine Events erfasst.</p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {data.recentEvents.map((event, idx) => (
+              <li
+                key={`evt-${event.questId ?? 'x'}-${idx}`}
+                className="rounded-xl border border-[#4a101b]/45 bg-[#120609]/65 p-3"
+              >
+                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">{event.at}</div>
+                <div className="mt-1 text-sm font-semibold leading-6 text-[#eadbe2]">{event.summary}</div>
+                {event.questId ? (
+                  <div className="mt-1 text-[11px] font-bold text-[#9f8d95]">questId: {event.questId}</div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Artifacts placeholder */}
+      <div className="rounded-2xl border border-[#4a101b]/40 bg-[#0c0507]/60 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Referenz-Artefakte</div>
+          <Pill>{data.artifacts?.length ?? 0}</Pill>
+        </div>
+        <p className="mt-3 text-sm font-semibold leading-6 text-[#9f8d95]">
+          Noch keine Referenzdateien verknüpft.
+        </p>
+        <p className="mt-2 text-[12px] font-semibold leading-5 text-[#9f8d95]/80">
+          Referenzdateien/Designbilder werden später über ReferenceArtifact angebunden.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function ProjectX({
   quests,
   outputs,
@@ -1629,6 +2043,9 @@ function ProjectX({
           <Pill tone="red">Keine Browser-Calls</Pill>
         </div>
       </Card>
+
+      {/* APP-X-BRIDGE-05a — Live Projektkontext (read-only Notion projection). */}
+      <LiveProjectContext />
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-8">

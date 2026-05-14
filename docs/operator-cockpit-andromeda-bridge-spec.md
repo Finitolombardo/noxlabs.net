@@ -1109,3 +1109,115 @@ optional. Wenn Notion keinen JSON-Body schickt (z.B. Netzwerk-Abort durch
 | `step=master_tasks_relation_query` 400 | `validation_error`, "Project is not a relation property" | Property `Project` in Master Tasks geaendert         |
 | `step=master_tasks_relation_query` 404 | `object_not_found`                                   | Integration fehlt auf Master Tasks Connection-Liste    |
 | upstreamMessage `notion_timeout after Xms` | (kein upstreamStatus)                            | Notion lahm, AbortController hat zugeschlagen          |
+
+## 18. APP-X-BRIDGE-05a — Cockpit Read-Only Project Context Loader
+
+### Problem
+
+Der read-only Endpoint `/api/operator/projects/:projectId/context` ist seit
+04a/04c/04d/04e live und liefert echten Notion-Kontext fuer `APP-X`. Bis
+05a hatte das Operator Cockpit keinen Pfad, die Antwort im UI anzuzeigen —
+der Operator musste per `curl` testen. 05a baut eine additive,
+read-only Cockpit-Sektion ein, die genau diesen Endpoint konsumiert,
+**ohne** dass der Browser jemals einen serverseitigen Operator-Key
+mitbringt.
+
+### Scope
+
+Frontend-only. Genau diese Dateien:
+
+- `src/pages/OperatorCockpit.tsx` (additive Sektion + Komponenten)
+- `src/lib/operatorContextClient.ts` (neue Same-Origin-Fetch-Helper)
+- `src/types/operatorContext.ts` (frontend-eigene Type-Contracts)
+- `docs/operator-cockpit-andromeda-bridge-spec.md` (Section 18)
+
+Nicht in 05a:
+
+- `api/`-Aenderungen (Backend-Verhalten unveraendert)
+- `vercel.json`, `package.json`, `package-lock.json`, `.env*`
+- Public Landing Home / Navbar / Routes
+- Telegram/n8n/Andromeda-Code
+- Execute-Unlock — bleibt `HTTP 423`
+- Persistenz des Keys (kein localStorage, kein sessionStorage, kein Cookie)
+
+### Schluessel-Lifecycle (in-memory only)
+
+1. Operator oeffnet `/operator-cockpit`, navigiert zum Project-X-Tab.
+2. Sektion **Live Projektkontext** ist sichtbar, aber ohne geladene Daten.
+3. Operator gibt `Project ID` (Default `APP-X`) + `Operator API Key` ein.
+   - Key-Input ist `type="password"` und `autoComplete="off"`.
+   - Browser darf den Wert nicht autofuellen oder speichern (Best-Effort).
+4. Operator klickt **Kontext laden**. Komponente sendet:
+   ```
+   GET /api/operator/projects/<projectId>/context
+   x-nox-operator-key: <key aus React state>
+   Accept: application/json
+   ```
+   Mit `cache: 'no-store'` und `AbortController`-Signal fuer Cancellation.
+5. Response wird in lokalen React-State geschrieben. Key bleibt im State
+   bis Operator **Key löschen** klickt oder die Seite reloadet.
+6. Beim Reload: alle State-Slots werden zurueckgesetzt, Key ist weg.
+
+### Verbotene Schluesselpfade
+
+| Pfad                                    | Status |
+| --------------------------------------- | ------ |
+| `VITE_NOX_OPERATOR_API_KEY` Env-Bake    | nicht eingebaut |
+| Hardcoded Key im Repo                   | nicht eingebaut |
+| `localStorage` / `sessionStorage`       | nicht verwendet |
+| `document.cookie`                       | nicht verwendet |
+| `console.log(apiKey)`                   | nicht verwendet |
+| `console.log(response)`                 | nicht verwendet |
+| `window.history.replaceState` mit Key   | nicht verwendet |
+
+### Backend-Sicht
+
+Nur Same-Origin-Aufruf. Kein direkter Notion-Call vom Browser. Keine
+POST/PUT/PATCH/DELETE. Vorhandene `fetch`-Aufrufe im Frontend bleiben
+unveraendert; 05a fuegt genau **einen** neuen `fetch` in
+`src/lib/operatorContextClient.ts` hinzu — gegen denselben read-only
+Endpoint, der seit 04a existiert.
+
+### Antwort-Handling
+
+| HTTP                              | UI-Verhalten                                                   |
+| --------------------------------- | -------------------------------------------------------------- |
+| `200`                             | Project-Card, Quests, Approvals, Events, Artifacts-Empty-State |
+| `401`                             | "Unauthorized — Operator Key fehlt oder ist falsch."           |
+| `503 notion_not_configured`       | "Notion Adapter nicht konfiguriert."                           |
+| `503 project_mapping_not_configured` | "Project Mapping nicht konfiguriert."                       |
+| `404 project_not_found`           | "Project ID nicht gefunden"                                    |
+| `502 notion_upstream_error`       | Diagnostic-Block (BRIDGE-04e): step + upstreamStatus + upstreamCode + upstreamMessage |
+| Sonstige                          | Status + sanitised error code/message                          |
+
+### Type-Contracts
+
+Frontend importiert **nicht** aus `api/_lib/types.ts`. Stattdessen lebt
+ein eigener Mirror in `src/types/operatorContext.ts`. Damit:
+
+- bleibt der React-Bundle frei von Server-Pfaden
+- Notion-Drift bricht die UI nicht (alle Felder optional)
+- ein Drift zwischen Frontend-/Backend-Shape ist nur ein lesbarer
+  Type-Cast im Client-Helper, keine globale Fehlannahme
+
+### Was 05a nicht macht
+
+- Keine Reference-Artifact-Anzeige ueber Empty-State hinaus
+  (Backend liefert `artifacts: []` in 04a-Skeleton; spaetere Quest
+  schaltet das frei).
+- Keine Pagination (Notion liefert page_size=100 im Adapter; das
+  reicht fuer APP-X).
+- Keine clientseitige Filter/Search auf den Quests.
+- Kein Caching / kein Polling — jede Anfrage geht frisch durch.
+- Kein automatischer Fetch beim Mount.
+
+### Test-Hinweise (manuell)
+
+| Schritt                                            | Erwartung                                                |
+| -------------------------------------------------- | -------------------------------------------------------- |
+| Cockpit oeffnen, ohne Key, Button **Kontext laden** | Disabled                                                |
+| Falscher Key, Klick **Kontext laden**              | Fehler-Card "Unauthorized", `HTTP 401`                   |
+| Richtiger Key, `projectId=APP-X`                   | Project-Card, 4 Quests, 2 Approvals (Status 14.05.2026)  |
+| Reload                                             | Sektion leer, Key weg                                    |
+| **Key löschen**                                   | Key-Feld leer, geladene Daten bleiben sichtbar           |
+| `projectId=DOES-NOT-EXIST`, korrekter Key          | Fehler-Card "Project ID nicht gefunden", `HTTP 404`      |
