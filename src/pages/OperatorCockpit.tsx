@@ -602,12 +602,65 @@ const outputTypes = [
   'Kunden-/Sales-Asset',
 ];
 
-const sidebarGroups = [
-  { title: 'Zentrale', items: ['Start', 'Projekte', 'Team', 'Sprachsteuerung', 'Quest-Generator'] },
-  { title: 'Cashflow', items: ['Lead Map', 'Lead-Eingang', 'Pitch-Zentrale'] },
-  { title: 'Intelligence', items: ['YouTube-Analyse', 'OG-Scraper'] },
-  { title: 'Ops', items: ['Quest-Zentrale', 'Agenten-Chat', 'Projekt X', 'Outputs', 'Freigaben'] },
+// APP-X-UI-01 — Cockpit Information Architecture.
+//
+// The sidebar shows a small, focused set of top-level entries. Each entry
+// maps a display label to an internal route key. Legacy route keys
+// (`Quest-Zentrale`, `Lead-Eingang`, `Projekt X`, `Outputs`, etc.) are
+// still reachable as `active` values from inside child views, but they
+// are no longer first-class menu items. `Project X` becomes a project
+// inside Projekte (selected via the project picker), not a separate
+// top-level destination.
+type SidebarItem = { label: string; route: string };
+type SidebarGroup = { title: string; items: SidebarItem[] };
+
+const sidebarGroups: SidebarGroup[] = [
+  {
+    title: 'Zentrale',
+    items: [
+      { label: 'Start', route: 'Start' },
+      { label: 'Projekte', route: 'Projekte' },
+      { label: 'Quests', route: 'Quest-Zentrale' },
+      { label: 'Freigaben', route: 'Freigaben' },
+    ],
+  },
+  {
+    title: 'Cashflow',
+    items: [
+      { label: 'Leads', route: 'Lead-Eingang' },
+      { label: 'Pitch-Zentrale', route: 'Pitch-Zentrale' },
+    ],
+  },
+  {
+    title: 'Agenten',
+    items: [
+      { label: 'Agenten-Chat', route: 'Agenten-Chat' },
+      { label: 'Workflow-Zonen', route: 'Workflow-Zonen' },
+      { label: 'Intelligence', route: 'Intelligence' },
+    ],
+  },
+  {
+    title: 'System',
+    items: [
+      { label: 'Status', route: 'Status' },
+      { label: 'Einstellungen', route: 'Einstellungen' },
+    ],
+  },
 ];
+
+// Map a possibly-legacy active route to the sidebar entry that should
+// be highlighted. Routes not in this map fall back to direct match.
+const routeAliasForSidebar: Record<string, string> = {
+  'Quest-Detail': 'Quest-Zentrale',
+  'Projekt X': 'Projekte',
+  Outputs: 'Projekte',
+  Team: 'Start',
+  Sprachsteuerung: 'Start',
+  'Quest-Generator': 'Start',
+  'Lead Map': 'Lead-Eingang',
+  'YouTube-Analyse': 'Intelligence',
+  'OG-Scraper': 'Intelligence',
+};
 
 const agentOptions = ['NOX', 'Andromeda', 'Claude', 'Project X', 'Owner'];
 const statusFilterOptions = ['Alle', 'Offen', 'Aktiv', 'In Arbeit', 'Pruefung noetig', 'Blockiert', 'Erledigt'];
@@ -966,28 +1019,31 @@ export default function OperatorCockpit() {
           </button>
 
           <div className="space-y-3">
-            {sidebarGroups.map((group) => (
-              <div key={group.title}>
-                <div className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#7f6b73]">{group.title}</div>
-                <div className="space-y-1.5">
-                  {group.items.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => setActive(item)}
-                      className={cx(
-                        'w-full rounded-2xl border px-4 py-2.5 text-left text-sm font-bold transition',
-                        active === item || (item === 'Projekte' && active === 'Quest-Zentrale')
-                          ? 'border-[#7a1526]/55 bg-[#2a0b12]/80 text-[#fff7fb]'
-                          : 'border-transparent text-[#cbbbc3] hover:border-[#7a1526]/45 hover:bg-[#14070a] hover:text-[#fff7fb]',
-                      )}
-                    >
-                      {item}
-                    </button>
-                  ))}
+            {sidebarGroups.map((group) => {
+              const activeForHighlight = routeAliasForSidebar[active] ?? active;
+              return (
+                <div key={group.title}>
+                  <div className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#7f6b73]">{group.title}</div>
+                  <div className="space-y-1.5">
+                    {group.items.map((item) => (
+                      <button
+                        key={item.route}
+                        type="button"
+                        onClick={() => setActive(item.route)}
+                        className={cx(
+                          'w-full rounded-2xl border px-4 py-2.5 text-left text-sm font-bold transition',
+                          activeForHighlight === item.route
+                            ? 'border-[#7a1526]/55 bg-[#2a0b12]/80 text-[#fff7fb]'
+                            : 'border-transparent text-[#cbbbc3] hover:border-[#7a1526]/45 hover:bg-[#14070a] hover:text-[#fff7fb]',
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </aside>
 
@@ -1163,6 +1219,41 @@ export default function OperatorCockpit() {
 
               {active === 'Outputs' ? <GlobalOutputs outputs={outputs} registerDemoAction={registerDemoAction} /> : null}
               {active === 'Freigaben' ? <GlobalApprovals approvals={approvals} registerDemoAction={registerDemoAction} /> : null}
+
+              {/* APP-X-UI-01 — new sidebar destinations. Lightweight stubs that
+                  point at the existing concepts without duplicating the deep
+                  workflows; reduces top-level noise while preserving access. */}
+              {active === 'Workflow-Zonen' ? (
+                <SimplePage
+                  eyebrow="Workflow-Zonen"
+                  title="Handoff-, Dry-Run- und Approval-Zonen"
+                  text="Project-X-Handoffs, Andromeda-Commands und Quest-Generator leben jetzt im jeweiligen Projektkontext. Oeffne ein Projekt, um die Commands, Dry-Runs und Outputs an dieser Stelle zu sehen."
+                />
+              ) : null}
+
+              {active === 'Intelligence' ? (
+                <SimplePage
+                  eyebrow="Intelligence"
+                  title="Quellen, Signale und Auswertung"
+                  text="YouTube-Analyse, OG-Scraper und Lead-Map sammeln Rohsignale. Die Auswertungen landen kuenftig hier als verdichtete Insight-Strecke. Bis dahin Demo-Stubs."
+                />
+              ) : null}
+
+              {active === 'Status' ? (
+                <SimplePage
+                  eyebrow="System"
+                  title="Cockpit Status"
+                  text="API live, Notion read-only adapter aktiv, execute weiterhin gesperrt. Detaillierte Health-Checks folgen mit Audit-Persistenz."
+                />
+              ) : null}
+
+              {active === 'Einstellungen' ? (
+                <SimplePage
+                  eyebrow="System"
+                  title="Einstellungen"
+                  text="Operator-Praeferenzen, Notion-Konfiguration und Audit-Optionen werden hier sichtbar, sobald sie ein Persistenz-Layer haben. Aktuell rein lokal/Demo."
+                />
+              ) : null}
             </motion.div>
           </AnimatePresence>
 
@@ -1589,9 +1680,13 @@ type LiveContextStateError = {
   loadedAt: string;
 };
 
-function LiveProjectContext() {
-  const [projectId, setProjectId] = useState<string>('APP-X');
+// APP-X-UI-01 — Compact loader: collapsible auth, controlled projectId.
+// The project id flows in from the parent Projekte page's project picker
+// so the operator does not retype it. Auth remains entirely in component
+// state for the page-session (no persistence).
+function LiveProjectContext({ projectId }: { projectId: string }) {
   const [apiKey, setApiKey] = useState<string>('');
+  const [authOpen, setAuthOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [resultData, setResultData] = useState<LiveContextStateData | null>(null);
   const [resultError, setResultError] = useState<LiveContextStateError | null>(null);
@@ -1599,9 +1694,13 @@ function LiveProjectContext() {
 
   const hasKey = apiKey.trim().length > 0;
   const hasResult = resultData !== null || resultError !== null;
+  const canLoad = hasKey && projectId.trim().length > 0 && !isLoading;
 
   const handleLoad = async () => {
-    // Cancel any in-flight request before starting a fresh one.
+    if (!hasKey || projectId.trim().length === 0) {
+      setAuthOpen(true);
+      return;
+    }
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -1614,10 +1713,7 @@ function LiveProjectContext() {
       apiKey,
       signal: controller.signal,
     });
-    if (abortRef.current !== controller) {
-      // Superseded by a newer request; drop this one's result.
-      return;
-    }
+    if (abortRef.current !== controller) return;
     abortRef.current = null;
     const stamp = new Date().toISOString();
     if (result.ok) {
@@ -1641,69 +1737,72 @@ function LiveProjectContext() {
   };
 
   return (
-    <Card>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <SectionTitle eyebrow="Notion read-only" title="Live Projektkontext" />
+    <Card className="!p-5 md:!p-6">
+      {/* Compact header: title + status chips + primary action in one row. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-amber-200/80">Notion · read-only</div>
+          <h3 className="mt-1 text-lg font-black leading-tight text-[#fff7fb]">Live Projektkontext</h3>
+          <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
+            Project ID <span className="text-[#eadbe2]">{projectId || '—'}</span>
+          </div>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <Pill tone="gold">read-only</Pill>
           <Pill tone="red">execute locked</Pill>
-        </div>
-      </div>
-      <p className="text-sm font-semibold leading-6 text-[#eadbe2]">
-        Ruft <code className="rounded bg-black/40 px-1.5 py-0.5 text-[12px] text-amber-200/90">GET /api/operator/projects/:projectId/context</code>
-        {' '}auf. Der Operator-Key bleibt nur in dieser Page-Session im Browser-RAM — kein Storage, kein Cookie, kein Env-Bake. Beim Reload ist er weg.
-      </p>
-
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <div>
-          <FieldLabel>Project ID</FieldLabel>
-          <input
-            type="text"
-            inputMode="text"
-            spellCheck={false}
-            autoCorrect="off"
-            autoCapitalize="off"
-            autoComplete="off"
-            value={projectId}
-            onChange={(event) => setProjectId(event.target.value)}
-            placeholder="APP-X"
-            className="w-full rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 px-4 py-3 text-sm font-extrabold tracking-wide text-[#fff7fb] outline-none transition focus:border-amber-300/60"
-          />
-        </div>
-        <div>
-          <FieldLabel>Operator API Key (nur für diese Session)</FieldLabel>
-          <input
-            type="password"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            value={apiKey}
-            onChange={(event) => setApiKey(event.target.value)}
-            placeholder="x-nox-operator-key"
-            className="w-full rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 px-4 py-3 text-sm font-extrabold tracking-wide text-[#fff7fb] outline-none transition focus:border-amber-300/60"
-          />
+          {resultData ? <Pill>Geladen {new Date(resultData.loadedAt).toLocaleTimeString('de-DE')}</Pill> : null}
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        <Button onClick={handleLoad} disabled={isLoading || !hasKey || projectId.trim().length === 0}>
+      {/* Primary actions row: load + reload + auth toggle. */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button onClick={handleLoad} disabled={!canLoad}>
           {isLoading ? 'Lädt…' : hasResult ? 'Neu laden' : 'Kontext laden'}
         </Button>
-        <Button tone="ghost" onClick={handleClearKey} disabled={!hasKey && !isLoading}>
-          Key löschen
+        <Button
+          tone="secondary"
+          onClick={() => setAuthOpen((open) => !open)}
+        >
+          {authOpen ? 'Auth ausblenden' : hasKey ? 'Auth (Key gesetzt)' : 'Auth einblenden'}
         </Button>
-        {resultData ? (
-          <span className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">
-            Geladen: <span className="text-[#eadbe2]">{resultData.loadedAt}</span>
-          </span>
+        {hasKey ? (
+          <Button tone="ghost" onClick={handleClearKey} disabled={isLoading}>
+            Key löschen
+          </Button>
         ) : null}
       </div>
 
-      <div className="mt-6">
+      {/* Collapsible auth panel. Closed by default to save vertical space. */}
+      {authOpen ? (
+        <div className="mt-4 rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-4">
+          <div className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#9f8d95]">
+            Operator-Auth (nur Page-Session)
+          </div>
+          <p className="mt-2 text-xs font-semibold leading-5 text-[#9f8d95]">
+            Key landet nur im React-State. Kein Storage, kein Cookie, kein Env-Bake. Beim Reload ist er weg.
+          </p>
+          <div className="mt-3">
+            <FieldLabel>Operator API Key</FieldLabel>
+            <input
+              type="password"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              value={apiKey}
+              onChange={(event) => setApiKey(event.target.value)}
+              placeholder="x-nox-operator-key"
+              className="w-full rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 px-4 py-2.5 text-sm font-extrabold tracking-wide text-[#fff7fb] outline-none transition focus:border-amber-300/60"
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {/* Body: state-driven, compact spacing. */}
+      <div className="mt-5">
         {isLoading ? (
-          <div className="rounded-2xl border border-[#4a101b]/55 bg-[#120609]/60 p-5 text-sm font-bold text-[#eadbe2]">
-            Lade Projektkontext aus Notion (read-only)…
+          <div className="rounded-2xl border border-[#4a101b]/55 bg-[#120609]/60 p-4 text-sm font-bold text-[#eadbe2]">
+            Lade Projektkontext (read-only)…
           </div>
         ) : null}
 
@@ -1711,8 +1810,12 @@ function LiveProjectContext() {
         {resultData ? <LiveContextDataView data={resultData.data} /> : null}
 
         {!isLoading && !resultData && !resultError ? (
-          <div className="rounded-2xl border border-[#4a101b]/40 bg-[#0c0507]/60 p-5 text-sm font-semibold leading-6 text-[#9f8d95]">
-            Noch nichts geladen. Operator-Key einsetzen und <b className="text-[#eadbe2]">Kontext laden</b> klicken.
+          <div className="rounded-2xl border border-[#4a101b]/35 bg-[#0c0507]/55 p-4 text-[13px] font-semibold leading-6 text-[#9f8d95]">
+            {hasKey ? (
+              <>Noch nichts geladen. <b className="text-[#eadbe2]">Kontext laden</b> klicken.</>
+            ) : (
+              <>Noch nichts geladen. Erst <b className="text-[#eadbe2]">Auth einblenden</b>, Key einsetzen, dann <b className="text-[#eadbe2]">Kontext laden</b>.</>
+            )}
           </div>
         ) : null}
       </div>
@@ -1801,156 +1904,137 @@ function LiveContextDataView({ data }: { data: ProjectContextResponse }) {
   const questCount = data.quests?.length ?? 0;
   const approvalCount = data.openApprovals?.length ?? 0;
   const blockerCount = data.blockers?.length ?? 0;
+  const eventCount = data.recentEvents?.length ?? 0;
+  const artifactCount = data.artifacts?.length ?? 0;
 
   return (
-    <div className="space-y-6">
-      {/* Summary chips */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Pill tone="gold">{`Quests: ${questCount}`}</Pill>
-        <Pill tone={approvalCount > 0 ? 'red' : 'default'}>{`Freigaben offen: ${approvalCount}`}</Pill>
-        <Pill tone={blockerCount > 0 ? 'red' : 'default'}>{`Blocker: ${blockerCount}`}</Pill>
-        <Pill tone={meta.projectMappingConfigured ? 'gold' : 'default'}>
-          {meta.projectMappingConfigured ? 'projectMappingConfigured=true' : 'projectMappingConfigured=false'}
-        </Pill>
-        <Pill tone={meta.liveExecution === 'locked' ? 'red' : 'default'}>
-          {meta.liveExecution ? `liveExecution=${meta.liveExecution}` : 'liveExecution=?'}
-        </Pill>
+    <div className="space-y-5">
+      {/* A — Command summary row: 6 compact stats. */}
+      <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3 lg:grid-cols-6">
+        <LiveStatTile label="Status" value={project.status ?? '—'} tone={project.status ? 'gold' : 'default'} />
+        <LiveStatTile label="Typ" value={project.typ ?? '—'} />
+        <LiveStatTile label="Priority" value={project.priority ?? '—'} />
+        <LiveStatTile label="Quests" value={String(questCount)} tone="gold" />
+        <LiveStatTile label="Freigaben" value={String(approvalCount)} tone={approvalCount > 0 ? 'red' : 'default'} />
+        <LiveStatTile label="execute" value={meta.liveExecution ?? '?'} tone={meta.liveExecution === 'locked' ? 'red' : 'default'} />
       </div>
+
       {data.contextSummary ? (
         <p className="text-sm font-semibold leading-6 text-[#eadbe2]">{data.contextSummary}</p>
       ) : null}
 
-      {/* Project Card */}
-      <div className="rounded-2xl border border-amber-300/25 bg-[#120609]/70 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-amber-200/75">Projekt</div>
-            <h3 className="mt-1 text-xl font-black text-[#fff7fb]">{project.title}</h3>
-            <div className="mt-1 text-[12px] font-bold text-[#9f8d95]">{project.projectId}</div>
+      {/* E — Open approvals first when >0: red warning band before everything else. */}
+      {approvalCount > 0 ? (
+        <div className="rounded-2xl border border-red-500/35 bg-red-500/10 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-red-200/85">Entscheidung nötig</div>
+              <div className="mt-1 text-sm font-black text-red-100">
+                {approvalCount} {approvalCount === 1 ? 'Freigabe braucht Entscheidung' : 'Freigaben brauchen Entscheidung'}
+              </div>
+            </div>
+            <Pill tone="red">{approvalCount}</Pill>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {project.status ? <Pill tone="gold">{`Status: ${project.status}`}</Pill> : null}
-            {project.typ ? <Pill>{`Typ: ${project.typ}`}</Pill> : null}
-            {project.priority ? <Pill>{`Priority: ${project.priority}`}</Pill> : null}
-          </div>
-        </div>
-        <dl className="mt-5 grid gap-4 md:grid-cols-2">
-          <LiveContextField label="Vision" value={project.vision} />
-          <LiveContextField label="Andromeda Kontext" value={project.andromedaContext} />
-          <LiveContextField label="Aktueller Stand" value={project.currentState} />
-          <LiveContextField label="Nächste Aktion" value={project.nextAction} />
-          <LiveContextField label="Erlaubte Aktionen" value={project.allowedActions} />
-          <LiveContextField label="Verbotene Aktionen" value={project.forbiddenActions} />
-        </dl>
-        {project.primaryUrl ? (
-          <div className="mt-5">
-            <a
-              href={project.primaryUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center rounded-2xl border border-amber-300/40 bg-amber-300/10 px-4 py-2 text-[12px] font-extrabold uppercase tracking-[0.2em] text-amber-100 transition hover:bg-amber-300/15"
-            >
-              Primary URL öffnen
-            </a>
-          </div>
-        ) : null}
-      </div>
-
-      {/* Quests */}
-      <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Verknüpfte Quests</div>
-          <Pill tone="gold">{questCount}</Pill>
-        </div>
-        {questCount === 0 ? (
-          <p className="mt-3 text-sm font-semibold leading-6 text-[#9f8d95]">Keine Quests verknüpft.</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {data.quests.map((quest) => (
-              <li key={quest.questId} className="rounded-2xl border border-[#4a101b]/45 bg-[#120609]/70 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-black leading-snug text-[#fff7fb]">{quest.title}</div>
-                    <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
-                      {quest.agent ? `${quest.agent}` : 'Agent unbekannt'}
-                      {quest.lastEditedAt ? ` · ${quest.lastEditedAt}` : ''}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {quest.status ? <Pill>{quest.status}</Pill> : null}
-                    {quest.approved ? <Pill tone="gold">freigegeben</Pill> : null}
-                    {quest.approvalNeeded ? <Pill tone="red">Freigabe nötig</Pill> : null}
-                    {quest.questStarten ? <Pill tone="gold">Quest starten</Pill> : null}
-                    {quest.questAbgeschlossen ? <Pill>abgeschlossen</Pill> : null}
-                  </div>
-                </div>
-                {quest.blocker ? (
-                  <div className="mt-3 rounded-xl border border-red-500/25 bg-red-500/8 p-3 text-sm font-semibold leading-6 text-red-100/85">
-                    <b className="mr-1 text-red-200">Blocker:</b>
-                    {quest.blocker.slice(0, 280)}
-                    {quest.blocker.length > 280 ? '…' : ''}
-                  </div>
-                ) : null}
-                {quest.url ? (
-                  <div className="mt-3">
-                    <a
-                      href={quest.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[12px] font-extrabold uppercase tracking-[0.2em] text-amber-200 hover:underline"
-                    >
-                      In Notion öffnen
-                    </a>
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Open approvals */}
-      <div className="rounded-2xl border border-red-500/30 bg-red-500/8 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-red-200/80">Offene Freigaben</div>
-          <Pill tone="red">{approvalCount}</Pill>
-        </div>
-        {approvalCount === 0 ? (
-          <p className="mt-3 text-sm font-semibold leading-6 text-[#9f8d95]">Keine offenen Freigaben.</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
+          <ul className="mt-3 space-y-2">
             {data.openApprovals.map((approval) => (
-              <li key={`apr-${approval.questId}`} className="rounded-2xl border border-red-500/25 bg-[#120609]/70 p-4">
-                <div className="text-sm font-black text-[#fff7fb]">{approval.title}</div>
-                <p className="mt-2 text-sm font-semibold leading-6 text-red-100/85">
-                  {approval.reason.slice(0, 280)}
-                  {approval.reason.length > 280 ? '…' : ''}
+              <li key={`apr-${approval.questId}`} className="rounded-xl border border-red-500/25 bg-[#120609]/70 p-3">
+                <div className="text-[13px] font-black leading-snug text-[#fff7fb]">{approval.title}</div>
+                <p className="mt-1 text-[12px] font-semibold leading-5 text-red-100/85">
+                  {approval.reason.slice(0, 160)}{approval.reason.length > 160 ? '…' : ''}
                 </p>
               </li>
             ))}
           </ul>
-        )}
-      </div>
-
-      {/* Recent events */}
-      <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Recent Events</div>
-          <Pill>{data.recentEvents?.length ?? 0}</Pill>
         </div>
-        {!data.recentEvents || data.recentEvents.length === 0 ? (
-          <p className="mt-3 text-sm font-semibold leading-6 text-[#9f8d95]">Keine Events erfasst.</p>
-        ) : (
-          <ul className="mt-4 space-y-2">
-            {data.recentEvents.map((event, idx) => (
-              <li
-                key={`evt-${event.questId ?? 'x'}-${idx}`}
-                className="rounded-xl border border-[#4a101b]/45 bg-[#120609]/65 p-3"
+      ) : null}
+
+      {/* B — Next Action Panel: nextAction + currentState + allowed/forbidden cols. */}
+      {(project.nextAction || project.currentState || project.allowedActions || project.forbiddenActions || project.vision || project.andromedaContext) ? (
+        <div className="rounded-2xl border border-amber-300/25 bg-[#120609]/65 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-amber-200/85">Projekt</div>
+              <h3 className="mt-1 text-lg font-black leading-tight text-[#fff7fb]">{project.title}</h3>
+              <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">{project.projectId}</div>
+            </div>
+            {project.primaryUrl ? (
+              <a
+                href={project.primaryUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-amber-200 hover:underline"
               >
-                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">{event.at}</div>
-                <div className="mt-1 text-sm font-semibold leading-6 text-[#eadbe2]">{event.summary}</div>
-                {event.questId ? (
-                  <div className="mt-1 text-[11px] font-bold text-[#9f8d95]">questId: {event.questId}</div>
+                In Notion öffnen
+              </a>
+            ) : null}
+          </div>
+          <dl className="mt-4 grid gap-4 lg:grid-cols-2">
+            <LiveContextField label="Nächste Aktion" value={project.nextAction} />
+            <LiveContextField label="Aktueller Stand" value={project.currentState} />
+            <LiveContextField label="Vision" value={project.vision} />
+            <LiveContextField label="Andromeda Kontext" value={project.andromedaContext} />
+          </dl>
+          {(project.allowedActions || project.forbiddenActions) ? (
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              {project.allowedActions ? (
+                <div className="rounded-xl border border-amber-300/25 bg-[#0c0507]/60 p-3">
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200/75">Erlaubt</div>
+                  <p className="mt-1 whitespace-pre-wrap text-[13px] font-semibold leading-6 text-[#fff7fb]">{project.allowedActions}</p>
+                </div>
+              ) : null}
+              {project.forbiddenActions ? (
+                <div className="rounded-xl border border-red-500/30 bg-[#0c0507]/60 p-3">
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-red-200/80">Verboten</div>
+                  <p className="mt-1 whitespace-pre-wrap text-[13px] font-semibold leading-6 text-[#fff7fb]">{project.forbiddenActions}</p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* D — Quests as a compact list/table hybrid. */}
+      <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/60 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Quests · {questCount}</div>
+          {blockerCount > 0 ? <Pill tone="red">{`${blockerCount} Blocker`}</Pill> : null}
+        </div>
+        {questCount === 0 ? (
+          <p className="mt-3 text-[13px] font-semibold leading-6 text-[#9f8d95]">Keine Quests verknüpft.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-[#4a101b]/35">
+            {data.quests.map((quest) => (
+              <li key={quest.questId} className="py-3 first:pt-0 last:pb-0">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-black leading-snug text-[#fff7fb]">{quest.title}</div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9f8d95]">
+                      {quest.agent ? <span>{quest.agent}</span> : null}
+                      {quest.lastEditedAt ? <span>{quest.lastEditedAt.slice(0, 10)}</span> : null}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {quest.status ? <Pill>{quest.status}</Pill> : null}
+                    {quest.approvalNeeded ? <Pill tone="red">Freigabe</Pill> : null}
+                    {quest.approved ? <Pill tone="gold">freigegeben</Pill> : null}
+                    {quest.questAbgeschlossen ? <Pill>abgeschlossen</Pill> : null}
+                    {quest.url ? (
+                      <a
+                        href={quest.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-full border border-amber-300/30 bg-amber-300/8 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-100 hover:bg-amber-300/15"
+                      >
+                        Notion
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+                {quest.blocker ? (
+                  <div className="mt-2 text-[12px] font-semibold leading-5 text-red-100/85">
+                    <b className="mr-1 text-red-200">Blocker:</b>
+                    {quest.blocker.slice(0, 160)}{quest.blocker.length > 160 ? '…' : ''}
+                  </div>
                 ) : null}
               </li>
             ))}
@@ -1958,19 +2042,51 @@ function LiveContextDataView({ data }: { data: ProjectContextResponse }) {
         )}
       </div>
 
-      {/* Artifacts placeholder */}
-      <div className="rounded-2xl border border-[#4a101b]/40 bg-[#0c0507]/60 p-5">
+      {/* F — Events: lean timeline. */}
+      <div className="rounded-2xl border border-[#4a101b]/45 bg-[#0c0507]/55 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Referenz-Artefakte</div>
-          <Pill>{data.artifacts?.length ?? 0}</Pill>
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Events · {eventCount}</div>
         </div>
-        <p className="mt-3 text-sm font-semibold leading-6 text-[#9f8d95]">
-          Noch keine Referenzdateien verknüpft.
-        </p>
-        <p className="mt-2 text-[12px] font-semibold leading-5 text-[#9f8d95]/80">
-          Referenzdateien/Designbilder werden später über ReferenceArtifact angebunden.
+        {eventCount === 0 ? (
+          <p className="mt-2 text-[13px] font-semibold leading-6 text-[#9f8d95]">Keine Events erfasst.</p>
+        ) : (
+          <ol className="mt-2 space-y-1.5 border-l border-[#4a101b]/50 pl-3">
+            {data.recentEvents.slice(0, 8).map((event, idx) => (
+              <li key={`evt-${event.questId ?? 'x'}-${idx}`} className="text-[12px] font-semibold leading-5 text-[#eadbe2]">
+                <span className="mr-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9f8d95]">
+                  {event.at.slice(0, 16).replace('T', ' ')}
+                </span>
+                {event.summary}
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
+      {/* G — Artifacts empty-state. */}
+      <div className="rounded-2xl border border-[#4a101b]/35 bg-[#0c0507]/50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Artefakte · {artifactCount}</div>
+        </div>
+        <p className="mt-2 text-[13px] font-semibold leading-6 text-[#9f8d95]">
+          Noch keine Referenzdateien. Später: Designbilder, Screenshots, Specs, Drive/Miro Links.
         </p>
       </div>
+    </div>
+  );
+}
+
+function LiveStatTile({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'gold' | 'red' }) {
+  const ring =
+    tone === 'red'
+      ? 'border-red-500/35 bg-red-500/8 text-red-100'
+      : tone === 'gold'
+        ? 'border-amber-300/30 bg-amber-300/8 text-amber-50'
+        : 'border-[#4a101b]/55 bg-[#0c0507]/55 text-[#eadbe2]';
+  return (
+    <div className={cx('rounded-xl border px-3 py-2.5', ring)}>
+      <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] opacity-80">{label}</div>
+      <div className="mt-0.5 truncate text-[13px] font-black leading-tight">{value}</div>
     </div>
   );
 }
@@ -2043,9 +2159,6 @@ function ProjectX({
           <Pill tone="red">Keine Browser-Calls</Pill>
         </div>
       </Card>
-
-      {/* APP-X-BRIDGE-05a — Live Projektkontext (read-only Notion projection). */}
-      <LiveProjectContext />
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-8">
@@ -2458,48 +2571,45 @@ function ProjectsDeepDive({
   ];
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-6">
-        <SectionTitle
-          eyebrow="Projects"
-          title="Projekt-Deep-Dive"
-          subtitle="Waehle ein Projekt und arbeite mit NOX am aktuellen Stand, Outputs, Freigaben und naechsten Schritten."
-        />
-
-        <Card className="max-w-3xl">
-          <FieldLabel>Operator Schnellzugriff</FieldLabel>
-          <div className="relative">
-            <select
-              value={selectedProjectId}
-              onChange={(event) => setSelectedProjectId(event.target.value)}
-              className="w-full appearance-none rounded-2xl border border-[#4a101b]/70 bg-[#120609] p-4 pr-12 text-base font-black text-[#fff7fb] outline-none transition focus:border-amber-300/70"
-            >
-              {projects.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.code} - {item.name}
-                </option>
-              ))}
-            </select>
-            <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs font-black text-amber-200">V</span>
+    <div className="space-y-6">
+      {/* APP-X-UI-01 — Compact command header: eyebrow + title + project picker
+          + status chips in one structured row. No mega-H1 wall. */}
+      <Card className="!p-5 md:!p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/80">Projektzentrale</div>
+            <h1 className="mt-1 text-2xl font-black leading-tight tracking-tight text-[#fff7fb] md:text-3xl">{project.name}</h1>
+            <p className="mt-1 text-sm font-semibold leading-6 text-[#9f8d95]">{project.code} · {project.type}</p>
           </div>
-        </Card>
-      </section>
-
-      <Card className="!p-7 md:!p-9">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-4xl">
-            <div className="text-[12px] font-extrabold uppercase tracking-[0.3em] text-amber-200/80">Projekt-Deep-Dive</div>
-            <h1 className="mt-3 text-4xl font-black leading-tight tracking-tight text-[#fff7fb] md:text-6xl">{project.name}</h1>
-            <p className="mt-5 text-lg font-semibold leading-8 text-[#eadbe2]">Vision: {project.vision}</p>
-          </div>
-
-          <div className="flex flex-wrap gap-3 lg:max-w-sm lg:justify-end">
-            <Pill tone="gold">Typ: {project.type}</Pill>
-            <Pill>Status: {project.status}</Pill>
-            <Pill>Verantwortlich: {project.owner}</Pill>
+          <div className="flex flex-col items-stretch gap-3 lg:items-end">
+            <div className="relative w-full lg:w-72">
+              <select
+                value={selectedProjectId}
+                onChange={(event) => setSelectedProjectId(event.target.value)}
+                className="w-full appearance-none rounded-2xl border border-[#4a101b]/70 bg-[#120609] p-3 pr-10 text-sm font-black text-[#fff7fb] outline-none transition focus:border-amber-300/70"
+              >
+                {projects.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.code} — {item.name}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-amber-200">V</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Pill tone="gold">Notion read-only</Pill>
+              <Pill tone="red">execute locked</Pill>
+              <Pill>Status: {project.status}</Pill>
+            </div>
           </div>
         </div>
+        <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-[#eadbe2]">Vision: {project.vision}</p>
       </Card>
+
+      {/* APP-X-UI-01 — Live Projektkontext at the top of the project page.
+          Bound to the picker's project id, so swapping projects swaps which
+          Notion projection the operator can pull. */}
+      <LiveProjectContext projectId={project.code} />
 
       <ProgressPanel
         project={project}
