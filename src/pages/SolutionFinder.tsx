@@ -216,7 +216,7 @@ export default function SolutionFinder() {
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => {
       if (!e[key as string]) return e;
-      const { [key as string]: _removed, ...rest } = e;
+      const rest = Object.fromEntries(Object.entries(e).filter(([entryKey]) => entryKey !== key));
       return rest;
     });
   }, []);

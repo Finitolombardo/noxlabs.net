@@ -49,6 +49,6 @@ export function optionalBoolean(v: unknown, field: string): Validated<boolean | 
 export function optionalIdempotencyKey(v: unknown): Validated<string | undefined> {
   if (v === undefined || v === null) return { ok: true, value: undefined };
   if (typeof v !== 'string') return { ok: false, error: `Field 'idempotencyKey' must be a string.` };
-  if (!/^[A-Za-z0-9_:.\-]{4,128}$/.test(v)) return { ok: false, error: `Field 'idempotencyKey' must match /^[A-Za-z0-9_:.\\-]{4,128}$/.` };
+  if (!/^[A-Za-z0-9_:.-]{4,128}$/.test(v)) return { ok: false, error: `Field 'idempotencyKey' must match /^[A-Za-z0-9_:.-]{4,128}$/.` };
   return { ok: true, value: v };
 }
