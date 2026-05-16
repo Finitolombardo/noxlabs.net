@@ -9,25 +9,27 @@ Die erste Integration im lokalen Playground lag in einer alten Mission-Control-S
 ## Warum die Root-Seite nicht direkt verändert wurde
 Die öffentliche Marketing-Navigation wurde bewusst nicht erweitert. Das Skillbook ist ein internes Kontrollzentrum-Modul und wurde nur in der internen Cockpit-Sidebar eingebunden.
 
-## Warum React Flow statt Excalidraw als Kernengine
-React Flow ist datengetrieben, eignet sich direkt für Knoten/Kanten aus Voraussetzungen und unterstützt Zoom, Pan, FitView und Custom Nodes ohne zusätzlichen Umweg. Excalidraw bleibt visuelle Inspiration für den Look, aber nicht technische Basis.
+## Wechsel der Canvas-Engine
+Die erste Skillbook-Variante nutzte React Flow. Dabei wurden Knoten sichtbar, die Kanten wurden im laufenden UI-Test jedoch nicht zuverlässig gerendert. Deshalb wurde der Forschungsbaum auf Excalidraw als freie Open-Source-Canvas umgestellt.
 
-## Excalidraw als visuelle Inspiration
-Der Stil orientiert sich an einer dunklen Forschungsbuch-Optik mit weichen Kanten, gedämpftem Glow und klaren Statusfarben.
+## Warum Excalidraw als Kernengine
+Excalidraw liefert das gewünschte Whiteboard-/Forschungsbuch-Gefühl, unterstützt Zoom und Pan nativ und ermöglicht eine klare Visualisierung von Perk-Karten plus Pfeilen aus den Voraussetzungen. Die Szene wird lokal aus `skillbookData` erzeugt, ohne API oder Persistenz.
 
 ## Neu / geändert
 - `src/pages/OperatorCockpit.tsx`
 - `src/components/skillbook/SkillbookPanel.tsx`
 - `src/components/skillbook/SkillbookCanvas.tsx`
-- `src/components/skillbook/SkillbookNode.tsx`
 - `src/components/skillbook/SkillbookDetailPanel.tsx`
 - `src/components/skillbook/SkillbookCardView.tsx`
 - `src/data/skillbookData.ts`
 - `src/types/skillbook.ts`
+- `package.json`
+- `package-lock.json`
 
 ## Bewusst nicht gemacht
 - Keine API-Anbindung
 - Keine Notion-Schreibaktionen
+- Keine Speicherung der Excalidraw-Szene
 - Kein Deploy
 - Kein Push
 - Keine Änderung an öffentlicher Marketing-Navigation

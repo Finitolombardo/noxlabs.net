@@ -1,8 +1,17 @@
 ﻿import { useMemo } from 'react';
-import { Background, Controls, MarkerType, MiniMap, ReactFlow, type Edge, type Node } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+import {
+  Excalidraw,
+  convertToExcalidrawElements,
+} from '@excalidraw/excalidraw';
+import '@excalidraw/excalidraw/index.css';
 import type { SkillbookPerk } from '../../types/skillbook';
-import SkillbookNode from './SkillbookNode';
+import type { ExcalidrawElementSkeleton } from '@excalidraw/excalidraw/data/transform';
+
+declare global {
+  interface Window {
+    __skillbookSzene?: { elemente: number; pfeile: number; erwartetePfeile: number };
+  }
+}
 
 type SkillbookCanvasProps = {
   perks: SkillbookPerk[];
@@ -10,75 +19,154 @@ type SkillbookCanvasProps = {
   onSelectPerk: (perkId: string) => void;
 };
 
-const nodeTypes = {
-  skillbook: SkillbookNode,
-} as const;
+const CARD_WIDTH = 230;
+const CARD_HEIGHT = 96;
 
-function createEdges(perks: SkillbookPerk[]): Edge[] {
+function statusFarben(status: SkillbookPerk['status']) {
+  if (status === 'integriert') return { stroke: '#2dd4bf', fill: '#0a2626', text: '#d1fae5' };
+  if (status === 'bereit') return { stroke: '#fbbf24', fill: '#2b1d07', text: '#fde68a' };
+  if (status === 'wird-geprueft') return { stroke: '#a78bfa', fill: '#23153d', text: '#ddd6fe' };
+  if (status === 'geplant') return { stroke: '#60a5fa', fill: '#0a1b36', text: '#bfdbfe' };
+  return { stroke: '#64748b', fill: '#1e293b', text: '#cbd5e1' };
+}
+
+function pfeilFarbe(von: SkillbookPerk, nach: SkillbookPerk) {
+  if (nach.status === 'gesperrt') return '#64748b';
+  if (nach.status === 'geplant') return '#60a5fa';
+  if (von.status === 'integriert' || von.status === 'bereit') return '#22d3ee';
+  return '#a78bfa';
+}
+
+function createSzene(perks: SkillbookPerk[]) {
   const byId = new Map(perks.map((perk) => [perk.id, perk]));
+  const elementZuPerk = new Map<string, string>();
+  const skeleton: ExcalidrawElementSkeleton[] = [];
+  let verbindungen = 0;
 
-  return perks.flatMap((perk) =>
-    perk.voraussetzungen
-      .filter((dependencyId) => byId.has(dependencyId))
-      .map((dependencyId) => {
-        const dependency = byId.get(dependencyId)!;
-        const active = dependency.status === 'integriert' || dependency.status === 'bereit';
-        const blocked = perk.status === 'gesperrt';
+  for (const perk of perks) {
+    const farben = statusFarben(perk.status);
+    const boxId = `perk-box-${perk.id}`;
+    const textId = `perk-text-${perk.id}`;
 
-        return {
-          id: `${dependencyId}-${perk.id}`,
-          source: dependencyId,
-          target: perk.id,
-          animated: active && !blocked,
-          type: 'smoothstep',
-          markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
-          style: {
-            strokeWidth: 2,
-            stroke: blocked ? '#475569' : active ? '#22d3ee' : '#7c3aed',
-            strokeDasharray: perk.status === 'geplant' ? '6 6' : undefined,
-            opacity: blocked ? 0.35 : 0.9,
-          },
-        } satisfies Edge;
-      }),
-  );
+    elementZuPerk.set(boxId, perk.id);
+    elementZuPerk.set(textId, perk.id);
+
+    skeleton.push({
+      type: 'rectangle',
+      id: boxId,
+      x: perk.position.x,
+      y: perk.position.y,
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
+      strokeColor: farben.stroke,
+      backgroundColor: farben.fill,
+      strokeWidth: perk.auswirkungen.risiko > 55 ? 3 : 2,
+      roughness: 1,
+      roundness: { type: 3 },
+      opacity: perk.status === 'gesperrt' ? 75 : 100,
+    });
+
+    skeleton.push({
+      type: 'text',
+      id: textId,
+      x: perk.position.x + 12,
+      y: perk.position.y + 10,
+      text: `${perk.kapitel}\n${perk.name}\n${perk.status.toUpperCase()}  •  STUFE ${perk.stufe}  •  ${perk.prioritaet}`,
+      fontSize: 16,
+      strokeColor: farben.text,
+      backgroundColor: 'transparent',
+      textAlign: 'left',
+      verticalAlign: 'top',
+      width: CARD_WIDTH - 24,
+    });
+  }
+
+  for (const perk of perks) {
+    for (const voraussetzungId of perk.voraussetzungen) {
+      const von = byId.get(voraussetzungId);
+      if (!von) continue;
+      verbindungen += 1;
+
+      const startX = von.position.x + CARD_WIDTH;
+      const startY = von.position.y + CARD_HEIGHT / 2;
+      const endX = perk.position.x;
+      const endY = perk.position.y + CARD_HEIGHT / 2;
+
+      skeleton.push({
+        type: 'arrow',
+        id: `perk-edge-${voraussetzungId}-${perk.id}`,
+        x: startX,
+        y: startY,
+        points: [
+          [0, 0],
+          [endX - startX, endY - startY],
+        ],
+        strokeColor: pfeilFarbe(von, perk),
+        backgroundColor: 'transparent',
+        strokeWidth: 2,
+        startArrowhead: null,
+        endArrowhead: 'arrow',
+        opacity: perk.status === 'gesperrt' ? 40 : 100,
+        roughness: 1,
+      });
+    }
+  }
+
+  return {
+    elementZuPerk,
+    verbindungen,
+    elements: convertToExcalidrawElements(skeleton, { regenerateIds: false }),
+  };
 }
 
 export default function SkillbookCanvas({ perks, selectedPerkId, onSelectPerk }: SkillbookCanvasProps) {
-  const nodes = useMemo<Node[]>(
-    () =>
-      perks.map((perk) => ({
-        id: perk.id,
-        type: 'skillbook',
-        position: perk.position,
-        data: {
-          perk,
-          isSelected: perk.id === selectedPerkId,
-        },
-      })),
-    [perks, selectedPerkId],
-  );
+  const szene = useMemo(() => createSzene(perks), [perks]);
 
-  const edges = useMemo(() => createEdges(perks), [perks]);
+  const initialData = useMemo(
+    () => ({
+      elements: szene.elements,
+      appState: {
+        viewBackgroundColor: '#0b0710',
+        gridSize: 20,
+      },
+    }),
+    [szene.elements],
+  );
 
   return (
     <div className="h-[620px] overflow-hidden rounded-3xl border border-[#2f2336] bg-[#0c0610]">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        minZoom={0.45}
-        maxZoom={1.8}
-        onNodeClick={(_, node) => onSelectPerk(node.id)}
-        nodesDraggable={false}
-        elementsSelectable
-        panOnDrag
-      >
-        <Background color="#2f2336" gap={28} size={1} />
-        <MiniMap zoomable pannable nodeColor="#7c3aed" className="!bg-[#120917] !border !border-[#3d2b42]" />
-        <Controls className="!bg-[#120917] !border !border-[#3d2b42] !rounded-xl" />
-      </ReactFlow>
+      <Excalidraw
+        initialData={initialData}
+        theme="dark"
+        viewModeEnabled={false}
+        gridModeEnabled
+        detectScroll
+        handleKeyboardGlobally={false}
+        UIOptions={{
+          canvasActions: {
+            clearCanvas: false,
+            export: false,
+            loadScene: false,
+            saveToActiveFile: false,
+            saveAsImage: false,
+            toggleTheme: false,
+            changeViewBackgroundColor: false,
+          },
+          tools: {
+            image: false,
+          },
+        }}
+        onChange={(_elements, appState) => {
+          if (typeof window !== 'undefined') {
+            const pfeile = _elements.filter((element) => element.type === 'arrow').length;
+            window.__skillbookSzene = { elemente: _elements.length, pfeile, erwartetePfeile: szene.verbindungen };
+          }
+          const ausgewaehlt = Object.keys(appState.selectedElementIds || {}).find((id) => appState.selectedElementIds[id]);
+          if (!ausgewaehlt) return;
+          const perkId = szene.elementZuPerk.get(ausgewaehlt);
+          if (perkId && perkId !== selectedPerkId) onSelectPerk(perkId);
+        }}
+      />
     </div>
   );
 }
-
