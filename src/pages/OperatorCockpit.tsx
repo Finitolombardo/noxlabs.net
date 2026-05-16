@@ -23,6 +23,7 @@ import type {
   FactorySetupField,
   FactoryWorkflowEntry,
 } from '../data/projectXFactoryDemo';
+import SkillbookPanel from '../components/skillbook/SkillbookPanel';
 
 type Project = {
   id: string;
@@ -652,6 +653,7 @@ const sidebarGroups: SidebarGroup[] = [
     title: 'Agenten',
     items: [
       { label: 'Agenten-Chat', route: 'Agenten-Chat' },
+      { label: 'Skillbook', route: 'Skillbook' },
       { label: 'Workflow-Zonen', route: 'Workflow-Zonen' },
       { label: 'Intelligence', route: 'Intelligence' },
     ],
@@ -1160,6 +1162,8 @@ export default function OperatorCockpit() {
               {active === 'Agenten-Chat' ? (
                 <SimplePage eyebrow="Agenten-Chat" title="Projektbewusst besprechen" text="Der Chat laedt Quest, Projekt, erlaubte und verbotene Aktionen, Artefakte und den Verlauf, bevor delegiert wird." />
               ) : null}
+
+              {active === 'Skillbook' ? <SkillbookPanel /> : null}
 
               {active === 'Projekt X' ? (
                 <ProjectX
