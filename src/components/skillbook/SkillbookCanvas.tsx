@@ -1,22 +1,20 @@
-﻿import { useMemo } from 'react';
-import {
-  Excalidraw,
-  convertToExcalidrawElements,
-} from '@excalidraw/excalidraw';
+﻿import { useEffect, useMemo, useRef } from 'react';
+import { Excalidraw, convertToExcalidrawElements } from '@excalidraw/excalidraw';
 import '@excalidraw/excalidraw/index.css';
-import type { SkillbookPerk } from '../../types/skillbook';
+import type { AppState, ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types';
 import type { ExcalidrawElementSkeleton } from '@excalidraw/excalidraw/data/transform';
+import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
+import type { SkillbookPerk } from '../../types/skillbook';
 
-declare global {
-  interface Window {
-    __skillbookSzene?: { elemente: number; pfeile: number; erwartetePfeile: number };
-  }
-}
+export type SketchElement = ExcalidrawElement;
 
 type SkillbookCanvasProps = {
   perks: SkillbookPerk[];
+  sketchElements: SketchElement[];
   selectedPerkId: string;
   onSelectPerk: (perkId: string) => void;
+  onSelectSkizze: (elementId: string | null) => void;
+  onSketchElementsChange: (elements: SketchElement[]) => void;
 };
 
 const CARD_WIDTH = 230;
@@ -30,26 +28,18 @@ function statusFarben(status: SkillbookPerk['status']) {
   return { stroke: '#64748b', fill: '#1e293b', text: '#cbd5e1' };
 }
 
-function pfeilFarbe(von: SkillbookPerk, nach: SkillbookPerk) {
-  if (nach.status === 'gesperrt') return '#64748b';
-  if (nach.status === 'geplant') return '#60a5fa';
-  if (von.status === 'integriert' || von.status === 'bereit') return '#22d3ee';
-  return '#a78bfa';
-}
-
-function createSzene(perks: SkillbookPerk[]) {
+function createPerkElements(perks: SkillbookPerk[]) {
   const byId = new Map(perks.map((perk) => [perk.id, perk]));
-  const elementZuPerk = new Map<string, string>();
+  const perkElementMap = new Map<string, string>();
   const skeleton: ExcalidrawElementSkeleton[] = [];
-  let verbindungen = 0;
 
   for (const perk of perks) {
     const farben = statusFarben(perk.status);
     const boxId = `perk-box-${perk.id}`;
     const textId = `perk-text-${perk.id}`;
 
-    elementZuPerk.set(boxId, perk.id);
-    elementZuPerk.set(textId, perk.id);
+    perkElementMap.set(boxId, perk.id);
+    perkElementMap.set(textId, perk.id);
 
     skeleton.push({
       type: 'rectangle',
@@ -60,35 +50,33 @@ function createSzene(perks: SkillbookPerk[]) {
       height: CARD_HEIGHT,
       strokeColor: farben.stroke,
       backgroundColor: farben.fill,
-      strokeWidth: perk.auswirkungen.risiko > 55 ? 3 : 2,
+      strokeWidth: 2,
       roughness: 1,
       roundness: { type: 3 },
-      opacity: perk.status === 'gesperrt' ? 75 : 100,
-    });
+      customData: { perkId: perk.id, elementType: 'perk-node', noxManaged: true },
+    } as ExcalidrawElementSkeleton);
 
     skeleton.push({
       type: 'text',
       id: textId,
       x: perk.position.x + 12,
       y: perk.position.y + 10,
-      text: `${perk.kapitel}\n${perk.name}\n${perk.status.toUpperCase()}  •  STUFE ${perk.stufe}  •  ${perk.prioritaet}`,
+      text: `${perk.kapitel}\n${perk.name}\n${perk.status.toUpperCase()} • STUFE ${perk.stufe}`,
       fontSize: 16,
       strokeColor: farben.text,
-      backgroundColor: 'transparent',
       textAlign: 'left',
       verticalAlign: 'top',
       width: CARD_WIDTH - 24,
-    });
+      customData: { perkId: perk.id, elementType: 'perk-label', noxManaged: true },
+    } as ExcalidrawElementSkeleton);
   }
 
   for (const perk of perks) {
     for (const voraussetzungId of perk.voraussetzungen) {
-      const von = byId.get(voraussetzungId);
-      if (!von) continue;
-      verbindungen += 1;
-
-      const startX = von.position.x + CARD_WIDTH;
-      const startY = von.position.y + CARD_HEIGHT / 2;
+      const source = byId.get(voraussetzungId);
+      if (!source) continue;
+      const startX = source.position.x + CARD_WIDTH;
+      const startY = source.position.y + CARD_HEIGHT / 2;
       const endX = perk.position.x;
       const endY = perk.position.y + CARD_HEIGHT / 2;
 
@@ -97,74 +85,63 @@ function createSzene(perks: SkillbookPerk[]) {
         id: `perk-edge-${voraussetzungId}-${perk.id}`,
         x: startX,
         y: startY,
-        points: [
-          [0, 0],
-          [endX - startX, endY - startY],
-        ],
-        strokeColor: pfeilFarbe(von, perk),
+        points: [[0, 0], [endX - startX, endY - startY]],
+        strokeColor: '#22d3ee',
         backgroundColor: 'transparent',
         strokeWidth: 2,
-        startArrowhead: null,
         endArrowhead: 'arrow',
-        opacity: perk.status === 'gesperrt' ? 40 : 100,
-        roughness: 1,
-      });
+        customData: { perkId: perk.id, elementType: 'perk-arrow', noxManaged: true },
+      } as ExcalidrawElementSkeleton);
     }
   }
 
-  return {
-    elementZuPerk,
-    verbindungen,
-    elements: convertToExcalidrawElements(skeleton, { regenerateIds: false }),
-  };
+  return { elements: convertToExcalidrawElements(skeleton, { regenerateIds: false }), perkElementMap };
 }
 
-export default function SkillbookCanvas({ perks, selectedPerkId, onSelectPerk }: SkillbookCanvasProps) {
-  const szene = useMemo(() => createSzene(perks), [perks]);
+export default function SkillbookCanvas({ perks, sketchElements, onSketchElementsChange, onSelectPerk, onSelectSkizze }: SkillbookCanvasProps) {
+  const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
+  const lastSketchHashRef = useRef('');
+  const { elements: perkElements, perkElementMap } = useMemo(() => createPerkElements(perks), [perks]);
+  const sceneElements = useMemo(() => [...perkElements, ...sketchElements], [perkElements, sketchElements]);
 
-  const initialData = useMemo(
-    () => ({
-      elements: szene.elements,
-      appState: {
-        viewBackgroundColor: '#0b0710',
-        gridSize: 20,
-      },
-    }),
-    [szene.elements],
-  );
+  useEffect(() => {
+    if (!apiRef.current) return;
+    apiRef.current.updateScene({ elements: sceneElements, appState: { viewBackgroundColor: '#05030a' } });
+  }, [sceneElements]);
 
   return (
-    <div className="h-[620px] overflow-hidden rounded-3xl border border-[#2f2336] bg-[#0c0610]">
+    <div className="h-[620px] overflow-hidden rounded-3xl border border-[#2f2336] bg-[#05030a]">
       <Excalidraw
-        initialData={initialData}
+        excalidrawAPI={(api) => {
+          apiRef.current = api;
+        }}
+        initialData={{ elements: sceneElements, appState: { viewBackgroundColor: '#05030a' } }}
         theme="dark"
         viewModeEnabled={false}
-        gridModeEnabled
+        gridModeEnabled={false}
         detectScroll
         handleKeyboardGlobally={false}
-        UIOptions={{
-          canvasActions: {
-            clearCanvas: false,
-            export: false,
-            loadScene: false,
-            saveToActiveFile: false,
-            saveAsImage: false,
-            toggleTheme: false,
-            changeViewBackgroundColor: false,
-          },
-          tools: {
-            image: false,
-          },
-        }}
-        onChange={(_elements, appState) => {
-          if (typeof window !== 'undefined') {
-            const pfeile = _elements.filter((element) => element.type === 'arrow').length;
-            window.__skillbookSzene = { elemente: _elements.length, pfeile, erwartetePfeile: szene.verbindungen };
+        onChange={(elements: readonly ExcalidrawElement[], appState: AppState) => {
+          const sketches = elements.filter((element) => !element.customData?.noxManaged);
+          const hash = JSON.stringify(sketches.map((element) => `${element.id}:${element.version}`));
+          if (hash !== lastSketchHashRef.current) {
+            lastSketchHashRef.current = hash;
+            onSketchElementsChange([...sketches]);
           }
-          const ausgewaehlt = Object.keys(appState.selectedElementIds || {}).find((id) => appState.selectedElementIds[id]);
-          if (!ausgewaehlt) return;
-          const perkId = szene.elementZuPerk.get(ausgewaehlt);
-          if (perkId && perkId !== selectedPerkId) onSelectPerk(perkId);
+
+          const selectedId = Object.keys(appState.selectedElementIds || {}).find((id) => appState.selectedElementIds[id]);
+          if (!selectedId) {
+            onSelectSkizze(null);
+            return;
+          }
+
+          const perkId = perkElementMap.get(selectedId);
+          if (perkId) {
+            onSelectPerk(perkId);
+            onSelectSkizze(null);
+          } else {
+            onSelectSkizze(selectedId);
+          }
         }}
       />
     </div>

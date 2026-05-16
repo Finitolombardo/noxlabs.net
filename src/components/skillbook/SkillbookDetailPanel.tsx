@@ -2,9 +2,12 @@
 import { statusLabel } from '../../data/skillbookData';
 
 type SkillbookDetailPanelProps = {
-  perk: SkillbookPerk;
+  perk: SkillbookPerk | null;
+  skizzenHinweis: boolean;
   resolveName: (perkId: string) => string;
+  onUpdatePerk: (perkId: string, patch: Partial<SkillbookPerk>) => void;
   onToast: (message: string) => void;
+  onAlsPerkUebernehmen: () => void;
 };
 
 function Wirkung({ label, value, invert = false }: { label: string; value: number; invert?: boolean }) {
@@ -22,54 +25,83 @@ function Wirkung({ label, value, invert = false }: { label: string; value: numbe
   );
 }
 
-export default function SkillbookDetailPanel({ perk, resolveName, onToast }: SkillbookDetailPanelProps) {
+function Zeilenliste({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
+  return (
+    <textarea
+      value={value.join('\n')}
+      onChange={(event) => onChange(event.target.value.split('\n').map((entry) => entry.trim()).filter(Boolean))}
+      className="min-h-[80px] w-full rounded-xl border border-[#3d2b42]/80 bg-[#140a18] px-3 py-2 text-sm text-[#f7edf5]"
+    />
+  );
+}
+
+export default function SkillbookDetailPanel({ perk, skizzenHinweis, resolveName, onUpdatePerk, onToast, onAlsPerkUebernehmen }: SkillbookDetailPanelProps) {
+  if (!perk) {
+    return (
+      <aside className="max-h-[620px] overflow-y-auto rounded-3xl border border-[#35243d] bg-[#100813]/95 p-5">
+        <h3 className="text-lg font-black text-[#fff5fc]">Detailpanel</h3>
+        {skizzenHinweis ? (
+          <div className="mt-3 space-y-3 text-sm text-[#e6d9eb]">
+            <p>Dieses Element ist nur eine Skizze und noch kein Perk.</p>
+            <button type="button" onClick={onAlsPerkUebernehmen} className="rounded-xl border border-cyan-300/40 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100">
+              Als Perk übernehmen
+            </button>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-[#e6d9eb]">Wähle einen Perk-Knoten oder erstelle einen neuen Perk.</p>
+        )}
+      </aside>
+    );
+  }
+
   return (
     <aside className="max-h-[620px] overflow-y-auto rounded-3xl border border-[#35243d] bg-[#100813]/95 p-5">
       <div className="text-xs uppercase tracking-[0.16em] text-[#9f89a7]">NOX Skillbook</div>
-      <h3 className="mt-1 text-xl font-black text-[#fff5fc]">{perk.name}</h3>
-      <p className="mt-1 text-xs text-[#bca8c4]">{perk.kategorie} • {perk.kapitel}</p>
+      <input
+        value={perk.name}
+        onChange={(event) => onUpdatePerk(perk.id, { name: event.target.value })}
+        className="mt-1 w-full rounded-xl border border-[#3d2b42]/80 bg-[#140a18] px-3 py-2 text-xl font-black text-[#fff5fc]"
+      />
 
-      <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
-        <span className="rounded-full border border-[#3d2b42]/80 bg-[#1c1220] px-2 py-1 text-[#cab7d1]">{statusLabel[perk.status]}</span>
-        <span className="rounded-full border border-[#3d2b42]/80 bg-[#1c1220] px-2 py-1 text-[#cab7d1]">Stufe {perk.stufe}</span>
-        <span className="rounded-full border border-[#3d2b42]/80 bg-[#1c1220] px-2 py-1 text-[#cab7d1]">Priorität: {perk.prioritaet}</span>
-        <span className="rounded-full border border-[#3d2b42]/80 bg-[#1c1220] px-2 py-1 text-[#cab7d1]">Schwierigkeit: {perk.schwierigkeit}</span>
+      <div className="mt-3 grid gap-2 md:grid-cols-2">
+        <label className="text-xs text-[#cab7d1]">Kategorie
+          <input value={perk.kategorie} onChange={(event) => onUpdatePerk(perk.id, { kategorie: event.target.value as SkillbookPerk['kategorie'] })} className="mt-1 w-full rounded-xl border border-[#3d2b42]/80 bg-[#140a18] px-2 py-1.5 text-sm text-[#f7edf5]" />
+        </label>
+        <label className="text-xs text-[#cab7d1]">Kapitel
+          <input value={perk.kapitel} onChange={(event) => onUpdatePerk(perk.id, { kapitel: event.target.value })} className="mt-1 w-full rounded-xl border border-[#3d2b42]/80 bg-[#140a18] px-2 py-1.5 text-sm text-[#f7edf5]" />
+        </label>
+        <label className="text-xs text-[#cab7d1]">Status
+          <select value={perk.status} onChange={(event) => onUpdatePerk(perk.id, { status: event.target.value as SkillbookPerk['status'] })} className="mt-1 w-full rounded-xl border border-[#3d2b42]/80 bg-[#140a18] px-2 py-1.5 text-sm text-[#f7edf5]"><option value="integriert">Integriert</option><option value="bereit">Bereit</option><option value="wird-geprueft">Wird geprüft</option><option value="geplant">Geplant</option><option value="gesperrt">Gesperrt</option></select>
+        </label>
+        <label className="text-xs text-[#cab7d1]">Stufe
+          <input type="number" min={1} value={perk.stufe} onChange={(event) => onUpdatePerk(perk.id, { stufe: Number(event.target.value) || 1 })} className="mt-1 w-full rounded-xl border border-[#3d2b42]/80 bg-[#140a18] px-2 py-1.5 text-sm text-[#f7edf5]" />
+        </label>
       </div>
 
       <section className="mt-4 space-y-3 text-sm">
-        <div>
-          <h4 className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Kurzbeschreibung</h4>
-          <p className="mt-1 text-[#ebdced]">{perk.kurzbeschreibung}</p>
-        </div>
-        <div>
-          <h4 className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Warum wichtig</h4>
-          <p className="mt-1 text-[#ebdced]">{perk.warumWichtig}</p>
-        </div>
+        <label className="block text-xs text-[#cab7d1]">Kurzbeschreibung
+          <textarea value={perk.kurzbeschreibung} onChange={(event) => onUpdatePerk(perk.id, { kurzbeschreibung: event.target.value })} className="mt-1 min-h-[70px] w-full rounded-xl border border-[#3d2b42]/80 bg-[#140a18] px-3 py-2 text-sm text-[#f7edf5]" />
+        </label>
+        <label className="block text-xs text-[#cab7d1]">Warum wichtig
+          <textarea value={perk.warumWichtig} onChange={(event) => onUpdatePerk(perk.id, { warumWichtig: event.target.value })} className="mt-1 min-h-[70px] w-full rounded-xl border border-[#3d2b42]/80 bg-[#140a18] px-3 py-2 text-sm text-[#f7edf5]" />
+        </label>
+
         <div>
           <h4 className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Voraussetzungen</h4>
-          <ul className="mt-1 space-y-1 text-[#ebdced]">
-            {perk.voraussetzungen.length === 0 ? <li>Keine Voraussetzungen</li> : perk.voraussetzungen.map((id) => <li key={id}>• {resolveName(id)}</li>)}
-          </ul>
+          <ul className="mt-1 space-y-1 text-[#ebdced]">{perk.voraussetzungen.length === 0 ? <li>Keine Voraussetzungen</li> : perk.voraussetzungen.map((id) => <li key={id}>• {resolveName(id)}</li>)}</ul>
+        </div>
+
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Nutzen</div>
+          <Zeilenliste value={perk.nutzen} onChange={(next) => onUpdatePerk(perk.id, { nutzen: next })} />
         </div>
         <div>
-          <h4 className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Nutzen und Risiken</h4>
-          <div className="mt-1 grid gap-3 md:grid-cols-2">
-            <div>
-              <div className="text-xs font-bold text-emerald-200">Nutzen</div>
-              <ul className="mt-1 space-y-1 text-[#ebdced]">{perk.nutzen.map((entry) => <li key={entry}>• {entry}</li>)}</ul>
-            </div>
-            <div>
-              <div className="text-xs font-bold text-rose-200">Risiken</div>
-              <ul className="mt-1 space-y-1 text-[#ebdced]">{perk.risiken.map((entry) => <li key={entry}>• {entry}</li>)}</ul>
-            </div>
-          </div>
+          <div className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Risiken</div>
+          <Zeilenliste value={perk.risiken} onChange={(next) => onUpdatePerk(perk.id, { risiken: next })} />
         </div>
         <div>
-          <h4 className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Freischaltung und nächste Forschung</h4>
-          <div className="mt-1 grid gap-3 md:grid-cols-2">
-            <ul className="space-y-1 text-[#ebdced]">{perk.freischaltBedingungen.map((entry) => <li key={entry}>• {entry}</li>)}</ul>
-            <ul className="space-y-1 text-[#ebdced]">{perk.naechsteForschung.map((entry) => <li key={entry}>• {entry}</li>)}</ul>
-          </div>
+          <div className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Nächste Forschung</div>
+          <Zeilenliste value={perk.naechsteForschung} onChange={(next) => onUpdatePerk(perk.id, { naechsteForschung: next })} />
         </div>
       </section>
 
@@ -85,10 +117,8 @@ export default function SkillbookDetailPanel({ perk, resolveName, onToast }: Ski
       </section>
 
       <div className="sticky bottom-0 mt-5 grid grid-cols-2 gap-2 border-t border-[#32243a] bg-[#100813]/95 pt-4">
-        <button type="button" onClick={() => onToast('Freischaltung vorbereitet (lokale Vorschau).')} className="rounded-xl border border-cyan-300/40 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100">Freischaltung vorbereiten</button>
+        <button type="button" onClick={() => onToast('Lokal gespeichert')} className="rounded-xl border border-cyan-300/40 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100">{statusLabel[perk.status]}</button>
         <button type="button" onClick={() => onToast('Aufgabenvorschlag vorbereitet – spätere Notion-Anbindung geplant.')} className="rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-100">Aufgabe erzeugen</button>
-        <button type="button" onClick={() => onToast('Perk als integriert markiert (lokale Vorschau).')} className="rounded-xl border border-emerald-300/40 bg-emerald-400/10 px-3 py-2 text-xs font-bold text-emerald-100">Als integriert markieren</button>
-        <button type="button" onClick={() => onToast('Perk für spätere Prüfung vorgemerkt.')} className="rounded-xl border border-violet-300/40 bg-violet-400/10 px-3 py-2 text-xs font-bold text-violet-100">Später prüfen</button>
       </div>
     </aside>
   );
