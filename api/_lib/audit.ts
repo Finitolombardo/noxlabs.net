@@ -38,7 +38,13 @@ export type AuditEventType =
   | 'PROJECT_CONTEXT_UPSTREAM_FAILED'
   | 'PROJECT_CONTEXT_PROJECT_LOOKUP'
   | 'PROJECT_CONTEXT_PROJECT_NOT_FOUND'
-  | 'PROJECT_CONTEXT_RELATION_READ';
+  | 'PROJECT_CONTEXT_RELATION_READ'
+  // Phase 2A — Project Auto Planner draft preview. Read-only echo + structural
+  // validation. No Notion call, no dispatcher, no write. The `_RESPONDED`
+  // event is emitted only on the 200 success path.
+  | 'PLAN_PREVIEW_REQUESTED'
+  | 'PLAN_PREVIEW_VALIDATION_FAILED'
+  | 'PLAN_PREVIEW_RESPONDED';
 
 export type AuditOutcome = 'success' | 'attempt' | 'blocked' | 'failure';
 

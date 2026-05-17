@@ -2,10 +2,18 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { fetchOperatorProjectContext } from '../lib/operatorContextClient';
+import {
+  fetchPlanPreview,
+  generatePreviewIdempotencyKey,
+} from '../lib/projectPlannerClient';
 import type {
   NotionUpstreamDiagnostic,
   ProjectContextResponse,
 } from '../types/operatorContext';
+import type {
+  PlanPreviewResponseWire,
+  PlanStepWire,
+} from '../types/projectPlanner';
 import {
   FACTORY_APPROVAL,
   FACTORY_DRIVE_FILES,
@@ -3198,8 +3206,20 @@ function ProjectsDeepDive({
   // Quest-Reihen-Entwurf, `approvals` shows a Freigabe-Gate-Vorschau,
   // `outputsViewer` is a read-only categorized list of existing outputs.
   const [modal, setModal] = useState<
-    'talk' | 'audit' | 'output' | 'planner' | 'approvals' | 'outputsViewer' | null
+    'talk' | 'audit' | 'output' | 'planner' | 'approvals' | 'outputsViewer' | 'apiPreview' | null
   >(null);
+  // Phase 2A — local Project Auto Planner API-preview state. The
+  // operator API key lives only in this component's memory for the
+  // current page session: no localStorage, no cookie, no env bake.
+  const [apiPreviewKey, setApiPreviewKey] = useState<string>('');
+  const [apiPreviewLoading, setApiPreviewLoading] = useState<boolean>(false);
+  const [apiPreviewData, setApiPreviewData] = useState<PlanPreviewResponseWire | null>(null);
+  const [apiPreviewError, setApiPreviewError] = useState<{
+    status: number;
+    errorCode?: string;
+    errorMessage?: string;
+  } | null>(null);
+  const apiPreviewAbortRef = useRef<AbortController | null>(null);
   const [talkText, setTalkText] = useState('');
   const [outputType, setOutputType] = useState(outputTypes[0]);
   const [outputPrompt, setOutputPrompt] = useState('');
@@ -3446,6 +3466,77 @@ function ProjectsDeepDive({
     setModal(null);
   }
 
+  // Phase 2A — call the read-only Project Auto Planner preview endpoint.
+  // No Notion writes happen here: the backend echoes + validates + emits
+  // a digest. The handler is locked to read-only by design. The operator
+  // API key is read from `apiPreviewKey` (in-memory only) and never
+  // persisted. The current local planSteps are mapped to the wire format
+  // before sending.
+  async function handleApiPreview() {
+    setApiPreviewError(null);
+    setApiPreviewData(null);
+    const trimmedGoal = projektZiel.trim();
+    if (!trimmedGoal) {
+      setApiPreviewError({
+        status: 0,
+        errorCode: 'client_validation',
+        errorMessage: 'Bitte erst ein Projektziel eingeben.',
+      });
+      return;
+    }
+    if (planSteps.length === 0) {
+      setApiPreviewError({
+        status: 0,
+        errorCode: 'client_validation',
+        errorMessage: 'Plan-Reihe ist leer.',
+      });
+      return;
+    }
+    if (apiPreviewAbortRef.current) apiPreviewAbortRef.current.abort();
+    const controller = new AbortController();
+    apiPreviewAbortRef.current = controller;
+    setApiPreviewLoading(true);
+    // Map local PlanStep[] -> PlanStepWire[]. The shapes already match;
+    // we copy defensively so future schema drift on the frontend cannot
+    // leak into the wire format.
+    const wireSteps: PlanStepWire[] = planSteps.map((s) => ({
+      id: s.id,
+      step: s.step,
+      title: s.title,
+      ziel: s.ziel,
+      agent: s.agent,
+      output: s.output,
+      risk: s.risk,
+      gate: s.gate,
+      reason: s.reason,
+      feedback: s.feedback,
+      rating: s.rating,
+    }));
+    const result = await fetchPlanPreview({
+      projectId: project.id,
+      apiKey: apiPreviewKey,
+      signal: controller.signal,
+      draft: {
+        projectId: project.id,
+        projectGoal: trimmedGoal,
+        planSteps: wireSteps,
+        idempotencyKey: generatePreviewIdempotencyKey(),
+      },
+    });
+    if (apiPreviewAbortRef.current !== controller) return;
+    apiPreviewAbortRef.current = null;
+    setApiPreviewLoading(false);
+    if (result.ok) {
+      setApiPreviewData(result.data);
+    } else {
+      setApiPreviewError({
+        status: result.status,
+        errorCode: result.errorCode,
+        errorMessage: result.errorMessage,
+      });
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Top workspace card — minimal, work-first. Project picker is part
@@ -3549,6 +3640,14 @@ function ProjectsDeepDive({
           regeneratePlan(demo);
           setRestoredAt(null);
           setModal('planner');
+        }}
+        onApiPreview={() => {
+          if (!projektZiel.trim()) {
+            setEmptyGoalHint(true);
+            return;
+          }
+          setEmptyGoalHint(false);
+          setModal('apiPreview');
         }}
         onOutputsViewer={() => setModal('outputsViewer')}
         onReset={resetPlan}
@@ -3748,6 +3847,186 @@ function ProjectsDeepDive({
                 <Button tone="ghost" onClick={() => setModal(null)}>Schließen</Button>
                 <Button onClick={createOutputDraft}>Output-Draft erzeugen</Button>
               </div>
+            </div>
+          </Modal>
+        ) : null}
+
+        {modal === 'apiPreview' ? (
+          <Modal
+            size="wide"
+            onClose={() => {
+              if (apiPreviewAbortRef.current) apiPreviewAbortRef.current.abort();
+              apiPreviewAbortRef.current = null;
+              setApiPreviewLoading(false);
+              setModal(null);
+            }}
+          >
+            <SectionTitle
+              eyebrow="NOX Agent · Phase 2A"
+              title="Project Auto Planner · API-Preview"
+              subtitle="Server validiert Payload und gibt Echo + Digest zurück. Kein Notion-Write. Kein Dispatcher."
+            />
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-amber-300/30 bg-amber-300/5 p-4">
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200">Projektziel</div>
+                  <p className="mt-2 text-sm font-bold leading-6 text-amber-50">
+                    {projektZiel.trim() || 'Kein Projektziel gesetzt.'}
+                  </p>
+                  <div className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9f8d95]">
+                    Projekt-ID <span className="text-amber-100">{project.id}</span> · {planSteps.length} Schritte
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-4">
+                  <div className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#9f8d95]">
+                    Operator-API-Key (nur Page-Session)
+                  </div>
+                  <p className="mt-2 text-xs font-semibold leading-5 text-[#9f8d95]">
+                    Key landet nur im React-State. Kein Storage, kein Cookie, kein Env-Bake. Beim Reload ist er weg.
+                  </p>
+                  <input
+                    type="password"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    value={apiPreviewKey}
+                    onChange={(event) => setApiPreviewKey(event.target.value)}
+                    placeholder="x-nox-operator-key"
+                    className="mt-3 w-full rounded-2xl border border-[#4a101b]/70 bg-[#120609] px-3 py-2 text-sm font-semibold text-[#fff7fb] outline-none placeholder:text-[#7f6f76] focus:border-amber-300/70"
+                  />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => void handleApiPreview()}
+                      disabled={apiPreviewLoading || !apiPreviewKey.trim() || planSteps.length === 0}
+                    >
+                      {apiPreviewLoading ? 'Lädt…' : apiPreviewData ? 'Erneut prüfen' : 'Preview anfordern'}
+                    </Button>
+                    {apiPreviewKey ? (
+                      <Button
+                        tone="ghost"
+                        onClick={() => {
+                          if (apiPreviewAbortRef.current) apiPreviewAbortRef.current.abort();
+                          apiPreviewAbortRef.current = null;
+                          setApiPreviewKey('');
+                        }}
+                        disabled={apiPreviewLoading}
+                      >
+                        Key löschen
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-[12px] font-semibold leading-5 text-amber-50">
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200">Phase 2A · Read-only</div>
+                  <ul className="mt-2 list-disc space-y-1 pl-4">
+                    <li>Backend validiert Payload und antwortet mit normalisiertem Plan, Mutations-Liste und Digest.</li>
+                    <li>Kein Notion-Read. Kein Notion-Write. Kein Dispatcher. Kein Agent-Run.</li>
+                    <li>Phase 2B prüft später dieselbe Payload gegen das Notion-Schema.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {apiPreviewError ? (
+                  <div className="rounded-2xl border border-rose-500/50 bg-rose-500/10 p-4 text-sm font-semibold leading-6 text-rose-100">
+                    <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-rose-200">
+                      Fehler {apiPreviewError.status > 0 ? `· HTTP ${apiPreviewError.status}` : ''}
+                    </div>
+                    <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-rose-200/90">
+                      {apiPreviewError.errorCode || '—'}
+                    </div>
+                    <p className="mt-2">{apiPreviewError.errorMessage || 'Unbekannter Fehler.'}</p>
+                  </div>
+                ) : null}
+
+                {apiPreviewData ? (
+                  <>
+                    <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4">
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-emerald-200">
+                        Preview erfolgreich
+                      </div>
+                      <div className="mt-2 grid gap-2 text-[12px] font-semibold leading-5 text-emerald-50 sm:grid-cols-2">
+                        <div>Projekt-ID: <span className="font-black">{apiPreviewData.projectId}</span></div>
+                        <div>Schritte: <span className="font-black">{apiPreviewData.normalisedPlan.length}</span></div>
+                        <div>Digest: <span className="font-mono text-emerald-100">{apiPreviewData.echoedDigest}</span></div>
+                        <div>Phase: <span className="font-black">{apiPreviewData.meta?.phase || '—'}</span></div>
+                        <div className="sm:col-span-2">
+                          Notion-Writes: <span className="font-black">{apiPreviewData.meta?.notionWritesEnabled === false ? 'aus (read-only)' : '?'}</span>
+                          {' · '}
+                          Live-Execution: <span className="font-black">{apiPreviewData.meta?.liveExecution || '?'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/70 p-4">
+                      <div className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-amber-200/90">
+                        Geplante Notion-Mutationen ({apiPreviewData.plannedMutations.length})
+                      </div>
+                      <p className="mt-1 text-[11px] font-semibold leading-5 text-[#9f8d95]">
+                        Phase 2A: nur Vorschau. Diese Mutationen werden weder validiert noch ausgeführt.
+                      </p>
+                      <div className="mt-3 max-h-80 space-y-3 overflow-y-auto pr-1">
+                        {apiPreviewData.plannedMutations.map((mut) => (
+                          <div key={mut.planStepId} className="rounded-xl border border-[#4a101b]/60 bg-[#120609]/70 p-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="text-[12px] font-black text-amber-50">
+                                <span className="text-amber-200">{mut.kind}</span> · {mut.proposedTitle}
+                              </div>
+                              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
+                                {mut.planStepId}
+                              </span>
+                            </div>
+                            <ul className="mt-2 space-y-1 text-[11px] font-semibold leading-5 text-[#d6c2cc]">
+                              {mut.proposedProperties.map((prop) => (
+                                <li key={`${mut.planStepId}-${prop.notionPropertyName}`}>
+                                  <span className="text-amber-200/90">{prop.notionPropertyName}</span>
+                                  <span className="text-[#7f6f76]"> ({prop.notionPropertyType}) ← </span>
+                                  <span className="text-[#fff7fb]">
+                                    {Array.isArray(prop.value)
+                                      ? prop.value.join(', ')
+                                      : String(prop.value).slice(0, 120)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                            {mut.warnings.length > 0 ? (
+                              <div className="mt-2 rounded-md border border-amber-300/30 bg-amber-300/10 p-2 text-[11px] font-bold leading-5 text-amber-100">
+                                {mut.warnings.map((w, idx) => (
+                                  <div key={`${mut.planStepId}-w-${idx}`}>· {w}</div>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : !apiPreviewError ? (
+                  <div className="rounded-2xl border border-dashed border-[#4a101b]/60 bg-[#0c0506]/50 p-5 text-sm font-semibold text-[#9f8d95]">
+                    Kein Preview geladen. Operator-Key eingeben und „Preview anfordern" klicken.
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 -mx-5 -mb-5 mt-6 flex flex-wrap justify-end gap-3 border-t border-[#4a101b]/60 bg-[#080304]/95 px-5 py-4 md:-mx-9 md:-mb-9 md:px-9 md:py-5">
+              <Button
+                tone="ghost"
+                onClick={() => {
+                  if (apiPreviewAbortRef.current) apiPreviewAbortRef.current.abort();
+                  apiPreviewAbortRef.current = null;
+                  setApiPreviewLoading(false);
+                  setApiPreviewData(null);
+                  setApiPreviewError(null);
+                  setModal(null);
+                }}
+              >
+                Schließen
+              </Button>
             </div>
           </Modal>
         ) : null}
@@ -4150,6 +4429,7 @@ function UnifiedAutoPlanner({
   onTalk,
   onPlan,
   onUseDemoGoal,
+  onApiPreview,
   onOutputsViewer,
   onReset,
   onDeleteDraft,
@@ -4168,6 +4448,7 @@ function UnifiedAutoPlanner({
   onTalk: () => void;
   onPlan: () => void;
   onUseDemoGoal: () => void;
+  onApiPreview: () => void;
   onOutputsViewer: () => void;
   onReset: () => void;
   onDeleteDraft: () => void;
@@ -4257,6 +4538,7 @@ function UnifiedAutoPlanner({
         <div className="flex flex-wrap gap-2">
           <Button onClick={onTalk}>Mit NOX besprechen</Button>
           <Button tone="ghost" onClick={onPlan}>Quest-Reihe entwerfen</Button>
+          <Button tone="ghost" onClick={onApiPreview}>API-Preview prüfen</Button>
           <Button tone="ghost" onClick={onOutputsViewer}>Outputs ansehen</Button>
           <Button tone="ghost" onClick={onReset}>Zurücksetzen</Button>
         </div>
