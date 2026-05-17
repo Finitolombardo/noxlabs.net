@@ -53,7 +53,27 @@ export type AuditEventType =
   | 'PLAN_VALIDATE_NOT_CONFIGURED'
   | 'PLAN_VALIDATE_UPSTREAM_FAILED'
   | 'PLAN_VALIDATE_SCHEMA_OK'
-  | 'PLAN_VALIDATE_SCHEMA_MISMATCH';
+  | 'PLAN_VALIDATE_SCHEMA_MISMATCH'
+  // Phase 2C-Pre — locked commit pipeline. The endpoint exists but every
+  // path that could touch Notion goes through stacked gates: feature flag,
+  // dedicated write token, digest re-match, schema re-validate, commit
+  // token / phrase, and idempotency precheck. Until the operator flips
+  // NOX_NOTION_WRITE_ENABLED to exactly "true" *and* provides a distinct
+  // NOX_NOTION_WRITE_TOKEN, the handler returns 423 locked. Even with the
+  // flag on, the digest/schema/duplicate gates can still abort the write.
+  | 'PLAN_COMMIT_REQUESTED'
+  | 'PLAN_COMMIT_VALIDATION_FAILED'
+  | 'PLAN_COMMIT_DIGEST_MISMATCH'
+  | 'PLAN_COMMIT_TOKEN_MISSING'
+  | 'PLAN_COMMIT_LOCKED'
+  | 'PLAN_COMMIT_WRITE_NOT_CONFIGURED'
+  | 'PLAN_COMMIT_WRITE_TOKEN_COLLISION'
+  | 'PLAN_COMMIT_SCHEMA_NOT_READY'
+  | 'PLAN_COMMIT_DUPLICATE_RISK'
+  | 'PLAN_COMMIT_PAGE_CREATED'
+  | 'PLAN_COMMIT_PAGE_FAILED'
+  | 'PLAN_COMMIT_SUCCESS'
+  | 'PLAN_COMMIT_PARTIAL_FAILURE';
 
 export type AuditOutcome = 'success' | 'attempt' | 'blocked' | 'failure';
 

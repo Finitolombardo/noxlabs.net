@@ -17,12 +17,14 @@
 import type {
   PlanMutation,
   PlanProposedProperty,
+  PlanProposedPropertyType,
   PlanStepAgent,
   PlanStepRating,
   PlanStepRisk,
   PlanStepWire,
 } from './types.js';
 import {
+  ALLOWED_MASTER_TASKS_WRITE_PROPERTIES,
   ALLOWED_PLAN_STEP_AGENTS,
   ALLOWED_PLAN_STEP_RATINGS,
   ALLOWED_PLAN_STEP_RISKS,
@@ -490,3 +492,136 @@ export function buildPlannedMutations(
 ): PlanMutation[] {
   return draft.planSteps.map((s) => buildMutation(s, digest, draft.projectId));
 }
+
+// =============================================================================
+// Phase 2C-Pre — Pure Notion property payload builder.
+//
+// Converts an allowlisted `PlanProposedProperty[]` into the raw property
+// map that Notion's `POST /v1/pages` expects. Pure: no env access, no
+// fetch, no mutation of inputs. Always filters strictly to
+// `ALLOWED_MASTER_TASKS_WRITE_PROPERTIES`. If an unsupported property
+// type or an unknown property name is encountered, it is silently dropped
+// AND added to the returned `dropped[]` list so the caller can surface it
+// in audit/diagnostics.
+//
+// `relationOverrides` lets the caller swap the wire value (a human-readable
+// projectId like `APP-X`) for a real Notion page id resolved at the
+// commit-handler level. Without it, relation properties are dropped.
+// =============================================================================
+
+export interface BuildPropertiesOptions {
+  /**
+   * Map from Notion property name → resolved Notion page id. Used to
+   * translate relation wire values (which carry a human-readable project
+   * id) into the page id Notion requires. Properties absent from this map
+   * are dropped from the output.
+   */
+  relationOverrides?: Record<string, string>;
+}
+
+export interface BuildPropertiesResult {
+  /** Raw Notion property payload, safe to ship as `properties` in pages.create. */
+  properties: Record<string, unknown>;
+  /** Property names that were dropped (not in allowlist, unknown type, or unresolved relation). */
+  dropped: Array<{ notionPropertyName: string; reason: string }>;
+}
+
+function notionPropertyValue(
+  type: PlanProposedPropertyType,
+  value: PlanProposedProperty['value'],
+  notionPropertyName: string,
+  relationOverrides: Record<string, string>,
+): { ok: true; payload: Record<string, unknown> } | { ok: false; reason: string } {
+  switch (type) {
+    case 'title': {
+      const text = typeof value === 'string' ? value : String(value);
+      return { ok: true, payload: { title: [{ type: 'text', text: { content: text } }] } };
+    }
+    case 'rich_text': {
+      const text = typeof value === 'string' ? value : String(value);
+      return { ok: true, payload: { rich_text: [{ type: 'text', text: { content: text } }] } };
+    }
+    case 'select': {
+      if (typeof value !== 'string' || value.length === 0) {
+        return { ok: false, reason: 'select_value_not_string' };
+      }
+      return { ok: true, payload: { select: { name: value } } };
+    }
+    case 'checkbox': {
+      return { ok: true, payload: { checkbox: Boolean(value) } };
+    }
+    case 'number': {
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        return { ok: false, reason: 'number_value_not_finite' };
+      }
+      return { ok: true, payload: { number: value } };
+    }
+    case 'url': {
+      if (typeof value !== 'string' || value.length === 0) {
+        return { ok: false, reason: 'url_value_not_string' };
+      }
+      return { ok: true, payload: { url: value } };
+    }
+    case 'relation': {
+      // Wire value is the human-readable id (e.g. `APP-X`). The caller
+      // must pre-resolve it to a Notion page id via `relationOverrides`.
+      const overrideId = relationOverrides[notionPropertyName];
+      if (typeof overrideId !== 'string' || overrideId.length === 0) {
+        return { ok: false, reason: 'relation_page_id_unresolved' };
+      }
+      return { ok: true, payload: { relation: [{ id: overrideId }] } };
+    }
+    default: {
+      // Defensive — TS exhaustiveness above; this branch fires only on
+      // future PlanProposedPropertyType additions that forget to update
+      // this switch.
+      return { ok: false, reason: 'unsupported_property_type' };
+    }
+  }
+}
+
+/**
+ * Pure builder. Converts the proposedProperties of a `PlanMutation` into the
+ * raw Notion property map for `POST /v1/pages`. Strictly filtered to
+ * `ALLOWED_MASTER_TASKS_WRITE_PROPERTIES`.
+ */
+export function mapPlanMutationToNotionProperties(
+  mutation: PlanMutation,
+  opts: BuildPropertiesOptions = {},
+): BuildPropertiesResult {
+  const properties: Record<string, unknown> = {};
+  const dropped: Array<{ notionPropertyName: string; reason: string }> = [];
+  const relationOverrides = opts.relationOverrides ?? {};
+
+  for (const prop of mutation.proposedProperties) {
+    if (!ALLOWED_MASTER_TASKS_WRITE_PROPERTIES.includes(prop.notionPropertyName)) {
+      dropped.push({
+        notionPropertyName: prop.notionPropertyName,
+        reason: 'not_in_allowlist',
+      });
+      continue;
+    }
+    const built = notionPropertyValue(
+      prop.notionPropertyType,
+      prop.value,
+      prop.notionPropertyName,
+      relationOverrides,
+    );
+    if (!built.ok) {
+      dropped.push({
+        notionPropertyName: prop.notionPropertyName,
+        reason: built.reason,
+      });
+      continue;
+    }
+    properties[prop.notionPropertyName] = built.payload;
+  }
+
+  return { properties, dropped };
+}
+
+/**
+ * Convenience alias. Same behaviour as `mapPlanMutationToNotionProperties`;
+ * kept for naming symmetry with the planner spec doc.
+ */
+export const buildMasterTaskPropertiesFromMutation = mapPlanMutationToNotionProperties;

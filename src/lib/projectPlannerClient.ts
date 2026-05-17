@@ -18,6 +18,8 @@
 // the in-memory audit ring buffer.
 
 import type {
+  PlanCommitRequestWire,
+  PlanCommitResponseWire,
   PlanPreviewResponseWire,
   PlanValidationReportWire,
   ProjectPlanDraftRequest,
@@ -259,6 +261,145 @@ export async function fetchPlanValidate(
       ok: false,
       status: resp.status,
       errorCode: typeof env.error === 'string' ? env.error : undefined,
+      errorMessage: typeof env.message === 'string' ? env.message : undefined,
+      raw: body,
+    };
+  }
+  return { ok: false, status: resp.status };
+}
+
+// =============================================================================
+// Phase 2C-Pre — Optional commit-endpoint client stub.
+//
+// Intentionally NOT wired into the cockpit UI. Phase 2C-Pre is a locked
+// preparation phase — there is no "Quests erzeugen" button. This stub
+// exists so any future UI iteration can import it without re-defining the
+// wire shape or rebuilding the auth/timeout patterns.
+//
+// CRITICAL: the operator API key is OPTIONAL on the wire format (Private-
+// Cockpit mode never opens the commit route, but the stub still leaves
+// `apiKey` optional so the API surface stays consistent with preview /
+// validate). When the operator-key gate is closed server-side, the
+// endpoint returns 401 just like every other write-grade route would.
+// =============================================================================
+
+export type PlanCommitResult =
+  | {
+      ok: true;
+      status: number;
+      data: PlanCommitResponseWire;
+    }
+  | {
+      ok: false;
+      status: number;
+      errorCode?: string;
+      errorMessage?: string;
+      raw?: unknown;
+    };
+
+export interface FetchPlanCommitArgs {
+  projectId: string;
+  /**
+   * Operator API key. Strongly recommended for /plan/commit because the
+   * route does NOT honour Private-Cockpit read-only mode (writes always
+   * require explicit operator auth). Stored only in-memory by the caller.
+   */
+  apiKey?: string;
+  /**
+   * Full commit request body, including planDigest + commitToken /
+   * explicitConfirmPhrase. The caller is responsible for assembling this
+   * object — the client does not auto-generate the confirm tokens.
+   */
+  request: PlanCommitRequestWire;
+  signal?: AbortSignal;
+}
+
+export async function fetchPlanCommit(
+  args: FetchPlanCommitArgs,
+): Promise<PlanCommitResult> {
+  const trimmedProjectId = args.projectId.trim();
+
+  if (!trimmedProjectId) {
+    return {
+      ok: false,
+      status: 0,
+      errorCode: 'client_validation',
+      errorMessage: 'Project ID darf nicht leer sein.',
+    };
+  }
+  if (!args.request.clientPlanId.trim()) {
+    return {
+      ok: false,
+      status: 0,
+      errorCode: 'client_validation',
+      errorMessage: 'clientPlanId darf nicht leer sein.',
+    };
+  }
+  if (!args.request.planDigest.trim()) {
+    return {
+      ok: false,
+      status: 0,
+      errorCode: 'client_validation',
+      errorMessage: 'planDigest darf nicht leer sein. Erst /plan/preview oder /plan/validate aufrufen.',
+    };
+  }
+  if (!args.request.commitToken && !args.request.explicitConfirmPhrase) {
+    return {
+      ok: false,
+      status: 0,
+      errorCode: 'client_validation',
+      errorMessage: 'Entweder commitToken oder explicitConfirmPhrase ist erforderlich.',
+    };
+  }
+
+  const url = `${ENDPOINT_BASE}/${encodeURIComponent(trimmedProjectId)}/plan/commit`;
+
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(args.apiKey && args.apiKey.trim().length > 0
+          ? { 'x-nox-operator-key': args.apiKey.trim() }
+          : {}),
+      },
+      cache: 'no-store',
+      signal: args.signal,
+      body: JSON.stringify(args.request),
+    });
+  } catch (err) {
+    const aborted = err instanceof Error && err.name === 'AbortError';
+    return {
+      ok: false,
+      status: 0,
+      errorCode: aborted ? 'aborted' : 'network_error',
+      errorMessage: aborted ? 'Anfrage abgebrochen.' : 'Netzwerkfehler beim Commit-Aufruf.',
+    };
+  }
+
+  let body: unknown = null;
+  try {
+    body = await resp.json();
+  } catch {
+    // Non-JSON body — fall through to status-only handling.
+  }
+
+  if (resp.ok && body && typeof body === 'object') {
+    return { ok: true, status: resp.status, data: body as PlanCommitResponseWire };
+  }
+  if (body && typeof body === 'object') {
+    const env = body as Partial<OperatorApiErrorBody> & Partial<PlanCommitResponseWire>;
+    return {
+      ok: false,
+      status: resp.status,
+      errorCode:
+        typeof env.error === 'string'
+          ? env.error
+          : typeof env.code === 'string'
+            ? env.code
+            : undefined,
       errorMessage: typeof env.message === 'string' ? env.message : undefined,
       raw: body,
     };

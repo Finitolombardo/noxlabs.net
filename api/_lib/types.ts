@@ -518,3 +518,112 @@ export interface PlanValidationReport {
     authMode: PlannerAuthModeWire;
   };
 }
+
+// =============================================================================
+// Phase 2C-Pre — Project Auto Planner Commit wire-format.
+//
+// `POST /api/operator/projects/:projectId/plan/commit`
+//
+// The commit endpoint accepts the SAME draft shape as preview/validate plus a
+// handful of write-grade fields. Strict invariants:
+//   - Private-Cockpit read-only mode does NOT apply. The endpoint uses the
+//     full `checkOperatorAuth` gate.
+//   - `NOX_NOTION_WRITE_ENABLED` must be exactly "true". Anything else → 423.
+//   - `NOX_NOTION_WRITE_TOKEN` must be set AND distinct from
+//     `NOX_NOTION_READONLY_TOKEN`. No fallback to the read-only token.
+//   - The request must include either `commitToken` (regex below) or
+//     `explicitConfirmPhrase` (constant string). Missing → 403.
+//   - The request must include the `planDigest` the operator saw in the last
+//     preview/validate call. The server recomputes the digest from the same
+//     payload and compares — if mismatch → 409.
+//   - The server re-runs Phase 2B schema validation; if `schemaOk: false` the
+//     handler aborts with 409.
+//   - Idempotency precheck: the server queries Master-Tasks for any existing
+//     pages tagged with the same `Plan Draft Digest` and aborts before any
+//     write if duplicates exist.
+//
+// Phase 2C-Pre status: the write adapter is wired BUT the default Vercel env
+// must NOT have `NOX_NOTION_WRITE_ENABLED=true`. Result: the endpoint
+// universally returns 423 in production until the operator consciously flips
+// the flag. There is no UI button for this endpoint in Phase 2C-Pre — only
+// types and an optional client stub exist on the browser side.
+// =============================================================================
+
+// Commit-confirm regex / phrase. Both are placeholder gates that force the
+// operator to *deliberately* construct the field. They are NOT cryptographic
+// — real cryptographic signing comes with the operator's Phase 2C release.
+export const PLAN_COMMIT_TOKEN_RE = /^commit-[A-Za-z0-9_-]{8,128}$/;
+export const PLAN_COMMIT_PHRASE = 'Yes, write this plan draft to Notion now';
+
+export interface PlanCommitRequestBody {
+  // Echoed from the URL path. Server rejects mismatches.
+  projectId?: string;
+  // Operator-side identifier for this plan draft. Must be a stable rich
+  // string the operator can correlate locally; the server treats it as
+  // opaque (no parsing). Length 4..128, regex similar to plan-step ids.
+  clientPlanId: string;
+  // Same shape as preview/validate — re-validated server-side.
+  projectGoal: string;
+  planSteps: PlanStepWire[];
+  idempotencyKey: string;
+  // Server recomputes and compares.
+  planDigest: string;
+  // One of these is required.
+  commitToken?: string;
+  explicitConfirmPhrase?: string;
+}
+
+// What the commit endpoint did. `writes_locked` is the default state in
+// Phase 2C-Pre — the flag is off, no Notion write happened.
+export type PlanCommitResultCode =
+  | 'writes_locked'
+  | 'write_not_configured'
+  | 'write_token_collision'
+  | 'commit_token_missing'
+  | 'plan_digest_mismatch'
+  | 'schema_not_ready'
+  | 'duplicate_risk'
+  | 'committed'
+  | 'partial_failure';
+
+export interface PlanCommitPageResult {
+  planStepId: string;
+  ok: boolean;
+  notionPageId?: string;
+  notionUrl?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+export interface PlanCommitResponse {
+  ok: boolean;
+  code: PlanCommitResultCode;
+  projectId: string;
+  // Echoed back so the operator can correlate with their local state.
+  clientPlanId: string;
+  planDigest: string;
+  idempotencyKey: string;
+  wouldCreateNTasks: number;
+  // True only when the handler actually executed a Notion write. The
+  // operator can rely on this as the single source of truth for "did
+  // anything get written".
+  notionWritesExecuted: boolean;
+  // The current state of the write flag, mirrored to the client so the
+  // UI can render the right CTA without re-reading env.
+  writeEnabled: boolean;
+  // Idempotency precheck signal. `true` means the server found at least
+  // one existing Master-Tasks page tagged with this Plan Draft Digest.
+  duplicateRisk: boolean;
+  // Per-step write report. Empty in locked state.
+  pageResults: PlanCommitPageResult[];
+  // Diagnostic strings, sanitised. No tokens, no Notion bodies.
+  diagnostics: string[];
+  meta: {
+    skeleton: false;
+    phase: '2c-pre';
+    readOnly: boolean;
+    notionWritesEnabled: boolean;
+    liveExecution: 'locked' | 'live';
+    authMode: PlannerAuthModeWire;
+  };
+}

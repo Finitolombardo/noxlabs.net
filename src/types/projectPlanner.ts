@@ -173,3 +173,77 @@ export interface PlanValidationReportWire {
   warnings: PlanValidationWarningWire[];
   meta: PlanValidationMetaWire;
 }
+
+// =============================================================================
+// Phase 2C-Pre — Browser mirror for the commit endpoint.
+//
+// The endpoint is hard-locked behind the server-side flag
+// `NOX_OPERATOR_COCKPIT_PRIVATE_MODE` is irrelevant — `commit` always uses
+// the strict operator-key auth, never Private-Cockpit bypass. There is NO
+// UI button for this endpoint yet; the types and client stub exist so a
+// future UI iteration can import them without re-defining the wire shape.
+// =============================================================================
+
+export type PlanCommitResultCodeWire =
+  | 'writes_locked'
+  | 'write_not_configured'
+  | 'write_token_collision'
+  | 'commit_token_missing'
+  | 'plan_digest_mismatch'
+  | 'schema_not_ready'
+  | 'duplicate_risk'
+  | 'committed'
+  | 'partial_failure'
+  // Defensive — any future server-side code surfaces as plain string so the
+  // browser bundle does not have to be re-deployed when the server grows.
+  | string;
+
+export interface PlanCommitRequestWire {
+  projectId: string;
+  clientPlanId: string;
+  projectGoal: string;
+  planSteps: PlanStepWire[];
+  idempotencyKey: string;
+  planDigest: string;
+  /**
+   * One of `commitToken` or `explicitConfirmPhrase` is required. The
+   * browser must NEVER auto-fill either — they exist exactly so the
+   * operator has to deliberately construct the request.
+   */
+  commitToken?: string;
+  explicitConfirmPhrase?: string;
+}
+
+export interface PlanCommitPageResultWire {
+  planStepId: string;
+  ok: boolean;
+  notionPageId?: string;
+  notionUrl?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+export interface PlanCommitMetaWire {
+  skeleton?: boolean;
+  phase?: string;
+  readOnly?: boolean;
+  notionWritesEnabled?: boolean;
+  liveExecution?: string;
+  authMode?: PlannerAuthModeWire;
+}
+
+export interface PlanCommitResponseWire {
+  ok: boolean;
+  code: PlanCommitResultCodeWire;
+  projectId: string;
+  clientPlanId: string;
+  planDigest: string;
+  idempotencyKey: string;
+  wouldCreateNTasks: number;
+  notionWritesExecuted: boolean;
+  writeEnabled: boolean;
+  duplicateRisk: boolean;
+  pageResults: PlanCommitPageResultWire[];
+  diagnostics: string[];
+  meta: PlanCommitMetaWire;
+}

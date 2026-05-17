@@ -526,6 +526,27 @@ export async function queryProjectsByProjectId(
 }
 
 /**
+ * Phase 2C-Pre — Idempotency precheck. Read-only. Looks up Master-Tasks
+ * pages that already carry the given `Plan Draft Digest` so the commit
+ * endpoint can refuse to write duplicates. The same query semantics as
+ * every other read in this module (POST /v1/databases/{id}/query with a
+ * filter body — POST per Notion API, but read-only operation).
+ */
+export async function queryMasterTasksByPlanDraftDigest(
+  token: string,
+  masterTasksDbId: string,
+  planDraftDigest: string,
+): Promise<NotionQueryResult> {
+  return queryDatabase(token, masterTasksDbId, {
+    page_size: 5,
+    filter: {
+      property: 'Plan Draft Digest',
+      rich_text: { equals: planDraftDigest },
+    },
+  });
+}
+
+/**
  * Filter Master Tasks by the `Project` relation, returning quests linked to
  * the given project page id. Sorted by last_edited_time descending.
  */
@@ -579,5 +600,138 @@ export function extractProjectFields(props: Record<string, unknown>): ExtractedP
     forbiddenActions: propRichText(props, 'Verbotene Aktionen'),
     artifactLinks: propRichText(props, 'Artifact Links'),
     primaryUrl: propUrl(props, 'Primary URL'),
+  };
+}
+
+// =============================================================================
+// Phase 2C-Pre — Notion WRITE adapter.
+//
+// This is the FIRST function in this module that issues a non-read-only
+// Notion call. It is intentionally walled off behind multiple gates at the
+// caller layer (`api/operator/projects/[projectId]/plan/commit.ts`):
+//   - NOX_NOTION_WRITE_ENABLED must be exactly "true"
+//   - NOX_NOTION_WRITE_TOKEN must be set AND distinct from
+//     NOX_NOTION_READONLY_TOKEN
+//   - The handler must re-validate digest + schema + idempotency before
+//     reaching this adapter
+//
+// The adapter itself does NOT read env. The caller must pass the write
+// token + the parent database id. No fallback to readonly tokens lives
+// inside this module.
+//
+// `properties` is a raw Notion property map — see Notion's
+// `POST /v1/pages` body schema. Callers (specifically
+// `mapPlanMutationToNotionProperties` in `planDraft.ts`) MUST build this map
+// from `ALLOWED_MASTER_TASKS_WRITE_PROPERTIES` only; this adapter does not
+// re-check the allowlist (separation of concerns).
+//
+// Failure handling:
+//   - Network/timeout/abort -> `{ ok: false, reason: 'upstream_error', ... }`
+//   - Notion non-2xx        -> safe diagnostics extracted from the error
+//                              envelope; no token, no header echoed.
+//   - 2xx but malformed     -> `{ ok: false, reason: 'upstream_error', ... }`
+// =============================================================================
+
+export type NotionCreatePageResult =
+  | {
+      ok: true;
+      pageId: string;
+      url?: string;
+    }
+  | {
+      ok: false;
+      reason: 'upstream_error';
+      statusCode?: number;
+      summary: string;
+      upstreamStatus?: number;
+      upstreamCode?: string;
+      upstreamMessage?: string;
+    };
+
+export async function createMasterTaskPage(
+  writeToken: string,
+  databaseId: string,
+  properties: Record<string, unknown>,
+): Promise<NotionCreatePageResult> {
+  const timeoutMs = resolveFetchTimeoutMs();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  const requestBody = {
+    parent: { database_id: databaseId },
+    properties,
+  };
+
+  let resp: Response;
+  try {
+    resp = await fetch(`${NOTION_API}/pages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${writeToken}`,
+        'Notion-Version': NOTION_VERSION,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const aborted = err instanceof Error && err.name === 'AbortError';
+    return {
+      ok: false,
+      reason: 'upstream_error',
+      summary: aborted
+        ? `notion_timeout after ${timeoutMs}ms`
+        : `notion fetch failed: ${err instanceof Error ? err.name : 'unknown'}`,
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!resp.ok) {
+    const diag = await readNotionErrorDiagnostics(resp);
+    const codePart = diag.upstreamCode ? ` ${diag.upstreamCode}` : '';
+    return {
+      ok: false,
+      reason: 'upstream_error',
+      statusCode: resp.status,
+      summary: `notion pages.create returned HTTP ${resp.status}${codePart}`,
+      upstreamStatus: resp.status,
+      ...(diag.upstreamCode ? { upstreamCode: diag.upstreamCode } : {}),
+      ...(diag.upstreamMessage ? { upstreamMessage: diag.upstreamMessage } : {}),
+    };
+  }
+
+  let json: unknown;
+  try {
+    json = await resp.json();
+  } catch {
+    return {
+      ok: false,
+      reason: 'upstream_error',
+      statusCode: resp.status,
+      summary: 'invalid json from notion pages.create',
+    };
+  }
+  if (!json || typeof json !== 'object') {
+    return {
+      ok: false,
+      reason: 'upstream_error',
+      statusCode: resp.status,
+      summary: 'unexpected notion pages.create payload shape',
+    };
+  }
+  const obj = json as { id?: unknown; url?: unknown };
+  if (typeof obj.id !== 'string' || obj.id.length === 0) {
+    return {
+      ok: false,
+      reason: 'upstream_error',
+      statusCode: resp.status,
+      summary: 'notion pages.create payload missing id',
+    };
+  }
+  return {
+    ok: true,
+    pageId: obj.id,
+    ...(typeof obj.url === 'string' ? { url: obj.url } : {}),
   };
 }
