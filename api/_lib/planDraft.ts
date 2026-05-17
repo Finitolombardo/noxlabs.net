@@ -404,9 +404,18 @@ function buildProposedProperties(
     },
   ];
 
+  // Map plan-step semantics onto the Master-Tasks columns the operator
+  // already uses for manual quests, instead of emitting emoji-prefixed
+  // sidecar fields:
+  //   step.ziel   -> Prompt                       (rich_text)
+  //   step.output -> Ergebnis / Definition of Done (rich_text)
+  // The previous 🤖 Ziel / 🤖 Erwarteter Output projections lived outside
+  // the Phase-2C write allowlist and would have been skipped anyway. With
+  // the new mapping the two fields land directly in the operator's primary
+  // quest columns, so Phase 2C can fill them without a schema migration.
   if (step.ziel.length > 0) {
     props.push({
-      notionPropertyName: '🤖 Ziel',
+      notionPropertyName: 'Prompt',
       notionPropertyType: 'rich_text',
       value: step.ziel,
       sourcePlanField: 'ziel',
@@ -414,7 +423,7 @@ function buildProposedProperties(
   }
   if (step.output.length > 0) {
     props.push({
-      notionPropertyName: '🤖 Erwarteter Output',
+      notionPropertyName: 'Ergebnis / Definition of Done',
       notionPropertyType: 'rich_text',
       value: step.output,
       sourcePlanField: 'output',

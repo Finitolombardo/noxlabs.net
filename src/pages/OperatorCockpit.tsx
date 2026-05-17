@@ -3220,6 +3220,11 @@ function ProjectsDeepDive({
   // for installations where the env flag is off.
   const [apiPreviewKey, setApiPreviewKey] = useState<string>('');
   const [apiPreviewKeyVisible, setApiPreviewKeyVisible] = useState<boolean>(false);
+  // Phase 2A/2B — technical details are collapsed by default so the modal
+  // reads as a status check, not a developer debug screen. The toggle
+  // reveals planned mutations, property checks, missing/unsafe lists,
+  // issues and warnings together.
+  const [technicalDetailsVisible, setTechnicalDetailsVisible] = useState<boolean>(false);
   const [apiPreviewLoading, setApiPreviewLoading] = useState<boolean>(false);
   const [apiPreviewData, setApiPreviewData] = useState<PlanPreviewResponseWire | null>(null);
   const [apiPreviewError, setApiPreviewError] = useState<{
@@ -3957,9 +3962,9 @@ function ProjectsDeepDive({
             }}
           >
             <SectionTitle
-              eyebrow="NOX Agent · Phase 2A"
-              title="Project Auto Planner · API-Preview"
-              subtitle="Server validiert Payload und gibt Echo + Digest zurück. Kein Notion-Write. Kein Dispatcher."
+              eyebrow="NOX Agent · Phase 2A/2B"
+              title="Project Auto Planner · Technische Prüfung"
+              subtitle="Server validiert Payload, liest Notion-Schema read-only und gibt Status zurück. Kein Notion-Write. Kein Dispatcher."
             />
 
             <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
@@ -3974,6 +3979,18 @@ function ProjectsDeepDive({
                   </div>
                 </div>
 
+                {/* The operator-key CTA only renders when the last response
+                    indicated `operator_key` mode or a 401, or when no response
+                    is in yet. In Private-Cockpit mode the operator never
+                    needs to see this — the fallback stays one fold away. */}
+                {(() => {
+                  const lastAuthMode =
+                    apiPreviewData?.meta?.authMode || apiValidateData?.meta?.authMode || null;
+                  const had401 =
+                    apiPreviewError?.status === 401 || apiValidateError?.status === 401;
+                  const inPrivateMode = lastAuthMode === 'private_cockpit_readonly';
+                  const keyCtaVisible = !inPrivateMode || had401;
+                  return (
                 <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -3981,21 +3998,24 @@ function ProjectsDeepDive({
                         Aufruf
                       </div>
                       <p className="mt-1 text-xs font-semibold leading-5 text-[#bfa9b3]">
-                        Phase 2A/2B sind read-only. Keine Notion-Writes. Wenn der Server im
-                        Private-Cockpit-Mode läuft, ist kein Operator-Key nötig.
+                        {inPrivateMode
+                          ? 'Private Cockpit Mode aktiv. Keine Notion-Writes. Kein Operator-Key nötig.'
+                          : 'Phase 2A/2B sind read-only. Keine Notion-Writes. Wenn der Server im Private-Cockpit-Mode läuft, ist kein Operator-Key nötig.'}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setApiPreviewKeyVisible((v) => !v)}
-                      className="shrink-0 rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-100 hover:bg-amber-300/20 focus:outline-none focus:ring-2 focus:ring-amber-300/40"
-                      aria-expanded={apiPreviewKeyVisible}
-                    >
-                      {apiPreviewKeyVisible ? 'Key ausblenden' : 'Operator-Key eingeben'}
-                    </button>
+                    {keyCtaVisible ? (
+                      <button
+                        type="button"
+                        onClick={() => setApiPreviewKeyVisible((v) => !v)}
+                        className="shrink-0 rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-100 hover:bg-amber-300/20 focus:outline-none focus:ring-2 focus:ring-amber-300/40"
+                        aria-expanded={apiPreviewKeyVisible}
+                      >
+                        {apiPreviewKeyVisible ? 'Key ausblenden' : 'Operator-Key eingeben'}
+                      </button>
+                    ) : null}
                   </div>
 
-                  {apiPreviewKeyVisible ? (
+                  {keyCtaVisible && apiPreviewKeyVisible ? (
                     <div className="mt-3 rounded-xl border border-[#4a101b]/60 bg-[#120609]/70 p-3">
                       <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">
                         Operator-API-Key (nur Page-Session)
@@ -4044,8 +4064,8 @@ function ProjectsDeepDive({
                         : apiValidateLoading
                           ? 'Schema wird validiert …'
                           : apiPreviewData
-                            ? 'Preview + Schema erneut prüfen'
-                            : 'Preview + Schema prüfen'}
+                            ? 'Prüfung erneut starten'
+                            : 'Prüfung starten'}
                     </Button>
                     <Button
                       tone="secondary"
@@ -4060,12 +4080,14 @@ function ProjectsDeepDive({
                     </Button>
                   </div>
                 </div>
+                  );
+                })()}
 
                 <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-[12px] font-semibold leading-5 text-amber-50">
                   <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200">Phase 2A + 2B · Read-only</div>
                   <ul className="mt-2 list-disc space-y-1 pl-4">
-                    <li><span className="font-black">Preview</span>: Backend echoed normalisierten Plan, Mutations-Liste und Digest. Kein Notion-Call.</li>
-                    <li><span className="font-black">Schema validieren</span>: Backend liest Notion-Schema read-only und prüft jede geplante Property gegen die Master-Tasks-DB. Kein Notion-Write.</li>
+                    <li><span className="font-black">Preview</span>: Backend echoed normalisierten Plan und Digest. Kein Notion-Call.</li>
+                    <li><span className="font-black">Schema-Validierung</span>: Backend liest Notion-Schema read-only und prüft jede geplante Property gegen die Master-Tasks-DB. Kein Notion-Write.</li>
                     <li>Kein Dispatcher. Kein Agent-Run. Kein Write-Token. Kein Phase-2C-Commit.</li>
                   </ul>
                 </div>
@@ -4110,22 +4132,28 @@ function ProjectsDeepDive({
                           <div>
                             Unsafe: <span className="font-black text-amber-200">{apiValidateData.unsafeProperties.length}</span>
                           </div>
-                          <div className="sm:col-span-2">
+                          <div>
                             TypeMismatch: <span className="font-black text-rose-200">{apiValidateData.typeMismatches.length}</span>
                           </div>
                         </>
                       ) : null}
+                      <div className="sm:col-span-2">
+                        Notion-Writes:{' '}
+                        <span className="font-black text-emerald-200">aus (read-only)</span>
+                      </div>
                     </div>
 
                     {apiValidateData ? (
                       apiValidateData.schemaOk ? (
                         <div className="mt-3 rounded-md border border-emerald-300/40 bg-emerald-400/10 p-2 text-[11px] font-bold leading-5 text-emerald-100">
-                          Schema bereit für Phase 2C-Pre. Noch keine Writes aktiv.
+                          Technische Prüfung bestanden. Bereit für Phase 2C-Pre.
+                          Noch keine Quests werden erzeugt.
                         </div>
                       ) : (
                         <div className="mt-3 rounded-md border border-amber-300/40 bg-amber-300/10 p-2 text-[11px] font-bold leading-5 text-amber-100">
-                          Notion-Schema noch nicht bereit. Fehlende Properties manuell in
-                          Master Tasks / Questboard anlegen.
+                          Notion-Schema noch nicht bereit. Technische Details aufklappen,
+                          um fehlende Properties / unsafe Felder zu sehen, und anschließend
+                          in Master Tasks / Questboard anlegen oder Mapping entscheiden.
                         </div>
                       )
                     ) : null}
@@ -4150,7 +4178,31 @@ function ProjectsDeepDive({
                   </div>
                 ) : null}
 
-                {apiPreviewData ? (
+                {/* Technical-details toggle. Visible as soon as any Preview
+                    or Validate result (success or error) is in. Collapses
+                    plannedMutations, propertyChecks, missing/unsafe-Listen,
+                    issues und warnings hinter eine Aufklapp-Schicht — der
+                    Operator sieht primär die Status-Card oben und kann bei
+                    Bedarf in die Tiefen schauen. */}
+                {apiPreviewData || apiValidateData ? (
+                  <button
+                    type="button"
+                    onClick={() => setTechnicalDetailsVisible((v) => !v)}
+                    aria-expanded={technicalDetailsVisible}
+                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#4a101b]/60 bg-[#120609]/60 px-4 py-3 text-left text-[12px] font-extrabold uppercase tracking-[0.18em] text-amber-200 transition hover:border-amber-300/40 hover:bg-[#1a070b]/80 focus:outline-none focus:ring-2 focus:ring-amber-300/40"
+                  >
+                    <span>
+                      {technicalDetailsVisible
+                        ? 'Technische Details ausblenden'
+                        : 'Technische Details anzeigen'}
+                    </span>
+                    <span className="text-[#9f8d95]" aria-hidden>
+                      {technicalDetailsVisible ? '−' : '+'}
+                    </span>
+                  </button>
+                ) : null}
+
+                {apiPreviewData && technicalDetailsVisible ? (
                   <>
                     <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4">
                       <div className="flex flex-wrap items-center gap-2">
@@ -4223,9 +4275,11 @@ function ProjectsDeepDive({
                       </div>
                     </div>
                   </>
-                ) : !apiPreviewError ? (
+                ) : null}
+
+                {!apiPreviewData && !apiPreviewError && !apiValidateData && !apiValidateError ? (
                   <div className="rounded-2xl border border-dashed border-[#4a101b]/60 bg-[#0c0506]/50 p-5 text-sm font-semibold text-[#9f8d95]">
-                    Kein Preview geladen. „Preview anfordern" klicken. (Operator-Key nur nötig, wenn der Server nicht im Private-Cockpit-Mode läuft.)
+                    Noch keine Prüfung gelaufen. Auf „Prüfung starten" klicken — Preview und Schema-Check laufen automatisch hintereinander. Im Private-Cockpit-Mode ohne Operator-Key.
                   </div>
                 ) : null}
 
@@ -4248,7 +4302,7 @@ function ProjectsDeepDive({
                   </div>
                 ) : null}
 
-                {apiValidateData ? (
+                {apiValidateData && technicalDetailsVisible ? (
                   <div className="rounded-2xl border border-cyan-400/40 bg-cyan-500/10 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.22em] text-cyan-200">
@@ -4945,7 +4999,7 @@ function UnifiedAutoPlanner({
         <div className="flex flex-wrap gap-2">
           <Button onClick={onTalk}>Mit NOX besprechen</Button>
           <Button tone="ghost" onClick={onPlan}>Quest-Reihe entwerfen</Button>
-          <Button tone="ghost" onClick={onApiPreview}>API-Preview prüfen</Button>
+          <Button tone="ghost" onClick={onApiPreview}>Technisch prüfen</Button>
           <Button tone="ghost" onClick={onOutputsViewer}>Outputs ansehen</Button>
           <Button tone="ghost" onClick={onReset}>Zurücksetzen</Button>
         </div>

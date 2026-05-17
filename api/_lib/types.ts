@@ -406,10 +406,13 @@ export interface PlanPreviewResponse {
 // properties outside the allowlist as `unsafe` (they would never make it
 // past Phase 2C even if the live Notion schema accepted them).
 //
-// IMPORTANT: 🤖-prefixed properties are operator-managed AI status fields
-// and are deliberately OUT of the write allowlist. Phase 2B will report
-// them as `unsafe_property` so the operator knows up front that Phase 2C
-// will not touch them.
+// Mapping decision (Phase 2A/2B): plan-step `ziel` and `output` land on
+// the operator's primary quest columns instead of emoji-prefixed sidecar
+// fields:
+//   - `Prompt`                        ← step.ziel
+//   - `Ergebnis / Definition of Done` ← step.output
+// Emoji-prefixed columns like `🎯 Ziel` / `🤖 Erwarteter Output` are
+// deliberately NOT on this list and are no longer emitted at all.
 export const ALLOWED_MASTER_TASKS_WRITE_PROPERTIES: readonly string[] = [
   'Titel',
   'Agent',
@@ -419,6 +422,8 @@ export const ALLOWED_MASTER_TASKS_WRITE_PROPERTIES: readonly string[] = [
   'Schritt-Reihenfolge',
   'Reason',
   'Operator-Check',
+  'Prompt',
+  'Ergebnis / Definition of Done',
 ];
 
 export type PlanValidationIssueCode =
