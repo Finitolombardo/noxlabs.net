@@ -81,26 +81,28 @@ Der Projekte-Bereich im Operator Cockpit ist der erste echte NOX-Agent-Hauptpfad
 
 ### Card-Architektur
 
-1. **Projekt-Zentrale Card (kompakt)** — Eyebrow `Projekt-Zentrale`, Projektname, kleine Projekt-ID, kurze Vision, typografisch gestalteter Projekt-Picker (`Projekt wählen`). Darunter eine zweispaltige Arbeitsübersicht: links großer `Projektfortschritt`-Block (Wert in Prozent, Status, `Phase 1 · Demo`, Fortschrittsbalken, Roh-Sub-Score `x / y Quests erledigt · Outputs · offene Freigaben`), rechts `Nächste Aktion` und `Letzter Meilenstein` als kompakte Kacheln.
-2. **Projektziel-Composer** — Phase-1 lokale Eingabe (`Projektziel · Was soll als nächstes entstehen?`). Textarea mit Placeholder, Buttons `Lokalen Plan entwerfen` und `Zurücksetzen`. Klick auf `Lokalen Plan entwerfen` ruft den regelbasierten Generator (siehe unten) auf und öffnet den Planner mit dem frischen Entwurf. Leeres Feld → Demo-Projektziel. Status-Chip: `Lokaler Entwurf · noch nicht erstellt · keine Notion-Speicherung`.
-3. **NOX Agent · Project Auto Planner Action-Card** — Phase-1-CTAs:
-   - **Mit NOX besprechen** → Talk-Modal (Quest-Draft / Output-Draft / Freigabe vormerken, alles lokal).
-   - **Quest-Reihe entwerfen** → Planner-Modal mit editierbarer Tabelle (siehe unten).
-   - **Outputs ansehen** → Read-only Output-Liste mit Status, Version, Speicherort. Footer-Button `Neuen Output anlegen` schaltet zum bestehenden Create-Modal.
-   - Sekundärleiste: **Projektkontext-Audit** (Health-Check) und **Output anlegen** (Create-Modal).
+1. **Projekt-Zentrale Card (kompakt)** — Eyebrow `Projekt-Zentrale`, Projektname, kleine Projekt-ID, kurze Vision, typografisch gestalteter Projekt-Picker (`Projekt wählen`). Dropdown-Optionen sind inline auf dunklen Hintergrund + helle Textfarbe gestylt, damit alle Projekt-Labels im aufgeklappten Zustand lesbar bleiben. Darunter eine zweispaltige Arbeitsübersicht: links großer `Projektfortschritt`-Block (Wert in Prozent, Status, `Phase 1 · Demo`, Fortschrittsbalken, Roh-Sub-Score `x / y Quests erledigt · Outputs · offene Freigaben`), rechts `Nächste Aktion` und `Letzter Meilenstein` als kompakte Kacheln.
+2. **Unified Project Auto Planner** — die ehemalige Projektziel-Composer-Card und die alte Action-Card sind in eine einzige Card zusammengeführt (eyebrow `NOX Agent`, Titel `Project Auto Planner`, Status-Chip `Phase 1 · lokaler Entwurf · keine Notion-Speicherung`). Inhalt: Projektziel-Textarea, Restore-Banner (cyan) bei wiederhergestelltem `localStorage`-Draft, leerer-Input-Inline-Hinweis mit `Demo-Ziel verwenden`-Button, Primärbuttons `Mit NOX besprechen` / `Quest-Reihe entwerfen` / `Outputs ansehen` / `Zurücksetzen`, Sekundärleiste `Projektkontext-Audit` / `Output anlegen` / `Lokalen Entwurf löschen`. Statistik-Pills (Quests, Freigaben, Outputs, Schritte im Entwurf) rechts oben.
 
 #### Lokaler Plan-Generator
 
 `generateLocalPlan(goal: string): PlanStep[]` lebt im Modul `OperatorCockpit.tsx`. Reine Funktion, keine KI, keine API, kein Netzwerk:
 
 - Zerlegt das Ziel in einfache Stichwort-Cluster (`lead`, `agent/workflow/n8n`, `content/youtube`, `dropshipping/test`) und färbt damit Schritt 2–5 leicht ein.
-- Liefert immer **7 Schritte** mit Feldern `id`, `step`, `title`, `ziel`, `agent`, `output`, `risk` (`Niedrig` / `Mittel` / `Hoch`), `gate`.
+- Liefert immer **7 Schritte** mit Feldern `id`, `step`, `title`, `ziel`, `agent` (`NOX Agent` / `Claude` / `Codex` / `Manuell`), `output`, `risk` (`Niedrig` / `Mittel` / `Hoch`), `gate` (optional · „Operator-Check"-Klartext statt technischer Freigabe-Gate-Bezeichnung), `reason` (Begründung warum dieser Schritt vorgeschlagen wurde), `feedback` (lokaler Operator-Text), `rating` (`gut` / `unklar` / `aendern` oder `null`).
 - Standard-Reihe: `Ziel klären → Kontext sammeln → Risiken & Blocker prüfen → Quest-Reihe definieren → Agenten zuweisen → Output-Artefakte planen → Review & Freigabe vorbereiten`.
-- Bei leerem Ziel wird ein Demo-Projektziel eingesetzt, der Plan bleibt bedienbar.
+- **Empty-Goal-Guard**: Wenn das Projektziel beim Klick auf `Quest-Reihe entwerfen` leer ist, wird kein Plan still erzeugt. Statt dessen erscheint ein Inline-Hinweis „Bitte erst ein Projektziel eingeben." mit Button `Demo-Ziel verwenden`. Erst der explizite Klick setzt ein Demo-Ziel und öffnet den Planner.
 
 #### Editierbare Quest-Reihe
 
-Im Planner-Modal sind die Felder eines Schrittes editierbar (Titel, Ziel, Agent, Output, Risiko, Freigabe-Gate). Änderungen werden automatisch in `localStorage` unter dem Key `nox.projectPlanner.localDraft.v1` persistiert (siehe „Lokale Persistenz" unten). Kein Notion-Write, kein Backend. Verfügbare Aktionen:
+Im Planner-Modal (`size="wide"`, breit bis `min(1200px, calc(100vw − 96px))`, internem Scroll, sticky Footer, Escape + Backdrop-Klick schließen) sind die Felder eines Schrittes editierbar:
+
+- Primärfelder: **Titel**, **Ziel**, **Warum diese Quest?** (`reason`), **Ergebnis / Output**, **Risiko** (Dropdown).
+- **Bearbeiter / Agent**: Chip-Buttons mit `NOX Agent`, `Claude`, `Codex`, `Manuell` (Default `NOX Agent`).
+- **Feedback an NOX**: Rating-Chips `Passt` / `Unklar` / `Ändern` (toggle) plus Textarea „Was soll NOX an diesem Schritt anpassen? Kürzer, technischer, business-lastiger?". Phase-1-Hinweis: „Feedback bleibt lokal. Später nutzt NOX Agent dieses Feedback zur besseren Quest-Erzeugung."
+- Optional: **Operator-Check** (ehemals technisches „Freigabe-Gate") als sekundäres Feld nach unten.
+
+Änderungen werden automatisch in `localStorage` unter dem Key `nox.projectPlanner.localDraft.v2` persistiert (Schema-Bump wegen erweitertem `PlanStep`). Kein Notion-Write, kein Backend. Verfügbare Aktionen:
 
 - **+ Schritt hinzufügen** (Footer unter der Tabelle)
 - **Schritt entfernen** (im Detailpanel rechts)
@@ -110,9 +112,13 @@ Im Planner-Modal sind die Felder eines Schrittes editierbar (Titel, Ziel, Agent,
 - **Als Plan-Output vormerken** (lokaler `Plan`-Output mit dem Projektziel im Beschreibungstext)
 - **Später als Quest erzeugen (Phase 2)** — bewusst deaktiviert
 
+#### Mit NOX besprechen (lokaler Gesprächsentwurf)
+
+Klick auf `Mit NOX besprechen` öffnet ein eigenes `size="wide"`-Modal. Links: Projektziel-Karte + aktuelle Quest-Reihe als Liste. Rechts: Textarea „Was willst du ändern oder verstehen?" + Button `Lokale NOX-Antwort generieren`. Der Antwortgenerator ist eine rein regelbasierte Funktion (Stichwörter `kürzer`, `business/sales/vertrieb/lead`, `technisch/implement/code`, `warum`) — keine KI, keine API. Antwort erscheint als „NOX (lokale Beispielantwort)"-Block mit Button `Antwort als Anpassungsnotiz übernehmen`: schreibt den Text in das Feedback-Feld des selektierten Schrittes oder hängt es als `// NOX-Notiz:` an das Projektziel. Footer-Buttons `Als Quest-Draft vormerken`, `Als Output-Draft vormerken`, `Schließen`.
+
 #### Lokale Persistenz
 
-- **Key**: `nox.projectPlanner.localDraft.v1` (versioniert; bei späterem Schemawechsel wird ein neuer Key vergeben, keine Migration).
+- **Key**: `nox.projectPlanner.localDraft.v2` (versioniert; alter `v1`-Key wird ignoriert, kein Migrationsskript nötig).
 - **Gespeichert**: `projectId`, `projectGoal`, `planSteps`, `selectedStepId`, `updatedAt` (ISO-Zeitstempel).
 - **Scope**: nur der Entwurf des **aktuell gewählten Projekts**. Wechsel auf ein anderes Projekt lädt dessen Entwurf bzw. setzt den Generator-Default ein.
 - **Auto-Save**: `useEffect` schreibt nach jeder Änderung an `projektZiel`, `planSteps` oder `plannerSelectedStepId`. Erste Auto-Save-Runde wird unterdrückt, bis die Hydrierung für die aktuelle Projekt-ID abgeschlossen ist, damit der gespeicherte Draft nicht vom Generator-Output überschrieben wird.
@@ -124,11 +130,11 @@ Im Planner-Modal sind die Felder eines Schrittes editierbar (Titel, Ziel, Agent,
   - `Lokalen Plan entwerfen` — schließt das Restore-Banner, regeneriert aus dem aktuellen Projektziel und öffnet das Planner-Modal.
 - **Keine Migration**: Versionierter Key + Strukturprüfung machen Migrationsskripte überflüssig. Bei Schemawechsel wird `v1` ignoriert und ein `v2`-Key eingeführt.
 - **Keine Cross-Browser-Sync**: rein lokal pro Browser-Profil — kein Notion, kein Backend, kein API-Call.
-4. **Offene Entscheidungen & Blocker** — übernimmt die Freigaben-Funktion. Zeigt projektbezogene Blocker plus eine Liste offener Freigaben (Titel, Beschreibung, Risiko, Status, NOX-Agent-Empfehlung) mit drei deaktivierten Phase-2-Buttons (`Freigeben`, `Rückfrage stellen`, `Ablehnen`). Wenn weder Blocker noch Freigaben offen sind: Hinweis „Keine kritischen Blocker. Nächste Aktion weiter ausführbar."
-5. **Verknüpfte Quests** — projektbezogen, klickbar zum Quest-Detail.
-6. **Outputs & Artefakte (Tabelle)** — datenbankartige Tabelle mit Spalten `Typ`, `Titel`, `Version`, `Status`, `Speicherort`, `Projekt`, `Aktionen`. Titel ist klickbar und öffnet ein **Output-Detail-Modal** (Typ, Version, Status, Speicherort, Projekt, Beschreibung). Pro Zeile fünf Aktions-Buttons als lokale Demo-Aktion mit Tooltip „Phase 1: lokale Demo-Aktion. Persistenz folgt später.": `Öffnen`, `Aktualisieren`, `In Google Drive speichern`, `In Notion speichern`, `Herunterladen`. Keine echten Writes, kein Drive, kein Notion, kein realer Download.
-7. **Projekt-Meilensteine** — unverändert, projektbezogen.
-8. **Erweiterter Kontext (eingeklappt)** — wrappt den bestehenden `LiveProjectContext`-Loader. Aufklappbar; die `Entwickler-Auth`-Eingabe (API Key) ist nur als Entwicklerhinweis sichtbar und nicht mehr Teil der Hauptachse.
+3. **Offene Entscheidungen & Blocker** — übernimmt die Freigaben-Funktion. Zeigt projektbezogene Blocker plus eine Liste offener Freigaben (Titel, Beschreibung, Risiko, Status, NOX-Agent-Empfehlung) mit drei deaktivierten Phase-2-Buttons (`Freigeben`, `Rückfrage stellen`, `Ablehnen`). Wenn weder Blocker noch Freigaben offen sind: Hinweis „Keine kritischen Blocker. Nächste Aktion weiter ausführbar."
+4. **Verknüpfte Quests** — projektbezogen, klickbar zum Quest-Detail.
+5. **Outputs & Artefakte (Tabelle)** — datenbankartige Tabelle mit Spalten `Typ`, `Titel`, `Version`, `Status`, `Speicherort`, `Projekt`, `Aktionen`. Titel ist klickbar und öffnet ein **Output-Detail-Modal** (Typ, Version, Status, Speicherort, Projekt, Beschreibung). Pro Zeile fünf Aktions-Buttons als lokale Demo-Aktion mit Tooltip „Phase 1: lokale Demo-Aktion. Persistenz folgt später.": `Öffnen`, `Aktualisieren`, `In Google Drive speichern`, `In Notion speichern`, `Herunterladen`. Keine echten Writes, kein Drive, kein Notion, kein realer Download.
+6. **Projekt-Meilensteine** — unverändert, projektbezogen.
+7. **Erweiterter Kontext (eingeklappt)** — wrappt den bestehenden `LiveProjectContext`-Loader. Aufklappbar; die `Entwickler-Auth`-Eingabe (API Key) ist nur als Entwicklerhinweis sichtbar und nicht mehr Teil der Hauptachse.
 
 ### Phase-1-Hinweis (in jedem neuen Modal)
 

@@ -2952,18 +2952,26 @@ function FactoryApprovalGate() {
 }
 
 // Local quest-series plan step. Editable in the React state of the
-// Project Auto Planner panel. Phase 1: never persisted to Notion or any
-// backend — lives only in the running session.
+// Project Auto Planner panel. Phase 1: persisted only to localStorage,
+// never to Notion or any backend.
+type AgentOption = 'NOX Agent' | 'Claude' | 'Codex' | 'Manuell';
+type PlanStepRating = 'gut' | 'unklar' | 'aendern';
+
 type PlanStep = {
   id: string;
   step: number;
   title: string;
   ziel: string;
-  agent: string;
+  agent: AgentOption;
   output: string;
   risk: 'Niedrig' | 'Mittel' | 'Hoch';
   gate: string;
+  reason: string;
+  feedback: string;
+  rating: PlanStepRating | null;
 };
+
+const AGENT_OPTIONS: AgentOption[] = ['NOX Agent', 'Claude', 'Codex', 'Manuell'];
 
 // Pure, rule-based generator. No AI, no API. Picks a small set of
 // keyword cues from the operator's goal text and uses them to colour
@@ -2983,7 +2991,7 @@ function generateLocalPlan(goalRaw: string): PlanStep[] {
   const stamp = Date.now();
   const sid = (n: number) => `step-${stamp}-${n}`;
 
-  return [
+  const base: Omit<PlanStep, 'feedback' | 'rating'>[] = [
     {
       id: sid(1),
       step: 1,
@@ -2992,7 +3000,8 @@ function generateLocalPlan(goalRaw: string): PlanStep[] {
       agent: 'NOX Agent',
       output: 'Ziel-Kurzformel (1 Satz)',
       risk: 'Niedrig',
-      gate: 'Kein Gate',
+      gate: '',
+      reason: 'Ohne klares Ziel verzettelt sich jede Quest-Reihe. Schritt 1 macht das Ziel präzise und überprüfbar.',
     },
     {
       id: sid(2),
@@ -3004,7 +3013,10 @@ function generateLocalPlan(goalRaw: string): PlanStep[] {
       agent: mentionsContent ? 'Claude' : 'NOX Agent',
       output: 'Kontext-Zusammenfassung',
       risk: 'Niedrig',
-      gate: 'Kein Gate',
+      gate: '',
+      reason: mentionsContent
+        ? 'Content-Themen brauchen reale Creator-/Hook-Referenzen vor jeder Strategie.'
+        : 'Vorhandene Notion-Notizen verhindern Doppelarbeit und falsche Annahmen.',
     },
     {
       id: sid(3),
@@ -3016,7 +3028,10 @@ function generateLocalPlan(goalRaw: string): PlanStep[] {
       agent: 'NOX Agent',
       output: 'Risiko-/Blockerliste',
       risk: 'Mittel',
-      gate: 'Operator-Freigabe',
+      gate: 'Operator-Check vor Umsetzung',
+      reason: mentionsTest
+        ? 'Test-Projekte ohne Stopp-Kriterien laufen länger, als sie sollten.'
+        : 'Risiken früh sichtbar machen ist günstiger als Blocker mitten in der Umsetzung.',
     },
     {
       id: sid(4),
@@ -3028,7 +3043,8 @@ function generateLocalPlan(goalRaw: string): PlanStep[] {
       agent: 'NOX Agent',
       output: 'Quest-Entwurfsliste',
       risk: 'Niedrig',
-      gate: 'Operator-Freigabe',
+      gate: 'Operator-Check',
+      reason: 'Quests mit klarem Endzustand sind delegierbar; Wischiwaschi-Quests blockieren Agenten.',
     },
     {
       id: sid(5),
@@ -3036,11 +3052,12 @@ function generateLocalPlan(goalRaw: string): PlanStep[] {
       title: 'Agenten zuweisen',
       ziel: mentionsAgent
         ? 'NOX Agent steuert, Codex implementiert, Claude prüft Sprache/Strategie.'
-        : 'Pro Quest verantwortlichen Agent setzen (NOX Agent / Codex / Claude / Operator).',
-      agent: 'Operator + NOX Agent',
+        : 'Pro Quest verantwortlichen Agent setzen (NOX Agent / Codex / Claude / Manuell).',
+      agent: 'NOX Agent',
       output: 'Quest-zu-Agent-Mapping',
       risk: 'Niedrig',
-      gate: 'Operator-Freigabe',
+      gate: '',
+      reason: 'Klar zugeordnete Bearbeiter verkürzen Übergaben und vermeiden Pingpong.',
     },
     {
       id: sid(6),
@@ -3050,7 +3067,8 @@ function generateLocalPlan(goalRaw: string): PlanStep[] {
       agent: 'NOX Agent',
       output: 'Artefakt-Liste mit Speicherort-Vorschlag',
       risk: 'Niedrig',
-      gate: 'Kein Gate',
+      gate: '',
+      reason: 'Definierte Artefakte machen Fortschritt sichtbar und verhindern lose Endpunkte.',
     },
     {
       id: sid(7),
@@ -3060,15 +3078,17 @@ function generateLocalPlan(goalRaw: string): PlanStep[] {
       agent: 'NOX Agent',
       output: 'Übergabe-Spec v0.x (Entwurf)',
       risk: 'Mittel',
-      gate: 'Operator-Freigabe (vor Live-Run)',
+      gate: 'Operator-Check vor Live-Run',
+      reason: 'Vor jedem Live-Run muss der Operator wissen, was er freigibt und mit welchem Risiko.',
     },
   ];
+  return base.map((s) => ({ ...s, feedback: '', rating: null }));
 }
 
 // Phase-1 local persistence for the Project Auto Planner draft.
 // Lives in localStorage under a versioned key so future schemas can
 // ignore old drafts cleanly. No API, no Notion, no backend.
-const PLAN_DRAFT_KEY = 'nox.projectPlanner.localDraft.v1';
+const PLAN_DRAFT_KEY = 'nox.projectPlanner.localDraft.v2';
 
 type PlanDraft = {
   projectId: string;
@@ -3081,15 +3101,21 @@ type PlanDraft = {
 function isPlanStep(value: unknown): value is PlanStep {
   if (!value || typeof value !== 'object') return false;
   const v = value as Record<string, unknown>;
+  const agentOk = AGENT_OPTIONS.includes(v.agent as AgentOption);
+  const ratingOk =
+    v.rating === null || v.rating === 'gut' || v.rating === 'unklar' || v.rating === 'aendern';
   return (
     typeof v.id === 'string' &&
     typeof v.step === 'number' &&
     typeof v.title === 'string' &&
     typeof v.ziel === 'string' &&
-    typeof v.agent === 'string' &&
+    agentOk &&
     typeof v.output === 'string' &&
     (v.risk === 'Niedrig' || v.risk === 'Mittel' || v.risk === 'Hoch') &&
-    typeof v.gate === 'string'
+    typeof v.gate === 'string' &&
+    typeof v.reason === 'string' &&
+    typeof v.feedback === 'string' &&
+    ratingOk
   );
 }
 
@@ -3185,6 +3211,9 @@ function ProjectsDeepDive({
   const [planSteps, setPlanSteps] = useState<PlanStep[]>(() => generateLocalPlan(''));
   const [plannerSelectedStepId, setPlannerSelectedStepId] = useState<string | null>(null);
   const [restoredAt, setRestoredAt] = useState<string | null>(null);
+  const [emptyGoalHint, setEmptyGoalHint] = useState<boolean>(false);
+  const [noxTalkInput, setNoxTalkInput] = useState<string>('');
+  const [noxTalkAnswer, setNoxTalkAnswer] = useState<string>('');
   // Tracks whether the current state was already hydrated for this
   // project id. We delay persistence until after hydration so the
   // first auto-save does not overwrite the stored draft with a fresh
@@ -3267,7 +3296,10 @@ function ProjectsDeepDive({
         agent: 'NOX Agent',
         output: 'Output beschreiben…',
         risk: 'Niedrig',
-        gate: 'Kein Gate',
+        gate: '',
+        reason: 'Manuell hinzugefügt — Begründung ergänzen.',
+        feedback: '',
+        rating: null,
       },
     ]);
     setPlannerSelectedStepId(id);
@@ -3429,20 +3461,25 @@ function ProjectsDeepDive({
             <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-[#eadbe2]">{project.vision}</p>
           </div>
           <div className="w-full lg:w-80">
-            <label className="block text-[10px] font-extrabold uppercase tracking-[0.24em] text-[#9f8d95]">Projekt wählen</label>
+            <label className="block text-[10px] font-extrabold uppercase tracking-[0.24em] text-amber-200/90">Projekt wählen</label>
             <div className="relative mt-2">
               <select
                 value={selectedProjectId}
                 onChange={(event) => setSelectedProjectId(event.target.value)}
-                className="w-full appearance-none rounded-2xl border border-[#3a0c14]/80 bg-gradient-to-br from-[#160709] to-[#0c0506] px-4 py-3 pr-10 text-base font-black tracking-tight text-[#fff7fb] outline-none transition hover:border-amber-300/40 focus:border-amber-300/70"
+                style={{ colorScheme: 'dark' }}
+                className="cockpit-select w-full appearance-none rounded-2xl border border-amber-300/30 bg-gradient-to-br from-[#1a0a0d] to-[#0c0506] px-4 py-3 pr-10 text-base font-black tracking-tight text-amber-50 outline-none transition hover:border-amber-300/60 focus:border-amber-300/80"
               >
                 {projects.map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <option
+                    key={item.id}
+                    value={item.id}
+                    style={{ backgroundColor: '#160709', color: '#fff7fb' }}
+                  >
                     {item.name}
                   </option>
                 ))}
               </select>
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-amber-200/70">▾</span>
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-amber-200">▾</span>
             </div>
           </div>
         </div>
@@ -3491,30 +3528,40 @@ function ProjectsDeepDive({
         </div>
       </Card>
 
-      <ProjectGoalComposer
+      <UnifiedAutoPlanner
         value={projektZiel}
-        onChange={setProjektZiel}
-        onGenerate={() => {
+        onChange={(next) => { setProjektZiel(next); if (emptyGoalHint) setEmptyGoalHint(false); }}
+        onTalk={() => setModal('talk')}
+        onPlan={() => {
+          if (!projektZiel.trim()) {
+            setEmptyGoalHint(true);
+            return;
+          }
+          setEmptyGoalHint(false);
           regeneratePlan(projektZiel);
           setRestoredAt(null);
           setModal('planner');
         }}
+        onUseDemoGoal={() => {
+          const demo = 'Demo-Ziel: NOX Agent so weit bringen, dass aus einem Projektziel lokal eine sinnvolle Quest-Reihe entsteht.';
+          setProjektZiel(demo);
+          setEmptyGoalHint(false);
+          regeneratePlan(demo);
+          setRestoredAt(null);
+          setModal('planner');
+        }}
+        onOutputsViewer={() => setModal('outputsViewer')}
         onReset={resetPlan}
         onDeleteDraft={deleteLocalDraft}
+        onAudit={() => setModal('audit')}
+        onOutputCreate={() => setModal('output')}
         stepCount={planSteps.length}
-        restoredAt={restoredAt}
-        onDismissRestoreNotice={() => setRestoredAt(null)}
-      />
-
-      <ProjectAutoPlannerActions
-        openTalk={() => setModal('talk')}
-        openPlanner={() => setModal('planner')}
-        openOutputsViewer={() => setModal('outputsViewer')}
-        openAudit={() => setModal('audit')}
-        openOutputCreate={() => setModal('output')}
         approvalsCount={projectApprovals.length}
         outputsCount={projectOutputs.length}
         questsCount={projectQuests.length}
+        restoredAt={restoredAt}
+        onDismissRestoreNotice={() => setRestoredAt(null)}
+        emptyGoalHint={emptyGoalHint}
       />
 
       <DecisionBlockers project={project} approvals={projectApprovals} recommend={approvalRecommendation} />
@@ -3542,24 +3589,104 @@ function ProjectsDeepDive({
 
       <AnimatePresence>
         {modal === 'talk' ? (
-          <Modal onClose={closeModal}>
-            <SectionTitle eyebrow="NOX" title="NOX · Projektgespräch" />
-            <div className="mt-7 space-y-5">
-              <textarea
-                value={talkText}
-                onChange={(event) => setTalkText(event.target.value)}
-                className="min-h-[180px] w-full resize-none rounded-2xl border border-[#4a101b]/70 bg-[#120609] p-5 text-base font-semibold leading-8 text-[#fff7fb] outline-none focus:border-amber-300/70"
-                placeholder="Kippe deine Idee, Frage oder Änderung hier rein..."
-              />
-              <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-5 text-base font-semibold leading-7 text-amber-50">
-                Ich pruefe Projektstand, Quests, Outputs und Freigaben. Daraus kann ich einen Quest-Draft, einen Output oder eine Freigabe vorbereiten.
+          <Modal size="wide" onClose={() => { closeModal(); setNoxTalkInput(''); setNoxTalkAnswer(''); }}>
+            <SectionTitle eyebrow="NOX Agent" title="Mit NOX besprechen" subtitle="Lokaler Gesprächsentwurf · Phase 1 · keine API · keine Notion-Speicherung" />
+            <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-amber-300/30 bg-amber-300/5 p-4">
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">Projektziel</div>
+                  <p className="mt-2 text-sm font-bold leading-6 text-amber-50">
+                    {projektZiel.trim() || 'Noch kein Projektziel gesetzt.'}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-[#4a101b]/60 bg-[#0c0506]/70 p-4">
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/80">Aktuelle Quest-Reihe ({planSteps.length} Schritte)</div>
+                  <ul className="mt-2 space-y-1 text-sm font-semibold text-amber-50/90">
+                    {planSteps.map((s) => (
+                      <li key={s.id} className="flex gap-2">
+                        <span className="font-black text-amber-200">{s.step}.</span>
+                        <span className="leading-5">{s.title}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-              <div className="flex flex-wrap justify-end gap-3 border-t border-[#4a101b]/50 pt-6">
-                <Button tone="ghost" onClick={() => createTalkEntry('Quest-Draft')}>Als Quest-Draft vormerken</Button>
-                <Button tone="ghost" onClick={() => createTalkEntry('Output-Draft')}>Als Output-Draft vormerken</Button>
-                <Button tone="ghost" onClick={() => createTalkEntry('Freigabe')}>Als Freigabe vormerken</Button>
-                <Button onClick={closeModal}>Schließen</Button>
+              <div className="space-y-4">
+                <div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">Was willst du ändern oder verstehen?</div>
+                  <textarea
+                    value={noxTalkInput}
+                    onChange={(event) => setNoxTalkInput(event.target.value)}
+                    rows={4}
+                    placeholder="Beispiele: Warum schlägst du diese Reihe vor? Mach es kürzer. Mach es business-lastiger. Welcher Schritt fehlt für Vertrieb?"
+                    className="mt-2 w-full resize-none rounded-2xl border border-amber-300/25 bg-[#120609]/80 px-3 py-2 text-sm font-semibold text-amber-50 outline-none placeholder:text-[#9f8588] focus:border-amber-300/70"
+                  />
+                  <div className="mt-3 flex flex-wrap justify-end gap-2">
+                    <Button tone="ghost" className="!px-3 !py-1.5 !text-[12px]" onClick={() => setNoxTalkAnswer('')}>
+                      Antwort verwerfen
+                    </Button>
+                    <Button
+                      className="!px-3 !py-1.5 !text-[12px]"
+                      onClick={() => {
+                        const input = noxTalkInput.trim();
+                        const lower = input.toLowerCase();
+                        let answer = 'Ich habe diese Quest-Reihe gewählt, weil zuerst Zielklarheit, dann Kontext, dann Risiken, dann Umsetzungsschritte nötig sind.';
+                        if (/kuerzer|kürzer|kompakt/.test(lower)) {
+                          answer = 'Lokaler Vorschlag: Schritte 1, 3 und 7 kombinieren. Schritt 2 + 5 entfallen, wenn Kontext bereits klar ist.';
+                        } else if (/business|sales|vertrieb|lead/.test(lower)) {
+                          answer = 'Lokaler Vorschlag: zusätzlich „Hypothese und Zielgruppe schärfen" vor Schritt 3 und „Pitch-Test mit 5 Leads" als Schritt 6 einbauen.';
+                        } else if (/technisch|implement|code/.test(lower)) {
+                          answer = 'Lokaler Vorschlag: Schritt 5 in „Code-/Workflow-Skeleton bauen" umbenennen und Schritt 6 als „Dry-Run + Logging" konkretisieren.';
+                        } else if (/warum/.test(lower)) {
+                          answer = 'Lokaler Vorschlag: Diese Reihe folgt der Logik Ziel → Kontext → Risiko → Lösung → Bearbeiter → Artefakt → Freigabe. Sie minimiert Rückfragen während der Umsetzung.';
+                        } else if (input.length > 0) {
+                          answer = `Lokaler Vorschlag basierend auf „${input.slice(0, 80)}": Pass den selektierten Schritt im Detailpanel an (Titel, Ziel, Risiko, Bearbeiter) und nutze „Feedback an NOX", damit später echtes NOX-Lernen darauf aufbauen kann.`;
+                        }
+                        setNoxTalkAnswer(answer);
+                      }}
+                    >
+                      Lokale NOX-Antwort generieren
+                    </Button>
+                  </div>
+                </div>
+
+                {noxTalkAnswer ? (
+                  <div className="rounded-2xl border border-amber-300/40 bg-amber-300/10 p-4">
+                    <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">NOX (lokale Beispielantwort)</div>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-amber-50">{noxTalkAnswer}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        tone="secondary"
+                        className="!px-3 !py-1.5 !text-[12px]"
+                        onClick={() => {
+                          if (plannerSelectedStepId) {
+                            const sel = planSteps.find((s) => s.id === plannerSelectedStepId);
+                            const merged = sel?.feedback ? `${sel.feedback}\n${noxTalkAnswer}` : noxTalkAnswer;
+                            updateStep(plannerSelectedStepId, { feedback: merged });
+                          } else {
+                            setProjektZiel((prev) => `${prev}${prev ? '\n' : ''}// NOX-Notiz: ${noxTalkAnswer}`);
+                          }
+                          closeModal();
+                          setNoxTalkInput('');
+                          setNoxTalkAnswer('');
+                        }}
+                      >
+                        Antwort als Anpassungsnotiz übernehmen
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-semibold leading-6 text-amber-50">
+              Phase 1: Keine API, kein echter Chat. Antworten sind regelbasiert und nur lokal. Später ersetzt NOX Agent das durch echte Auswertung.
+            </div>
+
+            <div className="sticky bottom-0 -mx-5 -mb-5 mt-6 flex flex-wrap justify-end gap-3 border-t border-[#4a101b]/60 bg-[#080304]/95 px-5 py-4 md:-mx-9 md:-mb-9 md:px-9 md:py-5">
+              <Button tone="ghost" onClick={() => createTalkEntry('Quest-Draft')}>Als Quest-Draft vormerken</Button>
+              <Button tone="ghost" onClick={() => createTalkEntry('Output-Draft')}>Als Output-Draft vormerken</Button>
+              <Button onClick={() => { closeModal(); setNoxTalkInput(''); setNoxTalkAnswer(''); }}>Schließen</Button>
             </div>
           </Modal>
         ) : null}
@@ -3626,39 +3753,39 @@ function ProjectsDeepDive({
         ) : null}
 
         {modal === 'planner' ? (
-          <Modal onClose={() => { setModal(null); setPlannerSelectedStepId(null); }}>
+          <Modal size="wide" onClose={() => { setModal(null); setPlannerSelectedStepId(null); }}>
             <SectionTitle
               eyebrow="NOX Agent · Project Auto Planner"
               title="Lokaler Quest-Reihen-Entwurf"
-              subtitle="Diese Quests sind noch nicht erstellt. Sie sind ein lokaler Entwurf. Später erzeugt NOX Agent daraus echte Quests nach Operator-Freigabe."
+              subtitle="Diese Quests sind lokale Entwürfe. Sie sind nicht in Notion, nicht in Master Tasks und nicht an Agenten übergeben."
             />
 
             <div className="mt-5 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200/80">Projektziel · lokaler Entwurf</div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200">Projektziel · lokaler Entwurf</div>
                   <p className="mt-1 text-sm font-bold leading-6 text-amber-50">
-                    {projektZiel.trim() ? projektZiel : 'Demo-Projektziel — Beispiel für lokalen Plan-Entwurf'}
+                    {projektZiel.trim() ? projektZiel : 'Kein Projektziel gesetzt — Generator hat Demo-Inhalte erzeugt.'}
                   </p>
                 </div>
                 <Button tone="secondary" className="!px-3 !py-1.5 !text-[11px]" onClick={() => regeneratePlan(projektZiel)}>
                   Plan neu erzeugen
                 </Button>
               </div>
-              <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-100/70">
+              <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-100">
                 Lokaler Entwurf · noch nicht erstellt · keine Notion-Speicherung
               </div>
             </div>
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
               <div className="overflow-hidden rounded-2xl border border-[#4a101b]/60">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-[#120609]/80 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">
+                  <thead className="bg-[#120609]/80 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200">
                     <tr>
                       <th className="w-10 px-3 py-3">#</th>
                       <th className="px-3 py-3">Schritt</th>
                       <th className="w-20 px-3 py-3">Risiko</th>
-                      <th className="w-20 px-3 py-3 text-right">Reihenfolge</th>
+                      <th className="w-20 px-3 py-3 text-right">Order</th>
                     </tr>
                   </thead>
                   <tbody className="text-[#eadbe2]">
@@ -3672,8 +3799,15 @@ function ProjectsDeepDive({
                         >
                           <td className="px-3 py-3 align-top font-black text-amber-200">{row.step}</td>
                           <td className="px-3 py-3 align-top">
-                            <div className="font-semibold leading-5 text-[#fff7fb]">{row.title}</div>
-                            <div className="mt-1 text-[11px] font-semibold text-[#9f8d95]">Status: Entwurf · noch nicht in Notion</div>
+                            <div className="font-semibold leading-5 text-amber-50">{row.title}</div>
+                            <div className="mt-1 flex flex-wrap gap-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-200/80">
+                              <span>Lokaler Entwurf</span>
+                              {row.rating ? (
+                                <span className={`rounded px-1.5 ${row.rating === 'gut' ? 'bg-emerald-400/15 text-emerald-200' : row.rating === 'unklar' ? 'bg-amber-300/15 text-amber-100' : 'bg-rose-400/15 text-rose-200'}`}>
+                                  {row.rating === 'gut' ? 'Passt' : row.rating === 'unklar' ? 'Unklar' : 'Ändern'}
+                                </span>
+                              ) : null}
+                            </div>
                           </td>
                           <td className="px-3 py-3 align-top">
                             <Pill tone={row.risk === 'Hoch' ? 'red' : row.risk === 'Mittel' ? 'gold' : 'default'}>
@@ -3703,49 +3837,48 @@ function ProjectsDeepDive({
                     })}
                   </tbody>
                 </table>
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#4a101b]/40 bg-[#0c0506]/60 px-3 py-2 text-[11px] font-semibold text-[#9f8d95]">
-                  <span>{planSteps.length} Schritte · lokal · keine Persistenz</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#4a101b]/40 bg-[#0c0506]/60 px-3 py-2 text-[11px] font-semibold text-amber-100/80">
+                  <span>{planSteps.length} Schritte · lokaler Entwurf · auto-saved</span>
                   <Button tone="ghost" className="!px-2 !py-1 !text-[11px]" onClick={addStep}>+ Schritt hinzufügen</Button>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-amber-300/25 bg-[#0c0506]/70 p-5">
+              <div className="rounded-2xl border border-amber-300/30 bg-[#0c0506]/70 p-5">
                 {(() => {
                   const sel = plannerSelectedStepId ? planSteps.find((s) => s.id === plannerSelectedStepId) : null;
                   if (!sel) {
                     return (
-                      <div className="text-sm font-semibold text-[#9f8d95]">
-                        Klick auf einen Schritt links, um Titel, Ziel, Agent, Output, Risiko und Freigabe-Gate zu bearbeiten.
+                      <div className="text-sm font-semibold text-amber-100/70">
+                        Klick auf einen Schritt links, um Titel, Ziel, Begründung, Output, Risiko und Feedback zu bearbeiten.
                       </div>
                     );
                   }
                   const inputClass =
-                    'mt-1 w-full rounded-xl border border-[#4a101b]/60 bg-[#120609]/70 px-3 py-2 text-sm font-semibold text-[#fff7fb] outline-none transition focus:border-amber-300/60';
+                    'mt-1 w-full rounded-xl border border-amber-300/25 bg-[#120609]/80 px-3 py-2 text-sm font-semibold text-amber-50 outline-none transition placeholder:text-[#9f8588] focus:border-amber-300/70';
                   return (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/80">Schritt {sel.step}</div>
-                        <div className="flex gap-2">
-                          <Pill tone="default">Status: Entwurf</Pill>
-                          <Button
-                            tone="ghost"
-                            className="!px-2 !py-1 !text-[11px]"
-                            onClick={() => removeStep(sel.id)}
-                          >
-                            Schritt entfernen
-                          </Button>
-                        </div>
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">Schritt {sel.step} · Lokaler Entwurf</div>
+                        <Button
+                          tone="ghost"
+                          className="!px-2 !py-1 !text-[11px]"
+                          onClick={() => removeStep(sel.id)}
+                        >
+                          Schritt entfernen
+                        </Button>
                       </div>
+
                       <div>
-                        <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Titel</div>
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/90">Titel</div>
                         <input
                           value={sel.title}
                           onChange={(event) => updateStep(sel.id, { title: event.target.value })}
                           className={inputClass}
                         />
                       </div>
+
                       <div>
-                        <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Ziel</div>
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/90">Ziel</div>
                         <textarea
                           value={sel.ziel}
                           rows={2}
@@ -3753,17 +3886,20 @@ function ProjectsDeepDive({
                           className={`${inputClass} resize-none`}
                         />
                       </div>
+
+                      <div>
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/90">Warum diese Quest?</div>
+                        <textarea
+                          value={sel.reason}
+                          rows={2}
+                          onChange={(event) => updateStep(sel.id, { reason: event.target.value })}
+                          className={`${inputClass} resize-none`}
+                        />
+                      </div>
+
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div>
-                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Empfohlener Agent</div>
-                          <input
-                            value={sel.agent}
-                            onChange={(event) => updateStep(sel.id, { agent: event.target.value })}
-                            className={inputClass}
-                          />
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Erwarteter Output</div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/90">Ergebnis / Output</div>
                           <input
                             value={sel.output}
                             onChange={(event) => updateStep(sel.id, { output: event.target.value })}
@@ -3771,28 +3907,84 @@ function ProjectsDeepDive({
                           />
                         </div>
                         <div>
-                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Risiko</div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/90">Risiko</div>
                           <select
                             value={sel.risk}
                             onChange={(event) => updateStep(sel.id, { risk: event.target.value as PlanStep['risk'] })}
+                            style={{ colorScheme: 'dark' }}
                             className={inputClass}
                           >
-                            <option value="Niedrig">Niedrig</option>
-                            <option value="Mittel">Mittel</option>
-                            <option value="Hoch">Hoch</option>
+                            <option value="Niedrig" style={{ backgroundColor: '#160709', color: '#fff7fb' }}>Niedrig</option>
+                            <option value="Mittel" style={{ backgroundColor: '#160709', color: '#fff7fb' }}>Mittel</option>
+                            <option value="Hoch" style={{ backgroundColor: '#160709', color: '#fff7fb' }}>Hoch</option>
                           </select>
                         </div>
                         <div>
-                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Freigabe-Gate</div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/90">Bearbeiter / Agent</div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {AGENT_OPTIONS.map((opt) => (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => updateStep(sel.id, { agent: opt })}
+                                className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${
+                                  sel.agent === opt
+                                    ? 'border-amber-300/80 bg-amber-300/20 text-amber-50'
+                                    : 'border-[#4a101b]/60 bg-[#120609]/70 text-amber-100/70 hover:border-amber-300/40'
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/90">Operator-Check (optional)</div>
                           <input
                             value={sel.gate}
+                            placeholder="z. B. Operator-Check vor Live-Run"
                             onChange={(event) => updateStep(sel.id, { gate: event.target.value })}
                             className={inputClass}
                           />
                         </div>
                       </div>
+
+                      <div className="rounded-2xl border border-amber-300/30 bg-amber-300/5 p-3">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200">Feedback an NOX</div>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {(['gut', 'unklar', 'aendern'] as PlanStepRating[]).map((r) => (
+                            <button
+                              key={r}
+                              type="button"
+                              onClick={() => updateStep(sel.id, { rating: sel.rating === r ? null : r })}
+                              className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${
+                                sel.rating === r
+                                  ? r === 'gut'
+                                    ? 'border-emerald-300/70 bg-emerald-400/20 text-emerald-100'
+                                    : r === 'unklar'
+                                      ? 'border-amber-300/70 bg-amber-300/20 text-amber-100'
+                                      : 'border-rose-400/70 bg-rose-400/20 text-rose-100'
+                                  : 'border-[#4a101b]/60 bg-[#120609]/70 text-amber-100/70 hover:border-amber-300/40'
+                              }`}
+                            >
+                              {r === 'gut' ? 'Passt' : r === 'unklar' ? 'Unklar' : 'Ändern'}
+                            </button>
+                          ))}
+                        </div>
+                        <textarea
+                          value={sel.feedback}
+                          rows={2}
+                          placeholder="Was soll NOX an diesem Schritt anpassen? Kürzer, technischer, business-lastiger?"
+                          onChange={(event) => updateStep(sel.id, { feedback: event.target.value })}
+                          className={`${inputClass} mt-2 resize-none`}
+                        />
+                        <div className="mt-2 text-[11px] font-semibold leading-5 text-amber-100/80">
+                          Phase 1: Feedback bleibt lokal. Später nutzt NOX Agent dieses Feedback zur besseren Quest-Erzeugung.
+                        </div>
+                      </div>
+
                       <div className="rounded-xl border border-amber-300/25 bg-amber-300/5 p-3 text-[12px] font-semibold leading-5 text-amber-100">
-                        Hinweis: Noch nicht in Notion / Master Tasks erstellt. Änderungen leben nur im Cockpit-State.
+                        Hinweis: Lokaler Entwurf · noch nicht in Notion / Master Tasks · nicht an Agenten übergeben.
                       </div>
                     </div>
                   );
@@ -3805,7 +3997,7 @@ function ProjectsDeepDive({
               Kein Notion-Write, kein Dispatcher, kein Telegram-Trigger, kein Agent-Run.
             </div>
 
-            <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-[#4a101b]/50 pt-6">
+            <div className="sticky bottom-0 -mx-5 -mb-5 mt-6 flex flex-wrap justify-end gap-3 border-t border-[#4a101b]/60 bg-[#080304]/95 px-5 py-4 md:-mx-9 md:-mb-9 md:px-9 md:py-5">
               <Button tone="secondary" onClick={copyPlanToClipboard}>
                 Entwurf kopieren
               </Button>
@@ -3952,30 +4144,47 @@ function ProjectsDeepDive({
   );
 }
 
-function ProjectGoalComposer({
+function UnifiedAutoPlanner({
   value,
   onChange,
-  onGenerate,
+  onTalk,
+  onPlan,
+  onUseDemoGoal,
+  onOutputsViewer,
   onReset,
   onDeleteDraft,
+  onAudit,
+  onOutputCreate,
   stepCount,
+  approvalsCount,
+  outputsCount,
+  questsCount,
   restoredAt,
   onDismissRestoreNotice,
+  emptyGoalHint,
 }: {
   value: string;
   onChange: (next: string) => void;
-  onGenerate: () => void;
+  onTalk: () => void;
+  onPlan: () => void;
+  onUseDemoGoal: () => void;
+  onOutputsViewer: () => void;
   onReset: () => void;
   onDeleteDraft: () => void;
+  onAudit: () => void;
+  onOutputCreate: () => void;
   stepCount: number;
+  approvalsCount: number;
+  outputsCount: number;
+  questsCount: number;
   restoredAt: string | null;
   onDismissRestoreNotice: () => void;
+  emptyGoalHint: boolean;
 }) {
-  // Local-only goal composer. Pure UI on top of the planner state.
-  // No fetch, no Notion write, no dispatcher. Empty input becomes a
-  // demo goal in the rule-based generator. Persistence is opaque
-  // localStorage and lives in the parent — the composer just shows
-  // the restore notice and exposes a delete-draft button.
+  // Phase-1 unified Project Auto Planner. Combines the project-goal
+  // composer and the planner action buttons into one card so the user
+  // doesn't see two near-identical CTA surfaces. Pure UI on top of the
+  // local React state — no API, no Notion, no backend.
   const restoredAtLabel = restoredAt
     ? new Date(restoredAt).toLocaleString('de-DE', {
         day: '2-digit',
@@ -3990,32 +4199,35 @@ function ProjectGoalComposer({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/80">Projektziel</span>
-            <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-100/80">
-              Lokaler Entwurf · noch nicht erstellt · keine Notion-Speicherung
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/90">NOX Agent</span>
+            <span className="rounded-full border border-amber-300/40 bg-amber-300/10 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-100">
+              Phase 1 · lokaler Entwurf · keine Notion-Speicherung
             </span>
           </div>
-          <h2 className="mt-2 text-xl font-black leading-tight text-[#fff7fb] md:text-2xl">Was soll als nächstes entstehen?</h2>
-          <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-[#cbbbc3]">
-            Schreib ein konkretes Ziel. Der lokale Plan-Generator (regelbasiert, keine KI, keine API) macht daraus einen
-            editierbaren Quest-Reihen-Entwurf. Änderungen werden automatisch lokal in deinem Browser gespeichert.
+          <h2 className="mt-2 text-2xl font-black leading-tight text-amber-50 md:text-3xl">Project Auto Planner</h2>
+          <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-[#d6c2cc]">
+            Schreib ein konkretes Projektziel. Der lokale, regelbasierte Generator (keine KI, keine API) macht daraus eine
+            editierbare Quest-Reihe. Änderungen werden automatisch lokal in deinem Browser gespeichert.
           </p>
         </div>
-        <div className="text-right text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
-          {stepCount} Schritte im Entwurf
+        <div className="flex flex-wrap gap-2 lg:justify-end">
+          <Pill>{questsCount} Quests</Pill>
+          <Pill tone={approvalsCount > 0 ? 'red' : 'gold'}>{approvalsCount} offene Freigaben</Pill>
+          <Pill tone="gold">{outputsCount} Outputs</Pill>
+          <Pill>{stepCount} Schritte im Entwurf</Pill>
         </div>
       </div>
 
       {restoredAt ? (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-3 text-[12px] font-semibold leading-5 text-cyan-100">
           <div className="flex flex-col">
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-200/80">Lokaler Entwurf wiederhergestellt</span>
-            {restoredAtLabel ? <span className="text-cyan-100/80">Stand: {restoredAtLabel}</span> : null}
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-200/90">Lokaler Entwurf wiederhergestellt</span>
+            {restoredAtLabel ? <span className="text-cyan-100/85">Stand: {restoredAtLabel}</span> : null}
           </div>
           <button
             type="button"
             onClick={onDismissRestoreNotice}
-            className="rounded-md border border-cyan-300/30 bg-cyan-300/5 px-2 py-1 text-[11px] font-bold text-cyan-100 transition hover:bg-cyan-300/15"
+            className="rounded-md border border-cyan-300/40 bg-cyan-300/5 px-2 py-1 text-[11px] font-bold text-cyan-100 transition hover:bg-cyan-300/15"
           >
             OK
           </button>
@@ -4023,87 +4235,35 @@ function ProjectGoalComposer({
       ) : null}
 
       <div className="mt-5">
+        <label className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200/90">Projektziel</label>
         <textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
           rows={3}
           placeholder="Beschreibe ein Ziel, z. B. Dropshipping-Test in 30 Tagen starten oder NOX Agent in echte Quest-Erzeugung bringen."
-          className="w-full resize-none rounded-2xl border border-[#3a0c14]/70 bg-gradient-to-br from-[#160709] to-[#0a0405] px-4 py-3 text-sm font-semibold leading-6 text-[#fff7fb] outline-none transition placeholder:text-[#7f6f76] focus:border-amber-300/60"
+          className="mt-2 w-full resize-none rounded-2xl border border-amber-300/25 bg-gradient-to-br from-[#1a0a0d] to-[#0a0405] px-4 py-3 text-sm font-semibold leading-6 text-amber-50 outline-none transition placeholder:text-[#9f8588] focus:border-amber-300/70"
         />
+        {emptyGoalHint ? (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/50 bg-amber-300/15 px-4 py-3 text-sm font-bold leading-5 text-amber-50">
+            <span>Bitte erst ein Projektziel eingeben.</span>
+            <Button tone="secondary" className="!px-3 !py-1.5 !text-[12px]" onClick={onUseDemoGoal}>
+              Demo-Ziel verwenden
+            </Button>
+          </div>
+        ) : null}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <span className="text-[11px] font-semibold leading-5 text-[#7f6f76]">
-          Phase 1 · regelbasiert · automatische localStorage-Speicherung · keine API · keine Notion-Writes
-        </span>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#4a101b]/40 pt-4">
         <div className="flex flex-wrap gap-2">
-          <Button tone="ghost" onClick={onDeleteDraft}>Lokalen Entwurf löschen</Button>
+          <Button onClick={onTalk}>Mit NOX besprechen</Button>
+          <Button tone="ghost" onClick={onPlan}>Quest-Reihe entwerfen</Button>
+          <Button tone="ghost" onClick={onOutputsViewer}>Outputs ansehen</Button>
           <Button tone="ghost" onClick={onReset}>Zurücksetzen</Button>
-          <Button onClick={onGenerate}>Lokalen Plan entwerfen</Button>
         </div>
-      </div>
-    </Card>
-  );
-}
-
-function ProjectAutoPlannerActions({
-  openTalk,
-  openPlanner,
-  openOutputsViewer,
-  openAudit,
-  openOutputCreate,
-  approvalsCount,
-  outputsCount,
-  questsCount,
-}: {
-  openTalk: () => void;
-  openPlanner: () => void;
-  openOutputsViewer: () => void;
-  openAudit: () => void;
-  openOutputCreate: () => void;
-  approvalsCount: number;
-  outputsCount: number;
-  questsCount: number;
-}) {
-  // NOX Agent / Project Auto Planner — Phase 1 control surface for the
-  // project route. Every button is local-only. The component intentionally
-  // does NOT trigger Notion writes, API calls, dispatcher runs or
-  // agent execution. Freigaben are not a primary CTA here — they live in
-  // "Offene Entscheidungen & Blocker" below.
-  return (
-    <Card>
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/80">NOX Agent</div>
-            <h2 className="mt-1 text-2xl font-black leading-tight text-[#fff7fb]">Project Auto Planner</h2>
-            <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#cbbbc3]">
-              Liest den Projektkontext, schlägt eine Quest-Reihe vor und zeigt die Outputs. Phase 1: nur lokale Entwürfe. Keine API, keine Notion-Writes, kein Dispatcher.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Pill>{questsCount} Quests</Pill>
-            <Pill tone={approvalsCount > 0 ? 'red' : 'gold'}>{approvalsCount} offene Freigaben</Pill>
-            <Pill tone="gold">{outputsCount} Outputs</Pill>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={openTalk}>Mit NOX besprechen</Button>
-          <Button tone="ghost" onClick={openPlanner}>
-            Quest-Reihe entwerfen
-          </Button>
-          <Button tone="ghost" onClick={openOutputsViewer}>
-            Outputs ansehen
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-3 border-t border-[#4a101b]/40 pt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
-          <span className="self-center">Sekundär:</span>
-          <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={openAudit}>
-            Projektkontext-Audit
-          </Button>
-          <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={openOutputCreate}>
-            Output anlegen
-          </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={onAudit}>Projektkontext-Audit</Button>
+          <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={onOutputCreate}>Output anlegen</Button>
+          <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={onDeleteDraft}>Lokalen Entwurf löschen</Button>
         </div>
       </div>
     </Card>
@@ -4355,23 +4515,44 @@ function MilestonesSection({ milestones }: { milestones: Milestone[] }) {
   );
 }
 
-function Modal({ children, onClose }: { children: ReactNode; onClose: () => void }) {
+function Modal({
+  children,
+  onClose,
+  size = 'default',
+}: {
+  children: ReactNode;
+  onClose: () => void;
+  size?: 'default' | 'wide';
+}) {
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const sizeClass =
+    size === 'wide'
+      ? 'w-full max-w-[min(1200px,calc(100vw-32px))] md:max-w-[min(1200px,calc(100vw-96px))]'
+      : 'w-full max-w-4xl';
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-[#030101]/86 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-[#030101]/86 px-3 py-6 backdrop-blur-md md:items-center md:px-6 md:py-10"
       onMouseDown={onClose}
     >
       <motion.div
         initial={{ y: 18, scale: 0.97 }}
         animate={{ y: 0, scale: 1 }}
         exit={{ y: 18, scale: 0.97 }}
-        className="w-full max-w-4xl rounded-[2rem] border border-[#7a1526]/70 bg-[#080304] p-6 shadow-[0_0_80px_rgba(122,21,38,0.45)] md:p-9"
+        className={`${sizeClass} my-auto flex max-h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-[2rem] border border-[#7a1526]/70 bg-[#080304] shadow-[0_0_80px_rgba(122,21,38,0.45)] md:max-h-[calc(100vh-5rem)]`}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        {children}
+        <div className="flex-1 overflow-y-auto p-5 md:p-9">{children}</div>
       </motion.div>
     </motion.div>
   );
