@@ -2956,7 +2956,14 @@ function ProjectsDeepDive({
   registerDemoAction: (project: string, title: string) => void;
   openQuest: (questId: string) => void;
 }) {
-  const [modal, setModal] = useState<'talk' | 'audit' | 'output' | null>(null);
+  // Phase-1 modal slots for the Operator-Cockpit Projekt-Zentrale. All
+  // modals are local-only; none triggers an API call, Notion write,
+  // Telegram dispatch, or backend run. `planner` builds a local
+  // Quest-Reihen-Entwurf, `approvals` shows a Freigabe-Gate-Vorschau,
+  // `outputsViewer` is a read-only categorized list of existing outputs.
+  const [modal, setModal] = useState<
+    'talk' | 'audit' | 'output' | 'planner' | 'approvals' | 'outputsViewer' | null
+  >(null);
   const [talkText, setTalkText] = useState('');
   const [outputType, setOutputType] = useState(outputTypes[0]);
   const [outputPrompt, setOutputPrompt] = useState('');
@@ -3043,6 +3050,92 @@ function ProjectsDeepDive({
     { label: 'Uebergabe-Spec vorhanden', status: projectOutputs.some((output) => output.outputType === 'Uebergabe-Spec') ? 'OK' : 'Fehlt' },
   ];
 
+  // Local-only Quest-Reihen-Entwurf for the Project Auto Planner. Pure
+  // derivation from existing demo state — no fetch, no Notion call.
+  // The order encodes a defensible default planning flow that the
+  // operator can read top-to-bottom: read context, identify gaps,
+  // generate quests, request approvals, deliver outputs.
+  const questSeriesPlan = [
+    {
+      step: 1,
+      title: 'Projektkontext lesen',
+      agent: 'NOX Agent',
+      gate: 'Kein Gate',
+      output: 'Kontext-Zusammenfassung',
+      risk: 'Niedrig',
+    },
+    {
+      step: 2,
+      title: project.blockers.length > 0 ? 'Blocker entschaerfen' : 'Luecken identifizieren',
+      agent: 'NOX Agent',
+      gate: project.blockers.length > 0 ? 'Operator-Freigabe' : 'Kein Gate',
+      output: 'Risiko-/Lueckenliste',
+      risk: project.blockers.length > 0 ? 'Mittel' : 'Niedrig',
+    },
+    {
+      step: 3,
+      title: 'Quest-Reihe vorschlagen',
+      agent: 'NOX Agent',
+      gate: 'Operator-Freigabe',
+      output: `${Math.max(3, projectQuests.length)} Quest-Entwuerfe (lokal)`,
+      risk: 'Niedrig',
+    },
+    {
+      step: 4,
+      title: 'Agent pro Quest zuweisen',
+      agent: 'Operator + NOX Agent',
+      gate: 'Operator-Freigabe',
+      output: 'Quest-zu-Agent-Mapping',
+      risk: 'Niedrig',
+    },
+    {
+      step: 5,
+      title: 'Outputs/Artefakte planen',
+      agent: 'NOX Agent',
+      gate: 'Kein Gate',
+      output: 'Artefakt-Liste mit Speicherort-Vorschlag',
+      risk: 'Niedrig',
+    },
+    {
+      step: 6,
+      title: 'Uebergabe-Spec vorbereiten',
+      agent: 'NOX Agent',
+      gate: 'Operator-Freigabe (vor Live-Run)',
+      output: 'Uebergabe-Spec v0.x',
+      risk: 'Mittel',
+    },
+  ];
+
+  function approvalRecommendation(approval: Approval): string {
+    if (approval.risk === 'Hoch') return 'Vor Freigabe: Rueckfrage stellen und Risiko klein schneiden.';
+    if (approval.status === 'Blockiert') return 'Blocker zuerst aufloesen, danach Freigabe pruefen.';
+    if (approval.status === 'Pruefung') return 'Pruefen und sofort Freigabe oder Rueckfrage waehlen.';
+    return 'Plausibel — Freigabe kann nach kurzer Pruefung erfolgen.';
+  }
+
+  // Local "Plan-Output vormerken" — turns the current Quest-Reihen-Entwurf
+  // into a new local OutputArtifact draft. No backend, no Notion write.
+  function vormerkenAlsPlanOutput() {
+    const planText = questSeriesPlan
+      .map((s) => `${s.step}. ${s.title} (${s.agent}) — Gate: ${s.gate} — Output: ${s.output} — Risiko: ${s.risk}`)
+      .join('\n');
+    setOutputs((current) => [
+      {
+        id: `ART-${Date.now()}`,
+        title: `Quest-Reihen-Entwurf: ${project.code}`,
+        project: project.id,
+        outputType: 'Plan',
+        storage: 'Lokal / Demo-State',
+        status: 'Draft',
+        version: 'v0.1',
+        description: `Lokaler Quest-Reihen-Entwurf fuer ${project.name} (NOX Agent / Project Auto Planner).\n\n${planText}`,
+      },
+      ...current,
+    ]);
+    addMilestone(project.id, 'Plan', `Quest-Reihen-Entwurf vorgemerkt`, planText);
+    setModal(null);
+  }
+
   return (
     <div className="space-y-6">
       {/* APP-X-UI-01 — Compact command header: eyebrow + title + project picker
@@ -3050,7 +3143,7 @@ function ProjectsDeepDive({
       <Card className="!p-5 md:!p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
-            <div className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/80">Projektzentrale</div>
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/80">Projekt-Zentrale</div>
             <h1 className="mt-1 text-2xl font-black leading-tight tracking-tight text-[#fff7fb] md:text-3xl">{project.name}</h1>
             <p className="mt-1 text-sm font-semibold leading-6 text-[#9f8d95]">{project.code} · {project.type}</p>
           </div>
@@ -3077,6 +3170,17 @@ function ProjectsDeepDive({
           </div>
         </div>
         <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-[#eadbe2]">Vision: {project.vision}</p>
+
+        {/* Projekt-Identity-Snapshot: kompakte Faktenleiste fuer
+            Project Auto Planner. Phase 1: rein lokal, kein Fetch. */}
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <MiniStat label="Projekt-ID" value={project.code} />
+          <MiniStat label="Status" value={project.status} />
+          <MiniStat label="Phase" value={project.stand || project.type} />
+          <MiniStat label="Fortschritt" value={`${project.progress}%`} />
+          <MiniStat label="Letzter Meilenstein" value={project.lastMilestone || '—'} />
+          <MiniStat label="Naechste Aktion" value={project.nextAction || '—'} />
+        </div>
       </Card>
 
       {/* APP-X-UI-01 — Live Projektkontext at the top of the project page.
@@ -3092,7 +3196,17 @@ function ProjectsDeepDive({
         approvalsCount={projectApprovals.length}
       />
 
-      <ProjectActions openTalk={() => setModal('talk')} openAudit={() => setModal('audit')} openOutput={() => setModal('output')} />
+      <ProjectAutoPlannerActions
+        openTalk={() => setModal('talk')}
+        openPlanner={() => setModal('planner')}
+        openApprovals={() => setModal('approvals')}
+        openOutputsViewer={() => setModal('outputsViewer')}
+        openAudit={() => setModal('audit')}
+        openOutputCreate={() => setModal('output')}
+        approvalsCount={projectApprovals.length}
+        outputsCount={projectOutputs.length}
+        questsCount={projectQuests.length}
+      />
 
       <DecisionBlockers project={project} />
 
@@ -3191,6 +3305,170 @@ function ProjectsDeepDive({
             </div>
           </Modal>
         ) : null}
+
+        {modal === 'planner' ? (
+          <Modal onClose={() => setModal(null)}>
+            <SectionTitle
+              eyebrow="NOX Agent · Project Auto Planner"
+              title="Projekt in Quest-Reihe zerlegen"
+              subtitle="Lokaler Entwurf — kein API-Call, kein Notion-Write, kein Dispatcher."
+            />
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-amber-300/25 bg-amber-300/5 p-4">
+                <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">Projektziel</div>
+                <p className="mt-2 text-sm font-semibold leading-6 text-[#fff7fb]">{project.vision}</p>
+              </div>
+              <div className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 p-4">
+                <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Naechste Entscheidung</div>
+                <p className="mt-2 text-sm font-semibold leading-6 text-[#eadbe2]">
+                  {project.nextAction || 'Quest-Reihe pruefen und freigeben.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 overflow-hidden rounded-2xl border border-[#4a101b]/60">
+              <table className="w-full table-fixed text-left text-sm">
+                <thead className="bg-[#120609]/80 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">
+                  <tr>
+                    <th className="w-12 px-3 py-3">#</th>
+                    <th className="px-3 py-3">Quest</th>
+                    <th className="px-3 py-3">Agent</th>
+                    <th className="px-3 py-3">Freigabe-Gate</th>
+                    <th className="px-3 py-3">Output / Artefakt</th>
+                    <th className="px-3 py-3">Risiko</th>
+                  </tr>
+                </thead>
+                <tbody className="text-[#eadbe2]">
+                  {questSeriesPlan.map((row) => (
+                    <tr key={row.step} className="border-t border-[#4a101b]/40">
+                      <td className="px-3 py-3 align-top font-black text-amber-200">{row.step}</td>
+                      <td className="px-3 py-3 align-top font-semibold leading-5 text-[#fff7fb]">{row.title}</td>
+                      <td className="px-3 py-3 align-top">{row.agent}</td>
+                      <td className="px-3 py-3 align-top">{row.gate}</td>
+                      <td className="px-3 py-3 align-top">{row.output}</td>
+                      <td className="px-3 py-3 align-top">
+                        <Pill tone={row.risk === 'Hoch' ? 'red' : row.risk === 'Mittel' ? 'gold' : 'default'}>
+                          {row.risk}
+                        </Pill>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-semibold leading-6 text-amber-50">
+              Phase 1: lokaler Entwurf. Echte Quest-Erzeugung erfolgt spaeter ueber NOX Agent nach Operator-Freigabe.
+              Kein Notion-Write, kein Dispatcher, kein Telegram-Trigger, kein Agent-Run.
+            </div>
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-[#4a101b]/50 pt-6">
+              <Button tone="ghost" onClick={() => setModal(null)}>Schliessen</Button>
+              <Button onClick={vormerkenAlsPlanOutput}>Als Plan-Output vormerken</Button>
+            </div>
+          </Modal>
+        ) : null}
+
+        {modal === 'approvals' ? (
+          <Modal onClose={() => setModal(null)}>
+            <SectionTitle
+              eyebrow="Freigabe-Gate"
+              title={`Freigaben pruefen — ${project.code}`}
+              subtitle="Projekt-/quest-bezogen. Aktionen sind in Phase 1 deaktiviert."
+            />
+            {projectApprovals.length > 0 ? (
+              <div className="mt-6 space-y-4">
+                {projectApprovals.map((approval) => (
+                  <div key={approval.id} className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">{approval.id}</div>
+                        <h3 className="mt-1 text-lg font-black leading-tight text-[#fff7fb]">{approval.title}</h3>
+                        <p className="mt-2 text-sm font-semibold leading-6 text-[#eadbe2]">{approval.description}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Pill tone={approval.risk === 'Hoch' ? 'red' : approval.risk === 'Mittel' ? 'gold' : 'default'}>
+                          Risiko: {approval.risk}
+                        </Pill>
+                        <Pill tone={approval.status === 'Blockiert' ? 'red' : 'default'}>{approval.status}</Pill>
+                      </div>
+                    </div>
+                    <div className="mt-4 rounded-xl border border-amber-300/25 bg-amber-300/5 p-4 text-sm font-semibold leading-6 text-amber-50">
+                      <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">Empfehlung NOX Agent:</span>{' '}
+                      {approvalRecommendation(approval)}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button tone="ghost" disabled className="!cursor-not-allowed !opacity-50">
+                        Freigeben (Phase 2)
+                      </Button>
+                      <Button tone="ghost" disabled className="!cursor-not-allowed !opacity-50">
+                        Rueckfrage stellen (Phase 2)
+                      </Button>
+                      <Button tone="ghost" disabled className="!cursor-not-allowed !opacity-50">
+                        Ablehnen (Phase 2)
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-6 rounded-2xl border border-dashed border-[#4a101b]/60 bg-[#120609]/35 p-6 text-center text-sm font-bold text-[#9f8d95]">
+                Keine offenen Freigaben fuer dieses Projekt.
+              </div>
+            )}
+            <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-semibold leading-6 text-amber-50">
+              Phase 1: lokale Anzeige. Echte Freigaben laufen spaeter ueber NOX Agent nach Operator-Klick mit Audit-Log
+              und HMAC-geschuetztem Backend.
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button onClick={() => setModal(null)}>Schliessen</Button>
+            </div>
+          </Modal>
+        ) : null}
+
+        {modal === 'outputsViewer' ? (
+          <Modal onClose={() => setModal(null)}>
+            <SectionTitle
+              eyebrow="Output · Read-only"
+              title={`Outputs ansehen — ${project.code}`}
+              subtitle="Read-only Anzeige der lokalen Outputs/Artefakte fuer dieses Projekt."
+            />
+            {projectOutputs.length > 0 ? (
+              <div className="mt-6 space-y-4">
+                {projectOutputs.map((output) => (
+                  <div key={output.id} className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">{output.outputType}</div>
+                        <h3 className="mt-1 text-lg font-black leading-tight text-[#fff7fb]">{output.title}</h3>
+                        <p className="mt-2 whitespace-pre-line text-sm font-semibold leading-6 text-[#eadbe2]">{output.description}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Pill tone={output.status === 'Active' ? 'gold' : 'default'}>{output.status}</Pill>
+                        <Pill>{output.version}</Pill>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
+                      Speicherort: {output.storage}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-6 rounded-2xl border border-dashed border-[#4a101b]/60 bg-[#120609]/35 p-6 text-center text-sm font-bold text-[#9f8d95]">
+                Noch keine Outputs fuer dieses Projekt. Lokal anlegen ueber das Talk-Modal oder das Output-Modal.
+              </div>
+            )}
+            <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-semibold leading-6 text-amber-50">
+              Phase 1: read-only. NOX Agent erzeugt spaeter automatische Artefakte (Plan, Report, Design, Code-Aenderung,
+              Review-Ergebnis) nach Operator-Freigabe.
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button tone="ghost" onClick={() => setModal('output')}>Neuen Output anlegen</Button>
+              <Button onClick={() => setModal(null)}>Schliessen</Button>
+            </div>
+          </Modal>
+        ) : null}
       </AnimatePresence>
     </div>
   );
@@ -3260,40 +3538,69 @@ function ProgressPanel({
   );
 }
 
-function ProjectActions({ openTalk, openAudit, openOutput }: { openTalk: () => void; openAudit: () => void; openOutput: () => void }) {
-  // Phase-1 CTAs prepare the page for NOX Agent / Project Auto Planner.
-  // None of these buttons triggers an API call, Notion write, dispatcher
-  // run or quest-start. "Mit NOX besprechen" and "Outputs ansehen" open
-  // the existing local-only modals. "Projekt in Quests zerlegen" and
-  // "Freigaben pruefen" are explicit placeholders for the Auto-Planner
-  // flow and the project-scoped approval list — both still local.
+function ProjectAutoPlannerActions({
+  openTalk,
+  openPlanner,
+  openApprovals,
+  openOutputsViewer,
+  openAudit,
+  openOutputCreate,
+  approvalsCount,
+  outputsCount,
+  questsCount,
+}: {
+  openTalk: () => void;
+  openPlanner: () => void;
+  openApprovals: () => void;
+  openOutputsViewer: () => void;
+  openAudit: () => void;
+  openOutputCreate: () => void;
+  approvalsCount: number;
+  outputsCount: number;
+  questsCount: number;
+}) {
+  // NOX Agent / Project Auto Planner — Phase 1 control surface for the
+  // project route. Every button is local-only. The component intentionally
+  // does NOT trigger Notion writes, API calls, dispatcher runs or
+  // agent execution. The secondary row exposes the audit modal and the
+  // existing output-create flow without crowding the primary CTA row.
   return (
     <Card>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="text-[13px] font-extrabold uppercase tracking-[0.24em] text-[#9f8d95]">Projekt-Aktionen</div>
-            <p className="mt-2 text-sm font-semibold text-[#cbbbc3]">
-              Projekte sind der Hauptpfad fuer NOX Agent / Project Auto Planner. Hier liest NOX spaeter den
-              Projektkontext, schlaegt Quest-Reihen vor, holt Freigaben ein und zeigt Outputs. Phase 1: nur
-              lokale Aktionen, keine API, keine Notion-Writes.
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/80">NOX Agent</div>
+            <h2 className="mt-1 text-2xl font-black leading-tight text-[#fff7fb]">Project Auto Planner</h2>
+            <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#cbbbc3]">
+              Lies Projektkontext, schlage eine Quest-Reihe vor, hole Freigaben im Projekt-/Quest-Kontext und zeige
+              Outputs. Phase 1: nur lokale Entwuerfe. Keine API, keine Notion-Writes, kein Dispatcher.
             </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Pill>{questsCount} Quests</Pill>
+            <Pill tone={approvalsCount > 0 ? 'red' : 'gold'}>{approvalsCount} Freigaben</Pill>
+            <Pill tone="gold">{outputsCount} Outputs</Pill>
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button onClick={openTalk}>Mit NOX besprechen</Button>
-          <span title="Phase 1: lokaler Entwurf, kein Dispatcher, kein Quest-Start.">
-            <Button tone="ghost" onClick={() => openTalk()}>
-              Projekt in Quests zerlegen
-            </Button>
-          </span>
-          <span title="Phase 1: zeigt Projekt-Audit. Freigaben bleiben Kontextaktion in Projekt/Quest.">
-            <Button tone="ghost" onClick={openAudit}>
-              Freigaben pruefen
-            </Button>
-          </span>
-          <Button tone="ghost" onClick={openOutput}>
+          <Button tone="ghost" onClick={openPlanner}>
+            Projekt in Quests zerlegen
+          </Button>
+          <Button tone="ghost" onClick={openApprovals}>
+            Freigaben pruefen
+          </Button>
+          <Button tone="ghost" onClick={openOutputsViewer}>
             Outputs ansehen
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-3 border-t border-[#4a101b]/40 pt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
+          <span className="self-center">Sekundaer:</span>
+          <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={openAudit}>
+            Projektkontext-Audit
+          </Button>
+          <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={openOutputCreate}>
+            Output anlegen
           </Button>
         </div>
       </div>

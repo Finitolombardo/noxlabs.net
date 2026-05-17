@@ -67,16 +67,43 @@ Phase 1 macht **nichts** ausser lokalem State:
 - kein Quest-Starten,
 - kein Dispatcher.
 
-## Projekte als naechster Hauptpfad
+## Projekte als Hauptpfad fuer NOX Agent / Project Auto Planner
 
-Im Modul `Projekte` werden die Operator-CTAs als Phase-1-Anker für NOX Agent / Project Auto Planner gefuehrt:
+Der Projekte-Bereich im Operator Cockpit ist der erste echte NOX-Agent-Hauptpfad. Die Card-Architektur fuer ein Projekt:
 
-- `Mit NOX besprechen` (oeffnet bestehendes Talk-Modal)
-- `Projekt in Quests zerlegen` (Phase 1: lokaler Talk-Flow, kein Dispatcher, kein Quest-Start)
-- `Freigaben pruefen` (Phase 1: Projekt-Audit, Freigaben bleiben projekt-/quest-bezogene Kontextaktion)
-- `Outputs ansehen` (oeffnet bestehendes Output-Modal)
+1. **Projekt-Zentrale Card** — Projektname, Code, Status-Pills (`Notion read-only`, `execute locked`, `Status:...`), Projekt-Picker, Vision plus **Identity-Snapshot**: Projekt-ID, Status, Phase, Fortschritt, letzter Meilenstein, naechste Aktion.
+2. **Live Projektkontext** — read-only Notion-Projektion (BRIDGE-05a).
+3. **Progress Panel** — Quests erledigt/gesamt, Outputs, offene Freigaben.
+4. **NOX Agent · Project Auto Planner Action-Card** — Phase-1-CTAs:
+   - **Mit NOX besprechen** → Talk-Modal (Quest-Draft / Output-Draft / Freigabe vormerken, alles lokal).
+   - **Projekt in Quests zerlegen** → Planner-Modal mit lokaler **Quest-Reihen-Tabelle** (Step, Quest, Agent, Freigabe-Gate, Output, Risiko). Button `Als Plan-Output vormerken` schreibt einen lokalen Output-Draft mit Plan-Beschreibung und Milestone.
+   - **Freigaben pruefen** → Approvals-Modal mit projekt-bezogenen Approvals, NOX-Agent-Empfehlung pro Eintrag und drei **disabled** Action-Buttons (`Freigeben (Phase 2)`, `Rueckfrage stellen (Phase 2)`, `Ablehnen (Phase 2)`).
+   - **Outputs ansehen** → Read-only Output-Liste fuer das Projekt mit Status, Version, Speicherort. Footer-Button `Neuen Output anlegen` schaltet zum bestehenden Create-Modal.
+   - Sekundaerleiste: **Projektkontext-Audit** (Health-Check) und **Output anlegen** (Create-Modal).
+5. **Decision Blockers, Linked Quests, Outputs & Artefakte, Projekt-Meilensteine** — unveraendert, projektbezogen.
 
-Der Header der Projekt-Aktionen erklaert explizit, dass Projekte der Hauptpfad fuer NOX Agent / Project Auto Planner sind. Phase 1 bleibt rein lokal.
+### Phase-1-Hinweis (in jedem neuen Modal)
+
+> „Phase 1: lokaler Entwurf. Echte Quest-Erzeugung erfolgt spaeter ueber NOX Agent nach Operator-Freigabe."
+
+Keine API-Anbindung, keine Notion-Writes, kein Dispatcher, kein Telegram-Trigger, kein echter Agent-Run, kein Backend. Die Identity-Snapshot-Leiste und die Action-Card sind reines UI auf lokalem React-State (`outputs`, `approvals`, `quests`, `milestones`), das in dieser Sitzung lebt.
+
+### Begriffsdisziplin im Projekte-Bereich
+
+- **NOX Agent**, nicht „Andromeda" als Produktname (interne TS-Identifier wie `AndromedaCommand` bleiben, siehe `docs/nox-agent-rename-inventory.md`).
+- **Projekt-Zentrale** als sichtbarer Bereichstitel.
+- **Quest-Reihe** statt „Quest-Folge" / „Quest-Liste".
+- **Freigabe-Gate** als Bezeichnung fuer den Approval-Schritt.
+- **Output / Artefakt** fuer fertige Ablieferungen (Plan, Report, Design, Code-Aenderung, Review-Ergebnis).
+- **Lokaler Entwurf** macht explizit, dass Phase 1 nur Demo-State ist.
+- Skillbook- und Perk-Begriffe gehoeren ausschliesslich in die Fähigkeitskarte, nicht in den Projekte-Bereich.
+
+### Naechste Phasen (nicht in dieser Iteration)
+
+- Phase 2: HMAC-gesicherter Backend-Proxy + Operator-Approval-Flow (siehe `docs/operator-cockpit-andromeda-bridge-spec.md`).
+- Phase 2: echte Quest-Erzeugung in Notion Master Tasks nach explizitem Operator-Klick mit Audit-Log.
+- Phase 2: NOX Agent uebernimmt Lese-Auswertung (Projektkontext, Quest-Reihe, Agentenvorschlag) statt der statischen Demo-Tabelle.
+- Phase 3: Read-write-Notion-Token mit Field-Allowlist nach Operator-Freigabe.
 
 ## Warum Playground falsch war
 Die erste Integration im lokalen Playground lag in einer alten Mission-Control-Struktur und nicht in der aktiven internen NOX-Arbeitsoberfläche. Die operative Zieloberfläche im Vercel-Repo ist die Operator-Cockpit-Route.
