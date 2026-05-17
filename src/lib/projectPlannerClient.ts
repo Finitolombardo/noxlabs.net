@@ -1,13 +1,21 @@
 // Phase 2A — Browser client for /api/operator/projects/:projectId/plan/preview.
+// Phase 2A/2B — Optional Operator API key.
 //
-// Same-origin only. No Notion direct calls. No writes. The Operator API
-// key is passed in *exclusively* via the `apiKey` argument coming from
-// the React component's in-memory state — never read from localStorage,
-// sessionStorage, cookies, env, or any persistence layer.
+// Same-origin only. No Notion direct calls. No writes. When supplied, the
+// Operator API key is passed in *exclusively* via the `apiKey` argument
+// coming from the React component's in-memory state — never read from
+// localStorage, sessionStorage, cookies, env, or any persistence layer.
 //
-// The endpoint is read-only: it echoes a normalised version of the draft
-// plus a deterministic digest. It does not call Notion and does not
-// persist anything beyond an in-memory audit ring buffer.
+// `apiKey` is OPTIONAL: when the server is configured with
+// NOX_OPERATOR_COCKPIT_PRIVATE_MODE=true, the read-only Preview/Validate
+// endpoints accept requests without the `x-nox-operator-key` header. The
+// browser still calls those endpoints over same-origin fetch; nothing
+// secret lives in the bundle.
+//
+// The endpoints are read-only: they echo a normalised version of the draft
+// plus a deterministic digest, and (for /validate) a Notion schema-read
+// report. They do not write to Notion and do not persist anything beyond
+// the in-memory audit ring buffer.
 
 import type {
   PlanPreviewResponseWire,
@@ -34,16 +42,39 @@ export type PlanPreviewResult =
 
 export interface FetchPlanPreviewArgs {
   projectId: string;
-  apiKey: string;
+  /**
+   * Optional Operator API key. Only sent as `x-nox-operator-key` when
+   * present. Leave undefined / empty when the server is in
+   * `private_cockpit_readonly` mode.
+   */
+  apiKey?: string;
   draft: ProjectPlanDraftRequest;
   signal?: AbortSignal;
+}
+
+// Shared header builder. `Content-Type`/`Accept` are constant; the operator
+// key header is only added when a non-empty trimmed key is supplied. We never
+// emit an empty `x-nox-operator-key` header — the server treats missing and
+// empty identically, but cleaner outbound headers keep the network panel
+// honest.
+function buildPlannerHeaders(apiKey: string | undefined): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  if (typeof apiKey === 'string') {
+    const trimmed = apiKey.trim();
+    if (trimmed.length > 0) {
+      headers['x-nox-operator-key'] = trimmed;
+    }
+  }
+  return headers;
 }
 
 export async function fetchPlanPreview(
   args: FetchPlanPreviewArgs,
 ): Promise<PlanPreviewResult> {
   const trimmedProjectId = args.projectId.trim();
-  const trimmedKey = args.apiKey.trim();
 
   if (!trimmedProjectId) {
     return {
@@ -51,14 +82,6 @@ export async function fetchPlanPreview(
       status: 0,
       errorCode: 'client_validation',
       errorMessage: 'Project ID darf nicht leer sein.',
-    };
-  }
-  if (!trimmedKey) {
-    return {
-      ok: false,
-      status: 0,
-      errorCode: 'client_validation',
-      errorMessage: 'Operator API Key darf nicht leer sein.',
     };
   }
   if (!args.draft.projectGoal.trim()) {
@@ -84,11 +107,7 @@ export async function fetchPlanPreview(
   try {
     resp = await fetch(url, {
       method: 'POST',
-      headers: {
-        'x-nox-operator-key': trimmedKey,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
+      headers: buildPlannerHeaders(args.apiKey),
       cache: 'no-store',
       signal: args.signal,
       body: JSON.stringify(args.draft),
@@ -156,7 +175,8 @@ export type PlanValidateResult =
 
 export interface FetchPlanValidateArgs {
   projectId: string;
-  apiKey: string;
+  /** Optional Operator API key — see {@link FetchPlanPreviewArgs.apiKey}. */
+  apiKey?: string;
   draft: ProjectPlanDraftRequest;
   signal?: AbortSignal;
 }
@@ -165,7 +185,6 @@ export async function fetchPlanValidate(
   args: FetchPlanValidateArgs,
 ): Promise<PlanValidateResult> {
   const trimmedProjectId = args.projectId.trim();
-  const trimmedKey = args.apiKey.trim();
 
   if (!trimmedProjectId) {
     return {
@@ -173,14 +192,6 @@ export async function fetchPlanValidate(
       status: 0,
       errorCode: 'client_validation',
       errorMessage: 'Project ID darf nicht leer sein.',
-    };
-  }
-  if (!trimmedKey) {
-    return {
-      ok: false,
-      status: 0,
-      errorCode: 'client_validation',
-      errorMessage: 'Operator API Key darf nicht leer sein.',
     };
   }
   if (!args.draft.projectGoal.trim()) {
@@ -206,11 +217,7 @@ export async function fetchPlanValidate(
   try {
     resp = await fetch(url, {
       method: 'POST',
-      headers: {
-        'x-nox-operator-key': trimmedKey,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
+      headers: buildPlannerHeaders(args.apiKey),
       cache: 'no-store',
       signal: args.signal,
       body: JSON.stringify(args.draft),

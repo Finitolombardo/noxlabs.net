@@ -92,3 +92,57 @@ export function respondAuthFailure(res: ApiResponse, failure: AuthFailure): void
   }
   sendError(res, 401, 'unauthorized', 'Unauthorized operator API request.');
 }
+
+// =============================================================================
+// Phase 2A/2B — Private-Cockpit read-only auth mode.
+//
+// SCOPE: This helper is intentionally NARROW. It is only consumed by the two
+// read-only project-plan endpoints:
+//   - POST /api/operator/projects/:projectId/plan/preview
+//   - POST /api/operator/projects/:projectId/plan/validate
+//
+// It MUST NOT be used by:
+//   - any write/command endpoint
+//   - any dispatcher route
+//   - any future Phase-2C commit path
+//
+// Behaviour:
+//   - NOX_OPERATOR_COCKPIT_PRIVATE_MODE truthy + endpoint is in scope
+//        -> request accepted without any header; authMode='private_cockpit_readonly'
+//   - Otherwise: fall back to checkOperatorAuth() (unchanged write-grade gate);
+//     on success authMode='operator_key'.
+//
+// The flag value is read once per request. We deliberately do NOT cache it —
+// Vercel cold starts already amortise env reads, and re-reading per request
+// keeps unit tests + local toggles trivial.
+//
+// SECURITY: The flag is server-side ONLY. It is never echoed back as the env
+// name in any response or audit detail, never logged, and never exposed to the
+// browser bundle.
+// =============================================================================
+
+export type PlannerAuthMode = 'operator_key' | 'private_cockpit_readonly';
+
+export type PlannerAuthResult =
+  | { ok: true; authMode: PlannerAuthMode }
+  | AuthFailure;
+
+const PRIVATE_MODE_TRUE_VALUES = new Set(['true', '1', 'yes', 'on']);
+
+function isPrivateCockpitReadOnlyEnabled(): boolean {
+  const raw = (process.env.NOX_OPERATOR_COCKPIT_PRIVATE_MODE ?? '').trim().toLowerCase();
+  return PRIVATE_MODE_TRUE_VALUES.has(raw);
+}
+
+/**
+ * Read-only-planner-scoped auth gate. Use ONLY for /plan/preview and
+ * /plan/validate. Never wire this into a write or execute route.
+ */
+export function checkReadOnlyPlannerAuth(req: ApiRequest): PlannerAuthResult {
+  if (isPrivateCockpitReadOnlyEnabled()) {
+    return { ok: true, authMode: 'private_cockpit_readonly' };
+  }
+  const base = checkOperatorAuth(req);
+  if (!base.ok) return base;
+  return { ok: true, authMode: 'operator_key' };
+}

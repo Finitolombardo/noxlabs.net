@@ -358,6 +358,11 @@ export interface PlanMutation {
   warnings: string[];
 }
 
+// Phase 2A/2B — Auth mode echoed in response meta. The flag itself is server
+// side only; the UI just needs to know whether the operator-key field is
+// still required for subsequent calls.
+export type PlannerAuthModeWire = 'operator_key' | 'private_cockpit_readonly';
+
 export interface PlanPreviewResponse {
   ok: true;
   projectId: string;
@@ -371,6 +376,7 @@ export interface PlanPreviewResponse {
     readOnly: true;
     notionWritesEnabled: false;
     liveExecution: 'locked';
+    authMode: PlannerAuthModeWire;
   };
 }
 
@@ -504,5 +510,6 @@ export interface PlanValidationReport {
     readOnly: true;
     notionWritesEnabled: false;
     liveExecution: 'locked';
+    authMode: PlannerAuthModeWire;
   };
 }

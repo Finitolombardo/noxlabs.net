@@ -35,7 +35,7 @@ import {
   readBodyAsObject,
   setNoStore,
 } from '../../../../_lib/handler.js';
-import { checkOperatorAuth, respondAuthFailure } from '../../../../_lib/auth.js';
+import { checkReadOnlyPlannerAuth, respondAuthFailure } from '../../../../_lib/auth.js';
 import { checkRateLimit, respondRateLimited } from '../../../../_lib/rateLimit.js';
 import { appendAuditEvent } from '../../../../_lib/audit.js';
 import type { PlanPreviewResponse } from '../../../../_lib/types.js';
@@ -97,8 +97,10 @@ const handler: ApiHandler = async (req, res) => {
   }
   const clientKeyLabel = rl.keyLabel;
 
-  // 2. Auth gate.
-  const auth = checkOperatorAuth(req);
+  // 2. Auth gate. Scope is intentionally narrow: this endpoint accepts
+  // `private_cockpit_readonly` mode when the server-side flag is set; all
+  // other operator endpoints continue to require the explicit operator key.
+  const auth = checkReadOnlyPlannerAuth(req);
   if (!auth.ok) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
@@ -110,6 +112,7 @@ const handler: ApiHandler = async (req, res) => {
     });
     return respondAuthFailure(res, auth);
   }
+  const authMode = auth.authMode;
 
   // 3. Method.
   if (!methodAllowed(req, res, ['POST'])) {
@@ -181,6 +184,7 @@ const handler: ApiHandler = async (req, res) => {
       readOnly: true,
       notionWritesEnabled: false,
       liveExecution: 'locked',
+      authMode,
     },
   };
 
@@ -191,7 +195,7 @@ const handler: ApiHandler = async (req, res) => {
     statusCode: 200,
     outcome: 'success',
     clientKeyLabel,
-    detailsSummary: `projectId=${projectId} steps=${draft.planSteps.length} digest=${echoedDigest}`,
+    detailsSummary: `projectId=${projectId} steps=${draft.planSteps.length} digest=${echoedDigest} authMode=${authMode}`,
   });
 
   res.status(200).json(response);

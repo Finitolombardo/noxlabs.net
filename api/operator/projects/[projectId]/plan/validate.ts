@@ -43,7 +43,7 @@ import {
   sendError,
   setNoStore,
 } from '../../../../_lib/handler.js';
-import { checkOperatorAuth, respondAuthFailure } from '../../../../_lib/auth.js';
+import { checkReadOnlyPlannerAuth, respondAuthFailure } from '../../../../_lib/auth.js';
 import { checkRateLimit, respondRateLimited } from '../../../../_lib/rateLimit.js';
 import { appendAuditEvent } from '../../../../_lib/audit.js';
 import {
@@ -192,8 +192,11 @@ const handler: ApiHandler = async (req, res) => {
   }
   const clientKeyLabel = rl.keyLabel;
 
-  // 2. Auth gate.
-  const auth = checkOperatorAuth(req);
+  // 2. Auth gate. Same scope rule as /plan/preview: this endpoint is
+  // read-only by design and may be opened to Private-Cockpit mode. The
+  // helper falls back to the standard operator-key gate when the flag is
+  // not set.
+  const auth = checkReadOnlyPlannerAuth(req);
   if (!auth.ok) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
@@ -205,6 +208,7 @@ const handler: ApiHandler = async (req, res) => {
     });
     return respondAuthFailure(res, auth);
   }
+  const authMode = auth.authMode;
 
   // 3. Method.
   if (!methodAllowed(req, res, ['POST'])) {
@@ -522,6 +526,7 @@ const handler: ApiHandler = async (req, res) => {
       readOnly: true,
       notionWritesEnabled: false,
       liveExecution: 'locked',
+      authMode,
     },
   };
 
@@ -532,7 +537,7 @@ const handler: ApiHandler = async (req, res) => {
     statusCode: 200,
     outcome: 'success',
     clientKeyLabel,
-    detailsSummary: `projectId=${projectId} schemaOk=${schemaOk} issues=${issues.length} steps=${draft.planSteps.length}`,
+    detailsSummary: `projectId=${projectId} schemaOk=${schemaOk} issues=${issues.length} steps=${draft.planSteps.length} authMode=${authMode}`,
   });
 
   res.status(200).json(report);

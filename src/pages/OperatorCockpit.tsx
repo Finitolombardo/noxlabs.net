@@ -3213,7 +3213,13 @@ function ProjectsDeepDive({
   // Phase 2A — local Project Auto Planner API-preview state. The
   // operator API key lives only in this component's memory for the
   // current page session: no localStorage, no cookie, no env bake.
+  //
+  // Phase 2A/2B Private-Cockpit-Mode: the key field is collapsed by
+  // default. When the server returns `meta.authMode === 'private_cockpit_readonly'`
+  // the operator never needs to expose the field. The field stays available
+  // for installations where the env flag is off.
   const [apiPreviewKey, setApiPreviewKey] = useState<string>('');
+  const [apiPreviewKeyVisible, setApiPreviewKeyVisible] = useState<boolean>(false);
   const [apiPreviewLoading, setApiPreviewLoading] = useState<boolean>(false);
   const [apiPreviewData, setApiPreviewData] = useState<PlanPreviewResponseWire | null>(null);
   const [apiPreviewError, setApiPreviewError] = useState<{
@@ -3962,52 +3968,79 @@ function ProjectsDeepDive({
                 </div>
 
                 <div className="rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-4">
-                  <div className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#9f8d95]">
-                    Operator-API-Key (nur Page-Session)
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-amber-200">
+                        Aufruf
+                      </div>
+                      <p className="mt-1 text-xs font-semibold leading-5 text-[#bfa9b3]">
+                        Phase 2A/2B sind read-only. Keine Notion-Writes. Wenn der Server im
+                        Private-Cockpit-Mode läuft, ist kein Operator-Key nötig.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setApiPreviewKeyVisible((v) => !v)}
+                      className="shrink-0 rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-100 hover:bg-amber-300/20 focus:outline-none focus:ring-2 focus:ring-amber-300/40"
+                      aria-expanded={apiPreviewKeyVisible}
+                    >
+                      {apiPreviewKeyVisible ? 'Key ausblenden' : 'Operator-Key eingeben'}
+                    </button>
                   </div>
-                  <p className="mt-2 text-xs font-semibold leading-5 text-[#9f8d95]">
-                    Key landet nur im React-State. Kein Storage, kein Cookie, kein Env-Bake. Beim Reload ist er weg.
-                  </p>
-                  <input
-                    type="password"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    value={apiPreviewKey}
-                    onChange={(event) => setApiPreviewKey(event.target.value)}
-                    placeholder="x-nox-operator-key"
-                    className="mt-3 w-full rounded-2xl border border-[#4a101b]/70 bg-[#120609] px-3 py-2 text-sm font-semibold text-[#fff7fb] outline-none placeholder:text-[#7f6f76] focus:border-amber-300/70"
-                  />
+
+                  {apiPreviewKeyVisible ? (
+                    <div className="mt-3 rounded-xl border border-[#4a101b]/60 bg-[#120609]/70 p-3">
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">
+                        Operator-API-Key (nur Page-Session)
+                      </div>
+                      <p className="mt-2 text-[11px] font-semibold leading-5 text-[#9f8d95]">
+                        Optional. Nur nötig, wenn der Server NICHT im Private-Cockpit-Mode läuft.
+                        Key bleibt im React-State. Kein Storage, kein Cookie, kein Env-Bake. Beim Reload ist er weg.
+                      </p>
+                      <input
+                        type="password"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        value={apiPreviewKey}
+                        onChange={(event) => setApiPreviewKey(event.target.value)}
+                        placeholder="x-nox-operator-key (optional)"
+                        className="mt-3 w-full rounded-2xl border border-[#4a101b]/70 bg-[#120609] px-3 py-2 text-sm font-semibold text-[#fff7fb] outline-none placeholder:text-[#7f6f76] focus:border-amber-300/70"
+                      />
+                      {apiPreviewKey ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (apiPreviewAbortRef.current) apiPreviewAbortRef.current.abort();
+                            if (apiValidateAbortRef.current) apiValidateAbortRef.current.abort();
+                            apiPreviewAbortRef.current = null;
+                            apiValidateAbortRef.current = null;
+                            setApiPreviewKey('');
+                          }}
+                          disabled={apiPreviewLoading || apiValidateLoading}
+                          className="mt-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-rose-200 hover:text-rose-100 disabled:opacity-40"
+                        >
+                          Key löschen
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       onClick={() => void handleApiPreview()}
-                      disabled={apiPreviewLoading || !apiPreviewKey.trim() || planSteps.length === 0}
+                      disabled={apiPreviewLoading || planSteps.length === 0}
                     >
                       {apiPreviewLoading ? 'Lädt…' : apiPreviewData ? 'Erneut prüfen' : 'Preview anfordern'}
                     </Button>
                     <Button
                       tone="secondary"
                       onClick={() => void handleApiValidate()}
-                      disabled={apiValidateLoading || !apiPreviewKey.trim() || planSteps.length === 0}
+                      disabled={apiValidateLoading || planSteps.length === 0}
                     >
                       {apiValidateLoading ? 'Validiert…' : apiValidateData ? 'Schema erneut validieren' : 'Schema validieren'}
                     </Button>
-                    {apiPreviewKey ? (
-                      <Button
-                        tone="ghost"
-                        onClick={() => {
-                          if (apiPreviewAbortRef.current) apiPreviewAbortRef.current.abort();
-                          if (apiValidateAbortRef.current) apiValidateAbortRef.current.abort();
-                          apiPreviewAbortRef.current = null;
-                          apiValidateAbortRef.current = null;
-                          setApiPreviewKey('');
-                        }}
-                        disabled={apiPreviewLoading || apiValidateLoading}
-                      >
-                        Key löschen
-                      </Button>
-                    ) : null}
                   </div>
                 </div>
 
@@ -4031,14 +4064,31 @@ function ProjectsDeepDive({
                       {apiPreviewError.errorCode || '—'}
                     </div>
                     <p className="mt-2">{apiPreviewError.errorMessage || 'Unbekannter Fehler.'}</p>
+                    {apiPreviewError.status === 401 ? (
+                      <p className="mt-2 rounded-md border border-amber-300/40 bg-amber-300/10 p-2 text-[11px] font-bold leading-5 text-amber-100">
+                        Private Cockpit Mode ist nicht aktiv oder Operator-Key fehlt. Setze auf dem Server
+                        <span className="font-mono"> NOX_OPERATOR_COCKPIT_PRIVATE_MODE=true</span> oder gib oben einen Operator-Key ein.
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
 
                 {apiPreviewData ? (
                   <>
                     <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4">
-                      <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-emerald-200">
-                        Preview erfolgreich
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-emerald-200">
+                          Preview erfolgreich
+                        </div>
+                        {apiPreviewData.meta?.authMode === 'private_cockpit_readonly' ? (
+                          <span className="rounded-full border border-amber-300/50 bg-amber-400/15 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-100">
+                            Private Cockpit Mode
+                          </span>
+                        ) : apiPreviewData.meta?.authMode === 'operator_key' ? (
+                          <span className="rounded-full border border-emerald-300/50 bg-emerald-400/15 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-emerald-100">
+                            Operator-Key
+                          </span>
+                        ) : null}
                       </div>
                       <div className="mt-2 grid gap-2 text-[12px] font-semibold leading-5 text-emerald-50 sm:grid-cols-2">
                         <div>Projekt-ID: <span className="font-black">{apiPreviewData.projectId}</span></div>
@@ -4098,7 +4148,7 @@ function ProjectsDeepDive({
                   </>
                 ) : !apiPreviewError ? (
                   <div className="rounded-2xl border border-dashed border-[#4a101b]/60 bg-[#0c0506]/50 p-5 text-sm font-semibold text-[#9f8d95]">
-                    Kein Preview geladen. Operator-Key eingeben und „Preview anfordern" klicken.
+                    Kein Preview geladen. „Preview anfordern" klicken. (Operator-Key nur nötig, wenn der Server nicht im Private-Cockpit-Mode läuft.)
                   </div>
                 ) : null}
 
@@ -4112,14 +4162,29 @@ function ProjectsDeepDive({
                       {apiValidateError.errorCode || '—'}
                     </div>
                     <p className="mt-2">{apiValidateError.errorMessage || 'Unbekannter Fehler.'}</p>
+                    {apiValidateError.status === 401 ? (
+                      <p className="mt-2 rounded-md border border-amber-300/40 bg-amber-300/10 p-2 text-[11px] font-bold leading-5 text-amber-100">
+                        Private Cockpit Mode ist nicht aktiv oder Operator-Key fehlt. Setze auf dem Server
+                        <span className="font-mono"> NOX_OPERATOR_COCKPIT_PRIVATE_MODE=true</span> oder gib oben einen Operator-Key ein.
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
 
                 {apiValidateData ? (
                   <div className="rounded-2xl border border-cyan-400/40 bg-cyan-500/10 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-cyan-200">
-                        Phase 2B · Schema-Validierung {apiValidateData.schemaOk ? '· OK' : '· Fehler'}
+                      <div className="flex flex-wrap items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.22em] text-cyan-200">
+                        <span>Phase 2B · Schema-Validierung {apiValidateData.schemaOk ? '· OK' : '· Fehler'}</span>
+                        {apiValidateData.meta?.authMode === 'private_cockpit_readonly' ? (
+                          <span className="rounded-full border border-amber-300/50 bg-amber-400/15 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-100">
+                            Private Cockpit Mode
+                          </span>
+                        ) : apiValidateData.meta?.authMode === 'operator_key' ? (
+                          <span className="rounded-full border border-emerald-300/50 bg-emerald-400/15 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-emerald-100">
+                            Operator-Key
+                          </span>
+                        ) : null}
                       </div>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] ${apiValidateData.schemaOk ? 'border border-emerald-300/50 bg-emerald-400/15 text-emerald-100' : 'border border-rose-300/50 bg-rose-400/15 text-rose-100'}`}>
                         schemaOk: {String(apiValidateData.schemaOk)}
