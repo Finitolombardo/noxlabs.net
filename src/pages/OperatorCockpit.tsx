@@ -3211,7 +3211,7 @@ function ProjectsDeepDive({
   // Quest-Reihen-Entwurf, `approvals` shows a Freigabe-Gate-Vorschau,
   // `outputsViewer` is a read-only categorized list of existing outputs.
   const [modal, setModal] = useState<
-    'talk' | 'audit' | 'output' | 'planner' | 'approvals' | 'outputsViewer' | 'apiPreview' | 'commitConfirm' | null
+    'talk' | 'audit' | 'output' | 'planner' | 'approvals' | 'outputsViewer' | 'apiPreview' | null
   >(null);
   // Phase 2A — local Project Auto Planner API-preview state. The
   // operator API key lives only in this component's memory for the
@@ -3249,13 +3249,12 @@ function ProjectsDeepDive({
   } | null>(null);
   const apiValidateAbortRef = useRef<AbortController | null>(null);
 
-  // Phase 2D-UI — Commit confirm-modal state. The commit endpoint is
-  // hard-locked behind NOX_NOTION_WRITE_ENABLED=true on the server side, but
-  // the UI still requires the operator to type the exact confirm phrase and
-  // supply an Operator-Key. Neither value is persisted: both live only in
-  // this component's memory for the current page session.
-  const [commitOperatorKey, setCommitOperatorKey] = useState<string>('');
-  const [commitConfirmPhrase, setCommitConfirmPhrase] = useState<string>('');
+  // Phase 2D-UI — Commit state. The commit endpoint is hard-locked behind
+  // server-side flags (NOX_NOTION_WRITE_ENABLED + NOX_NOTION_WRITE_TOKEN +
+  // private-write-mode auth + digest/schema/idempotency). The cockpit UI
+  // is intentionally one-click: no confirm-phrase field, no operator-key
+  // input. The conscious deliberation lives server-side in the flag(s)
+  // the operator has to flip outside the browser session.
   const [commitLoading, setCommitLoading] = useState<boolean>(false);
   const [commitData, setCommitData] = useState<PlanCommitResponseWire | null>(null);
   const [commitError, setCommitError] = useState<{
@@ -3694,32 +3693,21 @@ function ProjectsDeepDive({
     return 'idle';
   })();
 
-  // Phase 2D-UI — Commit handler. Strict invariants:
-  //   - confirm phrase must match the canonical PLAN_COMMIT_PHRASE
-  //   - operator key MUST be supplied (no Private-Cockpit bypass)
-  //   - digest comes from the auto-validated apiValidateData
-  //   - clientPlanId is generated per-call from project id + timestamp
-  // The handler never persists either secret or the confirm phrase.
+  // Phase 2D-UI — One-click commit handler. The browser sends only the
+  // structural payload (plan + digest + idempotency + clientPlanId) and
+  // NO secret material:
+  //   - No confirm phrase. Server-side `private_write_mode` flag IS the
+  //     conscious confirmation in the privately-hosted cockpit.
+  //   - No operator-key input. The cockpit relies on the same server-side
+  //     auth path used by /plan/preview + /plan/validate (extended with
+  //     `NOX_OPERATOR_COCKPIT_PRIVATE_WRITE_MODE` for the write side).
+  //   - 401 means private-write-mode is off and no Operator-Key on the
+  //     wire. The UI surfaces that as "write-auth not yet active".
+  //   - 423 writes_locked means the server flag is still down. UI says so.
+  // The handler never touches localStorage / sessionStorage / cookies.
   async function handleApiCommit() {
     setCommitError(null);
     setCommitData(null);
-    const phraseOk = commitConfirmPhrase.trim() === 'Yes, write this plan draft to Notion now';
-    if (!phraseOk) {
-      setCommitError({
-        status: 0,
-        errorCode: 'client_validation',
-        errorMessage: 'Bitte exakt die Confirm-Phrase eingeben: „Yes, write this plan draft to Notion now".',
-      });
-      return;
-    }
-    if (!commitOperatorKey.trim()) {
-      setCommitError({
-        status: 0,
-        errorCode: 'client_validation',
-        errorMessage: 'Operator-Key ist für echte Writes erforderlich. Private-Cockpit-Mode reicht nicht.',
-      });
-      return;
-    }
     if (!apiValidateData || !apiValidateData.schemaOk) {
       setCommitError({
         status: 0,
@@ -3767,12 +3755,13 @@ function ProjectsDeepDive({
       planSteps: wireSteps,
       idempotencyKey: generatePreviewIdempotencyKey('plan-commit'),
       planDigest: apiPreviewData.echoedDigest,
-      explicitConfirmPhrase: commitConfirmPhrase.trim(),
+      // commitToken / explicitConfirmPhrase are intentionally omitted —
+      // server gates accept that when authMode='private_write_mode'.
     };
 
     const result = await fetchPlanCommit({
       projectId: project.id,
-      apiKey: commitOperatorKey,
+      // No operator key on the wire. Private-write mode is the auth path.
       signal: controller.signal,
       request,
     });
@@ -3944,10 +3933,46 @@ function ProjectsDeepDive({
         onCommitOpen={() => {
           setCommitError(null);
           setCommitData(null);
-          setCommitConfirmPhrase('');
-          setCommitOperatorKey('');
-          setModal('commitConfirm');
+          void handleApiCommit();
         }}
+        commitStatus={(() => {
+          if (commitLoading) return 'running' as const;
+          if (commitError?.status === 401) return 'auth-blocked' as const;
+          if (commitError) return 'error' as const;
+          if (commitData?.code === 'committed') return 'committed' as const;
+          if (commitData?.code === 'writes_locked') return 'writes_locked' as const;
+          if (commitData?.code === 'duplicate_risk') return 'duplicate' as const;
+          if (commitData) return 'error' as const;
+          return 'idle' as const;
+        })()}
+        commitMessage={(() => {
+          if (commitLoading) return 'Commit läuft …';
+          if (commitError?.status === 401) {
+            return 'Schreibzugriff nicht autorisiert. Private App/Auth für Writes noch nicht aktiv.';
+          }
+          if (commitError) {
+            return commitError.errorMessage || `Fehler (HTTP ${commitError.status}).`;
+          }
+          if (commitData?.code === 'committed') {
+            const n = commitData.pageResults.filter((p) => p.ok).length;
+            return `Quests erzeugt: ${n}`;
+          }
+          if (commitData?.code === 'writes_locked') {
+            return 'Writes sind serverseitig gesperrt. Aktiviere Write-Flag nur für kontrollierten Test.';
+          }
+          if (commitData?.code === 'duplicate_risk') {
+            return 'Dieser Plan wurde bereits erzeugt. Keine Duplikate erstellt.';
+          }
+          if (commitData?.code === 'partial_failure') {
+            const ok = commitData.pageResults.filter((p) => p.ok).length;
+            const failed = commitData.pageResults.length - ok;
+            return `Teilweise erzeugt: ${ok} OK, ${failed} fehlgeschlagen.`;
+          }
+          if (commitData) {
+            return commitData.diagnostics[0] ?? 'Commit nicht ausgeführt.';
+          }
+          return undefined;
+        })()}
         writeEnabledHint={commitData?.writeEnabled ? 'enabled' : commitData ? 'locked' : 'unknown'}
         emptyGoalHint={emptyGoalHint}
       />
@@ -4684,213 +4709,6 @@ function ProjectsDeepDive({
           </Modal>
         ) : null}
 
-        {/* Phase 2D-UI — Commit Confirm Modal.
-            The user explicitly confirms a Notion write by:
-              1. Typing the exact confirm phrase
-              2. Supplying an Operator-Key (no Private-Cockpit fallback)
-              3. Pressing the destructive-toned button
-            Even after all three, the server's write flag is the final
-            authority: NOX_NOTION_WRITE_ENABLED ≠ "true" => 423 writes_locked
-            and the modal renders the locked-state message inline.
-        */}
-        {modal === 'commitConfirm' ? (
-          <Modal
-            onClose={() => {
-              if (commitAbortRef.current) commitAbortRef.current.abort();
-              commitAbortRef.current = null;
-              setCommitLoading(false);
-              setCommitConfirmPhrase('');
-              setCommitOperatorKey('');
-              setModal(null);
-            }}
-          >
-            <SectionTitle
-              eyebrow="NOX Agent · Phase 2C"
-              title="Quests in Notion erzeugen"
-              subtitle="Dies erzeugt echte Notion-Quests in der Master-Tasks-DB. Schreibrechte werden serverseitig validiert."
-            />
-
-            {/* Summary of what would be created */}
-            <div className="mt-5 grid gap-3 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-4 text-[12px] font-semibold leading-5 text-amber-50 sm:grid-cols-2">
-              <div>Projekt: <span className="font-black">{project.id}</span></div>
-              <div>Quests im Entwurf: <span className="font-black">{planSteps.length}</span></div>
-              <div className="sm:col-span-2">
-                Plan-Digest:{' '}
-                <span className="font-mono text-amber-100">
-                  {apiPreviewData?.echoedDigest ?? '—'}
-                </span>
-              </div>
-              {apiValidateData ? (
-                <div className="sm:col-span-2">
-                  Schema:{' '}
-                  <span className="font-black text-emerald-200">
-                    {apiValidateData.schemaOk ? 'bereit' : 'nicht bereit'}
-                  </span>
-                </div>
-              ) : null}
-            </div>
-
-            {/* Hard warning — operator must read this before proceeding */}
-            <div className="mt-4 rounded-2xl border border-rose-400/40 bg-rose-500/10 p-4 text-sm font-bold leading-6 text-rose-50">
-              <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-rose-200">
-                Achtung
-              </div>
-              Dies erzeugt echte Notion-Quests. Es gibt kein Undo per Klick. Der Operator-Key
-              wird NUR in dieser Session genutzt und nicht gespeichert. Private Cockpit Mode
-              gibt für Writes KEINE Freigabe — Operator-Key ist erforderlich.
-            </div>
-
-            {/* Operator key — required for writes */}
-            <div className="mt-4 rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-4">
-              <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200">
-                Operator-API-Key (nur Session)
-              </div>
-              <p className="mt-1 text-[11px] font-semibold leading-5 text-[#bfa9b3]">
-                Erforderlich. Wird nicht in Storage, Cookie, oder Bundle abgelegt.
-              </p>
-              <input
-                type="password"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                value={commitOperatorKey}
-                onChange={(event) => setCommitOperatorKey(event.target.value)}
-                placeholder="x-nox-operator-key"
-                className="mt-3 w-full rounded-2xl border border-[#4a101b]/70 bg-[#120609] px-3 py-2 text-sm font-semibold text-[#fff7fb] outline-none placeholder:text-[#7f6f76] focus:border-amber-300/70"
-              />
-            </div>
-
-            {/* Confirm phrase — server validates exact match */}
-            <div className="mt-4 rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 p-4">
-              <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200">
-                Confirm-Phrase
-              </div>
-              <p className="mt-1 text-[11px] font-semibold leading-5 text-[#bfa9b3]">
-                Bitte exakt eintippen:&nbsp;
-                <span className="font-mono text-amber-100">
-                  Yes, write this plan draft to Notion now
-                </span>
-              </p>
-              <input
-                type="text"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                value={commitConfirmPhrase}
-                onChange={(event) => setCommitConfirmPhrase(event.target.value)}
-                placeholder="Yes, write this plan draft to Notion now"
-                className="mt-3 w-full rounded-2xl border border-[#4a101b]/70 bg-[#120609] px-3 py-2 text-sm font-semibold text-[#fff7fb] outline-none placeholder:text-[#7f6f76] focus:border-amber-300/70"
-              />
-            </div>
-
-            {/* Error pane */}
-            {commitError ? (
-              <div className="mt-4 rounded-2xl border border-rose-500/50 bg-rose-500/10 p-4 text-sm font-semibold leading-6 text-rose-100">
-                <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-rose-200">
-                  Commit-Fehler {commitError.status > 0 ? `· HTTP ${commitError.status}` : ''}
-                </div>
-                <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-rose-200/90">
-                  {commitError.errorCode || '—'}
-                </div>
-                <p className="mt-2">{commitError.errorMessage || 'Unbekannter Fehler.'}</p>
-                {commitError.status === 401 ? (
-                  <p className="mt-2 rounded-md border border-amber-300/40 bg-amber-300/10 p-2 text-[11px] font-bold leading-5 text-amber-100">
-                    Operator-Key fehlt oder ist falsch. Private Cockpit Mode gibt für /plan/commit keine Freigabe.
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            {/* Result pane */}
-            {commitData ? (
-              <div
-                className={`mt-4 rounded-2xl border p-4 ${
-                  commitData.code === 'committed'
-                    ? 'border-emerald-300/40 bg-emerald-400/10 text-emerald-50'
-                    : commitData.code === 'writes_locked'
-                      ? 'border-amber-300/40 bg-amber-300/10 text-amber-50'
-                      : 'border-rose-400/40 bg-rose-500/10 text-rose-50'
-                }`}
-              >
-                <div className="text-[10px] font-extrabold uppercase tracking-[0.22em]">
-                  Commit-Ergebnis · {commitData.code}
-                </div>
-                {commitData.code === 'writes_locked' ? (
-                  <p className="mt-2 text-[13px] font-bold leading-6">
-                    Writes sind serverseitig gesperrt. Setze auf dem Server
-                    <span className="font-mono"> NOX_NOTION_WRITE_ENABLED=true</span> erst für
-                    kontrollierten Test. Keine Notion-Quests wurden erzeugt.
-                  </p>
-                ) : commitData.code === 'committed' ? (
-                  <p className="mt-2 text-[13px] font-bold leading-6">
-                    {commitData.pageResults.filter((p) => p.ok).length} Quests in Notion
-                    erzeugt. Digest <span className="font-mono">{commitData.planDigest}</span>.
-                  </p>
-                ) : commitData.code === 'duplicate_risk' ? (
-                  <p className="mt-2 text-[13px] font-bold leading-6">
-                    Bereits committet (gleicher Digest). Keine Duplikate erzeugt.
-                  </p>
-                ) : commitData.code === 'partial_failure' ? (
-                  <p className="mt-2 text-[13px] font-bold leading-6">
-                    Teilweise erfolgreich. {commitData.pageResults.filter((p) => p.ok).length}/
-                    {commitData.pageResults.length} Quests erzeugt. Details unten.
-                  </p>
-                ) : (
-                  <p className="mt-2 text-[13px] font-bold leading-6">
-                    {commitData.diagnostics[0] ?? 'Commit nicht ausgeführt.'}
-                  </p>
-                )}
-                <div className="mt-2 text-[11px] font-semibold opacity-80">
-                  Notion-Writes ausgeführt:{' '}
-                  <span className="font-black">{String(commitData.notionWritesExecuted)}</span>
-                  {' · '}Write-Flag:{' '}
-                  <span className="font-black">{String(commitData.writeEnabled)}</span>
-                </div>
-                {commitData.pageResults.length > 0 ? (
-                  <ul className="mt-3 space-y-1 text-[11px] font-mono leading-5">
-                    {commitData.pageResults.map((p) => (
-                      <li key={p.planStepId}>
-                        {p.ok ? '✓' : '✗'} {p.planStepId}
-                        {p.notionPageId ? ` → ${p.notionPageId.slice(0, 8)}…` : ''}
-                        {p.errorCode ? ` · ${p.errorCode}` : ''}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ) : null}
-
-            {/* Footer */}
-            <div className="-mx-5 -mb-5 mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-[#4a101b]/45 bg-[#0a0405]/85 px-5 py-4">
-              <Button
-                tone="ghost"
-                onClick={() => {
-                  if (commitAbortRef.current) commitAbortRef.current.abort();
-                  commitAbortRef.current = null;
-                  setCommitLoading(false);
-                  setCommitConfirmPhrase('');
-                  setCommitOperatorKey('');
-                  setModal(null);
-                }}
-              >
-                Schließen
-              </Button>
-              <Button
-                onClick={() => void handleApiCommit()}
-                disabled={
-                  commitLoading ||
-                  !commitConfirmPhrase ||
-                  !commitOperatorKey ||
-                  !apiValidateData?.schemaOk
-                }
-              >
-                {commitLoading ? 'Commit läuft …' : 'Jetzt in Notion schreiben'}
-              </Button>
-            </div>
-          </Modal>
-        ) : null}
 
         {modal === 'planner' ? (
           <Modal size="wide" onClose={() => { setModal(null); setPlannerSelectedStepId(null); }}>
@@ -5307,6 +5125,8 @@ function UnifiedAutoPlanner({
   techCheckSummary,
   onCommitOpen,
   writeEnabledHint,
+  commitStatus,
+  commitMessage,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -5337,6 +5157,9 @@ function UnifiedAutoPlanner({
   // True if the last commit attempt returned `writes_locked` so the inline
   // banner can stay loud without spawning a separate alert.
   writeEnabledHint?: 'unknown' | 'locked' | 'enabled';
+  // Phase 2D-UI — Commit attempt status, drives the second inline banner.
+  commitStatus: 'idle' | 'running' | 'committed' | 'writes_locked' | 'duplicate' | 'auth-blocked' | 'error';
+  commitMessage?: string;
 }) {
   // Phase-1 unified Project Auto Planner. Combines the project-goal
   // composer and the planner action buttons into one card so the user
@@ -5465,7 +5288,9 @@ function UnifiedAutoPlanner({
           </div>
           <div className="flex flex-wrap gap-2 md:justify-end">
             {techCheckStatus === 'ready' ? (
-              <Button onClick={onCommitOpen}>Quests in Notion erzeugen</Button>
+              <Button onClick={onCommitOpen} disabled={commitStatus === 'running'}>
+                {commitStatus === 'running' ? 'Commit läuft …' : 'Quests erzeugen'}
+              </Button>
             ) : null}
             {techCheckStatus !== 'idle' ? (
               <Button tone="ghost" className="!px-3 !py-2 !text-xs" onClick={onApiPreview}>
@@ -5473,6 +5298,35 @@ function UnifiedAutoPlanner({
               </Button>
             ) : null}
           </div>
+        </div>
+      ) : null}
+
+      {/* Phase 2D-UI — Commit result banner. One-line status that mirrors
+          the four documented outcomes (committed / writes_locked / 401 /
+          duplicate / error). Stays out of the way when nothing has been
+          attempted yet. */}
+      {commitStatus !== 'idle' ? (
+        <div
+          className={(() => {
+            const base =
+              'mt-3 rounded-2xl border px-4 py-3 text-[12px] font-bold leading-5';
+            switch (commitStatus) {
+              case 'committed':
+                return `${base} border-emerald-300/40 bg-emerald-400/10 text-emerald-50`;
+              case 'duplicate':
+                return `${base} border-cyan-300/40 bg-cyan-300/10 text-cyan-50`;
+              case 'writes_locked':
+                return `${base} border-amber-300/40 bg-amber-300/10 text-amber-50`;
+              case 'auth-blocked':
+              case 'error':
+                return `${base} border-rose-300/40 bg-rose-300/10 text-rose-50`;
+              case 'running':
+              default:
+                return `${base} border-cyan-300/40 bg-cyan-300/10 text-cyan-50`;
+            }
+          })()}
+        >
+          {commitMessage ?? '—'}
         </div>
       ) : null}
 

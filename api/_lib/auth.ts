@@ -146,3 +146,51 @@ export function checkReadOnlyPlannerAuth(req: ApiRequest): PlannerAuthResult {
   if (!base.ok) return base;
   return { ok: true, authMode: 'operator_key' };
 }
+
+// =============================================================================
+// Phase 2D/2E — Private-Write planner auth mode.
+//
+// SCOPE: Used ONLY by `/api/operator/projects/:projectId/plan/commit`. Allows
+// a single-cockpit-operator setup to omit the on-screen Operator-Key field
+// and the explicit confirm-phrase WITHOUT weakening the write-side gates:
+//
+//   - Bypasses operator-key auth + commit-token/phrase gate when
+//     `NOX_OPERATOR_COCKPIT_PRIVATE_WRITE_MODE` is exactly "true".
+//   - Does NOT bypass `NOX_NOTION_WRITE_ENABLED` — that flag still must be
+//     "true" before any Notion write executes.
+//   - Does NOT bypass the dedicated `NOX_NOTION_WRITE_TOKEN` requirement
+//     (still must be set AND distinct from the read-only token).
+//   - Does NOT bypass digest match, schema re-check, or idempotency
+//     precheck.
+//
+// SECURITY POSTURE: This mode is meant for a privately-hosted Cockpit
+// instance where the network boundary is the trust boundary. The web UI
+// avoids surfacing any secret in the browser; the actual Notion write
+// token never leaves the server.
+// =============================================================================
+
+export type WriteAuthMode = 'operator_key' | 'private_write_mode';
+export type WriteAuthResult = { ok: true; authMode: WriteAuthMode } | AuthFailure;
+
+function isPrivateWriteModeEnabled(): boolean {
+  const raw = (process.env.NOX_OPERATOR_COCKPIT_PRIVATE_WRITE_MODE ?? '').trim().toLowerCase();
+  return PRIVATE_MODE_TRUE_VALUES.has(raw);
+}
+
+/**
+ * Phase 2D/2E write-side auth gate. Use ONLY for /plan/commit.
+ *   - Flag on  → `{ ok: true, authMode: 'private_write_mode' }`
+ *   - Flag off → fall back to `checkOperatorAuth` (operator key required).
+ *
+ * The caller decides what to do with each `authMode`. In `commit.ts` the
+ * commit-token gate is intentionally skipped for `private_write_mode` —
+ * the conscious flag is itself the explicit confirmation.
+ */
+export function checkPrivateWritePlannerAuth(req: ApiRequest): WriteAuthResult {
+  if (isPrivateWriteModeEnabled()) {
+    return { ok: true, authMode: 'private_write_mode' };
+  }
+  const base = checkOperatorAuth(req);
+  if (!base.ok) return base;
+  return { ok: true, authMode: 'operator_key' };
+}

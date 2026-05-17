@@ -360,8 +360,12 @@ export interface PlanMutation {
 
 // Phase 2A/2B — Auth mode echoed in response meta. The flag itself is server
 // side only; the UI just needs to know whether the operator-key field is
-// still required for subsequent calls.
-export type PlannerAuthModeWire = 'operator_key' | 'private_cockpit_readonly';
+// still required for subsequent calls. Phase 2D adds `private_write_mode`
+// for the commit endpoint.
+export type PlannerAuthModeWire =
+  | 'operator_key'
+  | 'private_cockpit_readonly'
+  | 'private_write_mode';
 
 export interface PlanPreviewResponse {
   ok: true;

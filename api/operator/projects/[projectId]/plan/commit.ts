@@ -42,7 +42,8 @@ import {
   sendError,
   setNoStore,
 } from '../../../../_lib/handler.js';
-import { checkOperatorAuth, respondAuthFailure } from '../../../../_lib/auth.js';
+import { checkPrivateWritePlannerAuth, respondAuthFailure } from '../../../../_lib/auth.js';
+import type { WriteAuthMode } from '../../../../_lib/auth.js';
 import { checkRateLimit, respondRateLimited } from '../../../../_lib/rateLimit.js';
 import { appendAuditEvent } from '../../../../_lib/audit.js';
 import {
@@ -135,7 +136,7 @@ function buildResponse(
     duplicateRisk: boolean;
     pageResults: PlanCommitPageResult[];
     diagnostics: string[];
-    authMode: 'operator_key';
+    authMode: WriteAuthMode;
   },
 ): PlanCommitResponse {
   return {
@@ -172,7 +173,10 @@ interface BodyValidationFail {
   message: string;
 }
 
-function validateCommitBody(raw: Record<string, unknown>): BodyValidationOK | BodyValidationFail {
+function validateCommitBody(
+  raw: Record<string, unknown>,
+  opts: { requireCommitTokenOrPhrase: boolean },
+): BodyValidationOK | BodyValidationFail {
   const clientPlanId = raw.clientPlanId;
   if (typeof clientPlanId !== 'string' || !PLAN_STEP_ID_RE.test(clientPlanId)) {
     return {
@@ -195,13 +199,16 @@ function validateCommitBody(raw: Record<string, unknown>): BodyValidationOK | Bo
       message: `Field 'planDigest' must be an 8-char hex digest as returned by /plan/preview.`,
     };
   }
-  // commitToken OR explicitConfirmPhrase — both validated up-front so the
+  // commitToken / explicitConfirmPhrase. In `private_write_mode` the
+  // server-side flag IS the conscious confirmation, so neither needs to be
+  // present on the wire. In `operator_key` mode (the default) the operator
+  // must supply one of them — the body validator enforces that here so the
   // operator sees the spec via 400 even before the lock returns 423.
   const ct = raw.commitToken;
   const ph = raw.explicitConfirmPhrase;
   const ctOk = typeof ct === 'string' && PLAN_COMMIT_TOKEN_RE.test(ct);
   const phOk = typeof ph === 'string' && ph === PLAN_COMMIT_PHRASE;
-  if (!ctOk && !phOk) {
+  if (opts.requireCommitTokenOrPhrase && !ctOk && !phOk) {
     return {
       ok: false,
       field: 'commitToken|explicitConfirmPhrase',
@@ -275,7 +282,6 @@ async function recheckSchemaForCommit(
 const handler: ApiHandler = async (req, res) => {
   const method = req.method ?? '?';
   const route = ROUTE_LABEL;
-  const authModeWire = 'operator_key' as const;
 
   setNoStore(res);
 
@@ -294,8 +300,12 @@ const handler: ApiHandler = async (req, res) => {
   }
   const clientKeyLabel = rl.keyLabel;
 
-  // 2. STRICT auth — Private-Cockpit bypass is intentionally NOT used.
-  const auth = checkOperatorAuth(req);
+  // 2. Auth gate — Private-Cockpit READ-ONLY mode is NOT honoured here;
+  // only the explicit Private-Write mode flag bypasses the operator-key
+  // check. The flag's job is the conscious confirmation; all *write-side*
+  // server gates (flag, write token, digest, schema, idempotency) still
+  // run in full.
+  const auth = checkPrivateWritePlannerAuth(req);
   if (!auth.ok) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
@@ -307,6 +317,7 @@ const handler: ApiHandler = async (req, res) => {
     });
     return respondAuthFailure(res, auth);
   }
+  const authModeWire: WriteAuthMode = auth.authMode;
 
   // 3. Method
   if (!methodAllowed(req, res, ['POST'])) {
@@ -351,9 +362,14 @@ const handler: ApiHandler = async (req, res) => {
     detailsSummary: `projectId=${projectId}`,
   });
 
-  // 5. Body — commit-specific fields first, then shared payload.
+  // 5. Body — commit-specific fields first, then shared payload. The
+  // commit-token/phrase gate is enforced only when authMode === operator_key.
+  // In private-write mode the flag itself is the deliberate confirmation,
+  // so the wire-format gate is relaxed (other server gates remain).
   const body = readBodyAsObject(req);
-  const commitFieldCheck = validateCommitBody(body);
+  const commitFieldCheck = validateCommitBody(body, {
+    requireCommitTokenOrPhrase: authModeWire === 'operator_key',
+  });
   if (!commitFieldCheck.ok) {
     appendAuditEvent({
       eventType:

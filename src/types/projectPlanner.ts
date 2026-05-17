@@ -57,12 +57,19 @@ export interface PlanMutationWire {
   warnings: string[];
 }
 
-// Phase 2A/2B — Auth mode echoed back by the server so the UI can switch
-// between "Operator-Key needed" and "Private-Cockpit read-only" displays.
-// `operator_key` is the historical default; `private_cockpit_readonly` is
-// only set when NOX_OPERATOR_COCKPIT_PRIVATE_MODE is enabled server-side.
-// Kept as a wide union so unknown future modes don't break the bundle.
-export type PlannerAuthModeWire = 'operator_key' | 'private_cockpit_readonly' | string;
+// Phase 2A/2B/2D — Auth mode echoed back by the server so the UI can switch
+// between "Operator-Key needed", "Private-Cockpit read-only", and
+// "Private write mode" displays. `operator_key` is the historical default;
+// `private_cockpit_readonly` is only set when
+// `NOX_OPERATOR_COCKPIT_PRIVATE_MODE` is enabled, and `private_write_mode`
+// is only set on the commit endpoint when
+// `NOX_OPERATOR_COCKPIT_PRIVATE_WRITE_MODE` is enabled. Kept as a wide
+// union so unknown future modes don't break the bundle.
+export type PlannerAuthModeWire =
+  | 'operator_key'
+  | 'private_cockpit_readonly'
+  | 'private_write_mode'
+  | string;
 
 export interface PlanPreviewMetaWire {
   skeleton?: boolean;

@@ -343,14 +343,11 @@ export async function fetchPlanCommit(
       errorMessage: 'planDigest darf nicht leer sein. Erst /plan/preview oder /plan/validate aufrufen.',
     };
   }
-  if (!args.request.commitToken && !args.request.explicitConfirmPhrase) {
-    return {
-      ok: false,
-      status: 0,
-      errorCode: 'client_validation',
-      errorMessage: 'Entweder commitToken oder explicitConfirmPhrase ist erforderlich.',
-    };
-  }
+  // Phase 2D: commitToken/explicitConfirmPhrase are optional on the wire.
+  // The server-side gate enforces them when authMode='operator_key'; in
+  // `private_write_mode` neither field is needed. Letting both stay
+  // optional client-side means the UI can omit them in private-cockpit
+  // setups without re-implementing the gate.
 
   const url = `${ENDPOINT_BASE}/${encodeURIComponent(trimmedProjectId)}/plan/commit`;
 
