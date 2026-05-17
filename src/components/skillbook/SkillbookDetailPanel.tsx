@@ -8,6 +8,10 @@ type SkillbookDetailPanelProps = {
   onUpdatePerk: (perkId: string, patch: Partial<SkillbookPerk>) => void;
   onToast: (message: string) => void;
   onAlsPerkUebernehmen: () => void;
+  // Optional: triggers the lokal-only Aufgabenentwurf flow in the parent
+  // panel. When undefined, the draft button is hidden (e.g. in legacy
+  // contexts that have not been migrated to the Faehigkeitskarte view).
+  onAufgabenEntwurf?: () => void;
 };
 
 function Wirkung({ label, value, invert = false }: { label: string; value: number; invert?: boolean }) {
@@ -35,7 +39,7 @@ function Zeilenliste({ value, onChange }: { value: string[]; onChange: (next: st
   );
 }
 
-export default function SkillbookDetailPanel({ perk, skizzenHinweis, resolveName, onUpdatePerk, onToast, onAlsPerkUebernehmen }: SkillbookDetailPanelProps) {
+export default function SkillbookDetailPanel({ perk, skizzenHinweis, resolveName, onUpdatePerk, onToast, onAlsPerkUebernehmen, onAufgabenEntwurf }: SkillbookDetailPanelProps) {
   if (!perk) {
     return (
       <aside className="max-h-[620px] overflow-y-auto rounded-3xl border border-[#35243d] bg-[#100813]/95 p-5">
@@ -56,7 +60,7 @@ export default function SkillbookDetailPanel({ perk, skizzenHinweis, resolveName
 
   return (
     <aside className="max-h-[620px] overflow-y-auto rounded-3xl border border-[#35243d] bg-[#100813]/95 p-5">
-      <div className="text-xs uppercase tracking-[0.16em] text-[#9f89a7]">NOX Canvas – Karten-Details</div>
+      <div className="text-xs uppercase tracking-[0.16em] text-[#9f89a7]">Fähigkeitskarte – Karten-Details</div>
       <input
         value={perk.name}
         onChange={(event) => onUpdatePerk(perk.id, { name: event.target.value })}
@@ -164,7 +168,17 @@ export default function SkillbookDetailPanel({ perk, skizzenHinweis, resolveName
 
       <div className="sticky bottom-0 mt-5 grid grid-cols-2 gap-2 border-t border-[#32243a] bg-[#100813]/95 pt-4">
         <button type="button" onClick={() => onToast('Lokal gespeichert')} className="rounded-xl border border-cyan-300/40 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100">{statusLabel[perk.status]}</button>
-        <button type="button" onClick={() => onToast('Aufgabenvorschlag vorbereitet – spätere Notion-Anbindung geplant.')} className="rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-100">Aufgabe erzeugen</button>
+        <button
+          type="button"
+          onClick={() =>
+            onAufgabenEntwurf
+              ? onAufgabenEntwurf()
+              : onToast('Aufgabenentwurf lokal vorbereitet – noch nicht gespeichert.')
+          }
+          className="rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-100"
+        >
+          Aufgabenentwurf erzeugen
+        </button>
       </div>
     </aside>
   );

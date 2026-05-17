@@ -1,15 +1,88 @@
-# Skillbook → NOX Canvas Integration im Operator-Cockpit
+# Skillbook → Fähigkeitskarte + Whiteboard Integration im Operator-Cockpit
 
-## Ziel des Moduls
-Das sichtbare Modul heißt jetzt **NOX Canvas** (alternativ **Operator Canvas**) und ist in `/operator-cockpit` als interne Sektion eingebunden. Es dient als internes Whiteboard für Systemplanung – Karten, Verbindungen, Fortschritt – und visualisiert Elemente mit ihren Verbindungen, Status und Auswirkungen.
+## Aktuelle Modul-Trennung (Stand: Operator Cockpit Module Separation)
 
-Historie: Das Modul ist als „NOX Skillbook" gestartet. Begrifflich wurde der Schwerpunkt auf Canvas/Whiteboard verschoben, weil die Excalidraw-Integration als operative Zeichenfläche tragend ist. Skillbook-/Perk-/Forschungsbuch-Wortlaut ist aus den sichtbaren UI-Texten entfernt.
+Das ehemalige sichtbare Modul „NOX Canvas" wurde fachlich in **zwei eigenständige Module** aufgeteilt, weil ein freies Zeichenwerkzeug und ein strukturierter Capability-Katalog zwei unterschiedliche Aufgaben sind:
+
+- **NOX Whiteboard** = freies Excalidraw. Skizzen, Systemdenken, Planung. Keine Kopplung an Karten, keine Quest-Erzeugung, kein Detailpanel-Zwang.
+- **Fähigkeitskarte** = strukturierter Capability-/Upgrade-Katalog. Zeigt bestehende Fähigkeiten, geplante Verbesserungen, potenzielle Upgrades und ihre Auswirkungen. Aus einer Karte kann ein lokaler **Aufgabenentwurf** abgeleitet werden (Phase 1: keine Quest, keine API, kein Notion-Write).
+
+Der Begriff „NOX Canvas" wird in der UI nicht weiter ausgebaut. Sichtbare Texte zeigen jetzt **„NOX Whiteboard"** bzw. **„Fähigkeitskarte"**. Interne Identifier (Dateinamen `SkillbookCanvas`, `SkillbookPanel`, `customData.perkId`) bleiben unverändert, um Diff-Fläche klein zu halten.
+
+## Sidebar-Struktur
+
+Die Hauptnavigation des Operator-Cockpits folgt:
+
+```
+ZENTRALE  → Start | Projekte | Quests
+CASHFLOW  → Leads | Pitch-Zentrale
+AGENTEN   → Agenten-Chat | Faehigkeiten | Whiteboard | Workflow-Zonen | Intelligence
+SYSTEM    → Status | Einstellungen
+```
+
+**Freigaben sind kein eigener Hauptmenüpunkt mehr.** Die `GlobalApprovals`-View bleibt technisch erreichbar (Route `Freigaben`, z.B. ueber die Start-KPI-Kachel), wird aber im Sidebar-Highlight auf `Quest-Zentrale` aliassiert. Freigaben gehoeren konzeptionell in den Projekt-/Quest-Kontext und werden dort als Kontextaktion ausgeloest.
+
+`Projekte` ist der **naechste Hauptpfad** und wird als Hauptanker fuer `NOX Agent / Project Auto Planner` ausgebaut. Project-X selbst bleibt eine Projektzeile innerhalb von `Projekte`, kein separater Top-Level-Eintrag.
+
+## Historie
+
+Das Modul ist als „NOX Skillbook" gestartet. Zwischenzeitlich wurde die Excalidraw-Integration zum sichtbaren Anker und das Gesamtmodul als „NOX Canvas" gefuehrt. Die jetzige Trennung in Whiteboard und Faehigkeitskarte loest das Begriffsproblem sauber: das freie Zeichenwerkzeug heisst Whiteboard, der strukturierte Katalog heisst Faehigkeitskarte. „Canvas" tritt nur noch als sichtbar gleicher Eintrag (`Canvas`/`Skillbook`) als Legacy-Alias auf `Faehigkeiten` in `routeAliasForSidebar` auf.
+
+## Whiteboard-Modul
+
+- Titel: **„NOX Whiteboard"**
+- Untertitel: „Freies Whiteboard für Skizzen, Systemdenken und Planung."
+- Buttons: `Lokal speichern`, `Lokale Änderungen zurücksetzen`, `Vollbild`.
+- Excalidraw-Toolbar bleibt sichtbar und unveraendert.
+- `Vollbild` blendet das Modul als Overlay ueber das Cockpit (Esc verlaesst).
+- **Keine** Buttons fuer `+ Neue Karte`, `+ Verbundene Karte` oder `Aufgabenentwurf erzeugen`.
+- **Kein** Detailpanel, **keine** Quest-Erzeugung, **keine** automatische Datenquelle.
+- localStorage-Slot: `nox.skillbook.v1.sketchElements` (geteiltes Blob mit der Fähigkeitskarte, kein Migrations-Bruch).
+
+## Fähigkeitskarte-Modul
+
+- Titel: **„Fähigkeitskarte"**
+- Untertitel: „Strukturierte Übersicht über NOX-Fähigkeiten, Upgrades und prüfbare Verbesserungen."
+- Buttons: `+ Neue Karte`, `Lokal speichern`, `Lokale Änderungen zurücksetzen`.
+- Sucheingabe: „Fähigkeit suchen" (Name, Kategorie, Kapitel).
+- **Kategorie-Filter** als Chip-Strip:
+  Alle · Systemkern · Agentensteuerung · Sicherheit · Lernen & Verbesserung · Automatisierung / n8n · Notion / Wissen · Recherche / News · YouTube / Content · Leadgen / Sales · Trading · UI / Produkt · Kostenoptimierung
+  (Filter matcht intern auf `SkillbookKategorie`. Display-Labels duerfen ohne Datenbruch leicht abweichen.)
+- Strukturierte Karten-Ansicht (`SkillbookCardView`). **Kein** Canvas-Toggle in der Faehigkeitskarte mehr — die Faehigkeitskarte ist selbst die strukturierte Ansicht.
+- Detailpanel rechts: editierbarer Karteninhalt + Auswirkungen-Strip.
+- Status-Counter-Strip oben (Integriert, Bereit, Wird geprüft, Geplant, Gesperrt).
+
+## Aufgabenentwurf (lokal, Phase 1)
+
+Aus jeder Karte im Detailpanel ist `Aufgabenentwurf erzeugen` aufrufbar. Klick:
+- baut einen lokalen Entwurf mit den Feldern Titel, Kategorie, Quelle `Faehigkeitskarte`, Ziel, Warum relevant?, Nutzen, Risiko, Aufwand, vorgeschlagener Agent (`NOX Agent` / `Claude` / `Codex`), Status `Entwurf`,
+- zeigt den Entwurf unter dem Detail-Grid als amber-getöntes Block,
+- bietet `Prompt kopieren` (Clipboard) und `Entwurf schliessen`,
+- emittet einen Toast: „Aufgabenentwurf lokal vorbereitet – noch nicht gespeichert."
+
+Phase 1 macht **nichts** ausser lokalem State:
+- kein API-Call,
+- kein Notion-Write,
+- kein Backend,
+- kein Quest-Starten,
+- kein Dispatcher.
+
+## Projekte als naechster Hauptpfad
+
+Im Modul `Projekte` werden die Operator-CTAs als Phase-1-Anker für NOX Agent / Project Auto Planner gefuehrt:
+
+- `Mit NOX besprechen` (oeffnet bestehendes Talk-Modal)
+- `Projekt in Quests zerlegen` (Phase 1: lokaler Talk-Flow, kein Dispatcher, kein Quest-Start)
+- `Freigaben pruefen` (Phase 1: Projekt-Audit, Freigaben bleiben projekt-/quest-bezogene Kontextaktion)
+- `Outputs ansehen` (oeffnet bestehendes Output-Modal)
+
+Der Header der Projekt-Aktionen erklaert explizit, dass Projekte der Hauptpfad fuer NOX Agent / Project Auto Planner sind. Phase 1 bleibt rein lokal.
 
 ## Warum Playground falsch war
 Die erste Integration im lokalen Playground lag in einer alten Mission-Control-Struktur und nicht in der aktiven internen NOX-Arbeitsoberfläche. Die operative Zieloberfläche im Vercel-Repo ist die Operator-Cockpit-Route.
 
 ## Warum die Root-Seite nicht direkt verändert wurde
-Die öffentliche Marketing-Navigation wurde bewusst nicht erweitert. NOX Canvas ist ein internes Kontrollzentrum-Modul und wird nur in der internen Cockpit-Sidebar als Eintrag „Canvas" geführt.
+Die öffentliche Marketing-Navigation wurde bewusst nicht erweitert. Whiteboard und Fähigkeitskarte sind interne Kontrollzentrum-Module und werden nur in der internen Cockpit-Sidebar gefuehrt.
 
 ## Wechsel der Canvas-Engine
 Die erste Variante nutzte React Flow. Dabei wurden Knoten sichtbar, die Kanten wurden im laufenden UI-Test jedoch nicht zuverlässig gerendert. Deshalb wurde die Canvas-Engine auf Excalidraw als freie Open-Source-Canvas umgestellt. Excalidraw bleibt der Kern.

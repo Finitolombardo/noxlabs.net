@@ -639,7 +639,6 @@ const sidebarGroups: SidebarGroup[] = [
       { label: 'Start', route: 'Start' },
       { label: 'Projekte', route: 'Projekte' },
       { label: 'Quests', route: 'Quest-Zentrale' },
-      { label: 'Freigaben', route: 'Freigaben' },
     ],
   },
   {
@@ -653,7 +652,8 @@ const sidebarGroups: SidebarGroup[] = [
     title: 'Agenten',
     items: [
       { label: 'Agenten-Chat', route: 'Agenten-Chat' },
-      { label: 'Canvas', route: 'Canvas' },
+      { label: 'Faehigkeiten', route: 'Faehigkeiten' },
+      { label: 'Whiteboard', route: 'Whiteboard' },
       { label: 'Workflow-Zonen', route: 'Workflow-Zonen' },
       { label: 'Intelligence', route: 'Intelligence' },
     ],
@@ -669,17 +669,23 @@ const sidebarGroups: SidebarGroup[] = [
 
 // Map a possibly-legacy active route to the sidebar entry that should
 // be highlighted. Routes not in this map fall back to direct match.
+// Freigaben is intentionally not a main sidebar entry any more; it
+// remains reachable as a contextual view from Projekte / Quests, and
+// gets highlight-aliased to the related main entry so the sidebar
+// stays focused.
 const routeAliasForSidebar: Record<string, string> = {
   'Quest-Detail': 'Quest-Zentrale',
   'Projekt X': 'Projekte',
   Outputs: 'Projekte',
+  Freigaben: 'Quest-Zentrale',
   Team: 'Start',
   Sprachsteuerung: 'Start',
   'Quest-Generator': 'Start',
   'Lead Map': 'Lead-Eingang',
   'YouTube-Analyse': 'Intelligence',
   'OG-Scraper': 'Intelligence',
-  Skillbook: 'Canvas',
+  Skillbook: 'Faehigkeiten',
+  Canvas: 'Faehigkeiten',
 };
 
 const agentOptions = ['NOX', 'Andromeda', 'Claude', 'Project X', 'Owner'];
@@ -1164,7 +1170,10 @@ export default function OperatorCockpit() {
                 <SimplePage eyebrow="Agenten-Chat" title="Projektbewusst besprechen" text="Der Chat laedt Quest, Projekt, erlaubte und verbotene Aktionen, Artefakte und den Verlauf, bevor delegiert wird." />
               ) : null}
 
-              {active === 'Canvas' || active === 'Skillbook' ? <SkillbookPanel /> : null}
+              {active === 'Faehigkeiten' || active === 'Canvas' || active === 'Skillbook' ? (
+                <SkillbookPanel mode="faehigkeiten" />
+              ) : null}
+              {active === 'Whiteboard' ? <SkillbookPanel mode="whiteboard" /> : null}
 
               {active === 'Projekt X' ? (
                 <ProjectX
@@ -3252,17 +3261,40 @@ function ProgressPanel({
 }
 
 function ProjectActions({ openTalk, openAudit, openOutput }: { openTalk: () => void; openAudit: () => void; openOutput: () => void }) {
+  // Phase-1 CTAs prepare the page for NOX Agent / Project Auto Planner.
+  // None of these buttons triggers an API call, Notion write, dispatcher
+  // run or quest-start. "Mit NOX besprechen" and "Outputs ansehen" open
+  // the existing local-only modals. "Projekt in Quests zerlegen" and
+  // "Freigaben pruefen" are explicit placeholders for the Auto-Planner
+  // flow and the project-scoped approval list — both still local.
   return (
     <Card>
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="text-[13px] font-extrabold uppercase tracking-[0.24em] text-[#9f8d95]">Projekt-Aktionen</div>
-          <p className="mt-2 text-sm font-semibold text-[#cbbbc3]">NOX sammelt Ideen, prueft Kontext und erzeugt lokale Outputs im Demo-Modus.</p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="text-[13px] font-extrabold uppercase tracking-[0.24em] text-[#9f8d95]">Projekt-Aktionen</div>
+            <p className="mt-2 text-sm font-semibold text-[#cbbbc3]">
+              Projekte sind der Hauptpfad fuer NOX Agent / Project Auto Planner. Hier liest NOX spaeter den
+              Projektkontext, schlaegt Quest-Reihen vor, holt Freigaben ein und zeigt Outputs. Phase 1: nur
+              lokale Aktionen, keine API, keine Notion-Writes.
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button onClick={openTalk}>Mit NOX besprechen</Button>
-          <Button tone="ghost" onClick={openAudit}>Projektkontext pruefen</Button>
-          <Button tone="ghost" onClick={openOutput}>Output erstellen</Button>
+          <span title="Phase 1: lokaler Entwurf, kein Dispatcher, kein Quest-Start.">
+            <Button tone="ghost" onClick={() => openTalk()}>
+              Projekt in Quests zerlegen
+            </Button>
+          </span>
+          <span title="Phase 1: zeigt Projekt-Audit. Freigaben bleiben Kontextaktion in Projekt/Quest.">
+            <Button tone="ghost" onClick={openAudit}>
+              Freigaben pruefen
+            </Button>
+          </span>
+          <Button tone="ghost" onClick={openOutput}>
+            Outputs ansehen
+          </Button>
         </div>
       </div>
     </Card>
