@@ -20,9 +20,9 @@ AGENTEN   → Agenten-Chat | Faehigkeiten | Whiteboard | Workflow-Zonen | Intell
 SYSTEM    → Status | Einstellungen
 ```
 
-**Freigaben sind kein eigener Hauptmenüpunkt mehr.** Die `GlobalApprovals`-View bleibt technisch erreichbar (Route `Freigaben`, z.B. ueber die Start-KPI-Kachel), wird aber im Sidebar-Highlight auf `Quest-Zentrale` aliassiert. Freigaben gehoeren konzeptionell in den Projekt-/Quest-Kontext und werden dort als Kontextaktion ausgeloest.
+**Freigaben sind kein eigener Hauptmenüpunkt mehr.** Die `GlobalApprovals`-View bleibt technisch erreichbar (Route `Freigaben`, z.B. über die Start-KPI-Kachel), wird aber im Sidebar-Highlight auf `Quest-Zentrale` aliassiert. Freigaben gehören konzeptionell in den Projekt-/Quest-Kontext und werden dort in „Offene Entscheidungen & Blocker" als Kontextaktion ausgelöst.
 
-`Projekte` ist der **naechste Hauptpfad** und wird als Hauptanker fuer `NOX Agent / Project Auto Planner` ausgebaut. Project-X selbst bleibt eine Projektzeile innerhalb von `Projekte`, kein separater Top-Level-Eintrag.
+`Projekte` ist der **Hauptpfad für NOX Agent / Project Auto Planner**. Project-X selbst bleibt eine Projektzeile innerhalb von `Projekte`, kein separater Top-Level-Eintrag.
 
 ## Historie
 
@@ -67,42 +67,53 @@ Phase 1 macht **nichts** ausser lokalem State:
 - kein Quest-Starten,
 - kein Dispatcher.
 
-## Projekte als Hauptpfad fuer NOX Agent / Project Auto Planner
+## Projekte als Hauptpfad für NOX Agent / Project Auto Planner
 
-Der Projekte-Bereich im Operator Cockpit ist der erste echte NOX-Agent-Hauptpfad. Die Card-Architektur fuer ein Projekt:
+Der Projekte-Bereich im Operator Cockpit ist der erste echte NOX-Agent-Hauptpfad. Nach dem Live-Review wurde der obere Bereich gezielt vereinfacht, damit die Projektzentrale wie eine Arbeitsfläche wirkt und nicht wie ein Technik-Dashboard.
 
-1. **Projekt-Zentrale Card** — Projektname, Code, Status-Pills (`Notion read-only`, `execute locked`, `Status:...`), Projekt-Picker, Vision plus **Identity-Snapshot**: Projekt-ID, Status, Phase, Fortschritt, letzter Meilenstein, naechste Aktion.
-2. **Live Projektkontext** — read-only Notion-Projektion (BRIDGE-05a).
-3. **Progress Panel** — Quests erledigt/gesamt, Outputs, offene Freigaben.
-4. **NOX Agent · Project Auto Planner Action-Card** — Phase-1-CTAs:
+### Vereinfachung nach Live-Review
+
+- Technische Pills wie `Notion read-only` und `execute locked` sind aus der sichtbaren Hauptachse entfernt.
+- Die große sechsspaltige Identity-Snapshot-Leiste ist durch eine kompakte Arbeitsübersicht ersetzt.
+- Der prominente `Live Projektkontext`-Block mit `Auth einblenden` ist als **Erweiterter Kontext** ans Ende der Seite verschoben und standardmäßig eingeklappt.
+- Freigaben sind **kein primärer CTA** mehr im Project Auto Planner. Sie wandern in **Offene Entscheidungen & Blocker**.
+- Outputs sind als datenbankartige Tabelle dargestellt, nicht mehr als große Marketing-Karten.
+
+### Card-Architektur
+
+1. **Projekt-Zentrale Card (kompakt)** — Eyebrow `Projekt-Zentrale`, Projektname, kleine Projekt-ID, kurze Vision, typografisch gestalteter Projekt-Picker (`Projekt wählen`). Darunter eine zweispaltige Arbeitsübersicht: links großer `Projektfortschritt`-Block (Wert in Prozent, Status, `Phase 1 · Demo`, Fortschrittsbalken, Roh-Sub-Score `x / y Quests erledigt · Outputs · offene Freigaben`), rechts `Nächste Aktion` und `Letzter Meilenstein` als kompakte Kacheln.
+2. **NOX Agent · Project Auto Planner Action-Card** — Phase-1-CTAs:
    - **Mit NOX besprechen** → Talk-Modal (Quest-Draft / Output-Draft / Freigabe vormerken, alles lokal).
-   - **Projekt in Quests zerlegen** → Planner-Modal mit lokaler **Quest-Reihen-Tabelle** (Step, Quest, Agent, Freigabe-Gate, Output, Risiko). Button `Als Plan-Output vormerken` schreibt einen lokalen Output-Draft mit Plan-Beschreibung und Milestone.
-   - **Freigaben pruefen** → Approvals-Modal mit projekt-bezogenen Approvals, NOX-Agent-Empfehlung pro Eintrag und drei **disabled** Action-Buttons (`Freigeben (Phase 2)`, `Rueckfrage stellen (Phase 2)`, `Ablehnen (Phase 2)`).
-   - **Outputs ansehen** → Read-only Output-Liste fuer das Projekt mit Status, Version, Speicherort. Footer-Button `Neuen Output anlegen` schaltet zum bestehenden Create-Modal.
-   - Sekundaerleiste: **Projektkontext-Audit** (Health-Check) und **Output anlegen** (Create-Modal).
-5. **Decision Blockers, Linked Quests, Outputs & Artefakte, Projekt-Meilensteine** — unveraendert, projektbezogen.
+   - **Quest-Reihe entwerfen** → Planner-Modal mit zweispaltiger Ansicht: links eine schmale Tabelle (Schritt, Quest-Entwurf, Risiko) mit klickbaren Zeilen, rechts ein Detailpanel (Ziel, empfohlener Agent, Freigabe-Gate, erwarteter Output, Risiko, Status `Entwurf`, Hinweis „Noch nicht in Notion / Master Tasks erstellt"). Footer: `Entwurf kopieren` (Clipboard), `Später als Quest erzeugen (Phase 2)` (disabled), `Schließen`, `Als Plan-Output vormerken`.
+   - **Outputs ansehen** → Read-only Output-Liste mit Status, Version, Speicherort. Footer-Button `Neuen Output anlegen` schaltet zum bestehenden Create-Modal.
+   - Sekundärleiste: **Projektkontext-Audit** (Health-Check) und **Output anlegen** (Create-Modal).
+3. **Offene Entscheidungen & Blocker** — übernimmt die Freigaben-Funktion. Zeigt projektbezogene Blocker plus eine Liste offener Freigaben (Titel, Beschreibung, Risiko, Status, NOX-Agent-Empfehlung) mit drei deaktivierten Phase-2-Buttons (`Freigeben`, `Rückfrage stellen`, `Ablehnen`). Wenn weder Blocker noch Freigaben offen sind: Hinweis „Keine kritischen Blocker. Nächste Aktion weiter ausführbar."
+4. **Verknüpfte Quests** — projektbezogen, klickbar zum Quest-Detail.
+5. **Outputs & Artefakte (Tabelle)** — datenbankartige Tabelle mit Spalten `Typ`, `Titel`, `Version`, `Status`, `Speicherort`, `Projekt`, `Aktionen`. Titel ist klickbar und öffnet ein **Output-Detail-Modal** (Typ, Version, Status, Speicherort, Projekt, Beschreibung). Pro Zeile fünf Aktions-Buttons als lokale Demo-Aktion mit Tooltip „Phase 1: lokale Demo-Aktion. Persistenz folgt später.": `Öffnen`, `Aktualisieren`, `In Google Drive speichern`, `In Notion speichern`, `Herunterladen`. Keine echten Writes, kein Drive, kein Notion, kein realer Download.
+6. **Projekt-Meilensteine** — unverändert, projektbezogen.
+7. **Erweiterter Kontext (eingeklappt)** — wrappt den bestehenden `LiveProjectContext`-Loader. Aufklappbar; die `Entwickler-Auth`-Eingabe (API Key) ist nur als Entwicklerhinweis sichtbar und nicht mehr Teil der Hauptachse.
 
 ### Phase-1-Hinweis (in jedem neuen Modal)
 
-> „Phase 1: lokaler Entwurf. Echte Quest-Erzeugung erfolgt spaeter ueber NOX Agent nach Operator-Freigabe."
+> „Phase 1: lokaler Entwurf. Echte Quest-Erzeugung erfolgt später über NOX Agent nach Operator-Freigabe."
 
-Keine API-Anbindung, keine Notion-Writes, kein Dispatcher, kein Telegram-Trigger, kein echter Agent-Run, kein Backend. Die Identity-Snapshot-Leiste und die Action-Card sind reines UI auf lokalem React-State (`outputs`, `approvals`, `quests`, `milestones`), das in dieser Sitzung lebt.
+Keine API-Anbindung, keine Notion-Writes, kein Dispatcher, kein Telegram-Trigger, kein echter Agent-Run, kein Backend. Die Arbeitsübersicht-Leiste und die Action-Card sind reines UI auf lokalem React-State (`outputs`, `approvals`, `quests`, `milestones`), das in dieser Sitzung lebt.
 
 ### Begriffsdisziplin im Projekte-Bereich
 
 - **NOX Agent**, nicht „Andromeda" als Produktname (interne TS-Identifier wie `AndromedaCommand` bleiben, siehe `docs/nox-agent-rename-inventory.md`).
 - **Projekt-Zentrale** als sichtbarer Bereichstitel.
-- **Quest-Reihe** statt „Quest-Folge" / „Quest-Liste".
-- **Freigabe-Gate** als Bezeichnung fuer den Approval-Schritt.
-- **Output / Artefakt** fuer fertige Ablieferungen (Plan, Report, Design, Code-Aenderung, Review-Ergebnis).
+- **Quest-Reihe entwerfen** statt „Projekt in Quests zerlegen".
+- **Freigabe-Gate** als Bezeichnung für den Approval-Schritt; Freigaben selbst leben in **Offene Entscheidungen & Blocker**.
+- **Output / Artefakt** für fertige Ablieferungen (Plan, Report, Design, Code-Änderung, Review-Ergebnis).
 - **Lokaler Entwurf** macht explizit, dass Phase 1 nur Demo-State ist.
-- Skillbook- und Perk-Begriffe gehoeren ausschliesslich in die Fähigkeitskarte, nicht in den Projekte-Bereich.
+- Skillbook- und Perk-Begriffe gehören ausschließlich in die Fähigkeitskarte, nicht in den Projekte-Bereich.
 
-### Naechste Phasen (nicht in dieser Iteration)
+### Nächste Phasen (nicht in dieser Iteration)
 
 - Phase 2: HMAC-gesicherter Backend-Proxy + Operator-Approval-Flow (siehe `docs/operator-cockpit-andromeda-bridge-spec.md`).
 - Phase 2: echte Quest-Erzeugung in Notion Master Tasks nach explizitem Operator-Klick mit Audit-Log.
-- Phase 2: NOX Agent uebernimmt Lese-Auswertung (Projektkontext, Quest-Reihe, Agentenvorschlag) statt der statischen Demo-Tabelle.
+- Phase 2: NOX Agent übernimmt Lese-Auswertung (Projektkontext, Quest-Reihe, Agentenvorschlag) statt der statischen Demo-Tabelle.
 - Phase 3: Read-write-Notion-Token mit Field-Allowlist nach Operator-Freigabe.
 
 ## Warum Playground falsch war

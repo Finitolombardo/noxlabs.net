@@ -157,7 +157,7 @@ const projects: Project[] = [
     owner: 'NOX',
     status: 'Entwurf',
     progress: 35,
-    vision: 'Zentrale Steuerzentrale fuer Projekte, Quests, Agenten, Freigaben und Outputs.',
+    vision: 'Zentrale Steuerzentrale für Projekte, Quests, Agenten, Freigaben und Outputs.',
     stand: 'Canvas-Design laeuft. Lokaler Prototyp.',
     nextAction: 'Projects-Deep-Dive finalisieren und Output-System als Demo-State anbinden.',
     lastMilestone: 'v0.2 - Projekt-Zentrale aufgebaut',
@@ -171,7 +171,7 @@ const projects: Project[] = [
     owner: 'Andromeda',
     status: 'Stage 11B',
     progress: 72,
-    vision: 'Aufgaben strukturieren, Quests vorbereiten, Worker vorschlagen und Uebergaben koordinieren.',
+    vision: 'Aufgaben strukturieren, Quests vorbereiten, Worker vorschlagen und Übergaben koordinieren.',
     stand: 'Project-aware Patch ist vorbereitet.',
     nextAction: 'Soft Launch vorbereiten und Backfill-Liste schaerfen.',
     lastMilestone: 'Stage 11B - Project-aware Patch vorbereitet',
@@ -289,7 +289,7 @@ const leads = [
 ];
 
 const workflowItems = [
-  { id: 'WF-YT', title: 'YouTube Intelligence Worker', risk: 'Mittel', text: 'URL zu Transkript zu Analyse zu Insights zu Quest-Entwuerfen.' },
+  { id: 'WF-YT', title: 'YouTube Intelligence Worker', risk: 'Mittel', text: 'URL zu Transkript zu Analyse zu Insights zu Quest-Entwürfen.' },
   { id: 'WF-OG', title: 'OG-Scraper zu Google Sheets', risk: 'Hoch', text: 'Website-Daten extrahieren. Echter Sheet-Write nur mit Datenvertrag und Gate.' },
 ];
 
@@ -297,14 +297,14 @@ const initialQuests: Quest[] = [
   {
     id: 'APP-X-01',
     code: 'APP-X-01',
-    title: 'Canvas-App Zentrale haerten',
+    title: 'Canvas-App Zentrale härten',
     project: 'APP-X',
     status: 'Pruefung noetig',
     active: false,
     priority: 'Hoch',
     agent: 'NOX',
     goal: 'Die Cockpit-Zentrale bleibt stabil, klar scanbar und ohne innere Content-Scrollbars.',
-    notes: 'Projects-Deep-Dive ist stabilisiert. Jetzt muss die globale Quest-Ebene sauber anschliessen.',
+    notes: 'Projects-Deep-Dive ist stabilisiert. Jetzt muss die globale Quest-Ebene sauber anschließen.',
     acceptanceCriteria: ['Start und Projects bleiben erreichbar', 'Keine inneren Content-Scrollbars', 'Operator-Hierarchie bleibt klar'],
     requiresApproval: false,
     lastMovement: 'Projects-Deep-Dive stabilisiert',
@@ -319,7 +319,7 @@ const initialQuests: Quest[] = [
     active: false,
     priority: 'Normal',
     agent: 'NOX',
-    goal: 'Eine einzelne Quest kann im Detail geprueft, aktiviert, umgehaengt und mit Outputs verbunden werden.',
+    goal: 'Eine einzelne Quest kann im Detail geprüft, aktiviert, umgehängt und mit Outputs verbunden werden.',
     notes: 'Detailscreen soll aus derselben lokalen Quest-Datenquelle lesen wie Quest-Zentrale und Projects.',
     acceptanceCriteria: ['Quest-Code sichtbar', 'Historie sichtbar', 'Ruecknavigation funktioniert'],
     requiresApproval: false,
@@ -335,7 +335,7 @@ const initialQuests: Quest[] = [
     active: false,
     priority: 'Hoch',
     agent: 'NOX',
-    goal: 'Outputs und Artefakte koennen aus Projekt- und Quest-Kontext als lokale Drafts entstehen.',
+    goal: 'Outputs und Artefakte können aus Projekt- und Quest-Kontext als lokale Drafts entstehen.',
     notes: 'Output-Typen bleiben Demo-State: keine API, keine Downloads, keine externen Writes.',
     acceptanceCriteria: ['Output-Typen vorhanden', 'Draft wird lokal gespeichert', 'Projektbezug bleibt erhalten'],
     requiresApproval: false,
@@ -351,17 +351,17 @@ const initialQuests: Quest[] = [
     active: false,
     priority: 'Hoch',
     agent: 'Project X',
-    goal: 'Project X bekommt eine klare Uebergabe-Spec mit Ziel, Kontext, Grenzen und naechster Implementierungsaufgabe.',
+    goal: 'Project X bekommt eine klare Uebergabe-Spec mit Ziel, Kontext, Grenzen und nächster Implementierungsaufgabe.',
     notes: 'Die Workflowfabrik braucht verwertbare Outputs statt lose Chat-Ideen.',
-    acceptanceCriteria: ['Ziel beschrieben', 'Kontext enthalten', 'Naechste Aufgabe ableitbar'],
+    acceptanceCriteria: ['Ziel beschrieben', 'Kontext enthalten', 'Nächste Aufgabe ableitbar'],
     requiresApproval: false,
-    lastMovement: 'Bereit fuer Spezifikation',
+    lastMovement: 'Bereit für Spezifikation',
     history: ['Quest PX-01 erstellt.'],
   },
   {
     id: 'PX-02',
     code: 'PX-02',
-    title: 'App-Zugriff fuer NOX vorbereiten',
+    title: 'App-Zugriff für NOX vorbereiten',
     project: 'PROJECT-X',
     status: 'Blockiert',
     active: false,
@@ -384,8 +384,8 @@ const initialQuests: Quest[] = [
     priority: 'Hoch',
     agent: 'Andromeda',
     goal: 'Andromeda strukturiert Aufgaben als Unter-Orchestrator, ohne NOX als sichtbares Gehirn zu verdraengen.',
-    notes: 'Project-aware Kontext, Backfill und Aktivierungslogik muessen zusammenpassen.',
-    acceptanceCriteria: ['NOX bleibt primaerer Ansprechpartner', 'Projektkontext wird erkannt', 'Uebergaben sind nachvollziehbar'],
+    notes: 'Project-aware Kontext, Backfill und Aktivierungslogik müssen zusammenpassen.',
+    acceptanceCriteria: ['NOX bleibt primaerer Ansprechpartner', 'Projektkontext wird erkannt', 'Übergaben sind nachvollziehbar'],
     requiresApproval: false,
     lastMovement: 'Orchestrierungslogik in Arbeit',
     history: ['Quest AND-01 erstellt.', 'Orchestrierung in Arbeit.'],
@@ -399,8 +399,8 @@ const initialQuests: Quest[] = [
     active: false,
     priority: 'Normal',
     agent: 'Andromeda',
-    goal: 'Freigaben werden als Review-Gate vorbereitet, nicht als automatische Ausfuehrung.',
-    notes: 'Telegram ist spaeter Approval-/Alarm-Kanal, nicht Hauptsteuerzentrale.',
+    goal: 'Freigaben werden als Review-Gate vorbereitet, nicht als automatische Ausführung.',
+    notes: 'Telegram ist später Approval-/Alarm-Kanal, nicht Hauptsteuerzentrale.',
     acceptanceCriteria: ['Freigabearten beschrieben', 'Risiko sichtbar', 'Keine echten Sends'],
     requiresApproval: true,
     lastMovement: 'Offen',
@@ -431,7 +431,7 @@ const initialQuests: Quest[] = [
     active: false,
     priority: 'Normal',
     agent: 'Claude',
-    goal: 'Lead-Pitches werden nach Prioritaet und naechstem Schritt als lokale Queue vorbereitet.',
+    goal: 'Lead-Pitches werden nach Priorität und nächstem Schritt als lokale Queue vorbereitet.',
     notes: 'Demo-Pitches bleiben lokal und werden nicht gesendet.',
     acceptanceCriteria: ['Lead-Auswahl vorhanden', 'Pitch-Text editierbar', 'Kein echter Send'],
     requiresApproval: false,
@@ -465,7 +465,7 @@ const initialOutputs: OutputArtifact[] = [
     storage: 'Lokal / Canvas-Demo',
     status: 'Active',
     version: 'v0.2',
-    description: 'Systemkarte fuer Projekt, Quest, Output und Freigabe-Zonen.',
+    description: 'Systemkarte für Projekt, Quest, Output und Freigabe-Zonen.',
   },
   {
     id: 'ART-APPX-2',
@@ -475,7 +475,7 @@ const initialOutputs: OutputArtifact[] = [
     storage: 'Lokaler Entwurf',
     status: 'Draft',
     version: 'v0.1',
-    description: 'Prompt fuer den Projects-Deep-Dive und die vorbereitete Quest-Zentrale.',
+    description: 'Prompt für den Projects-Deep-Dive und die vorbereitete Quest-Zentrale.',
   },
   {
     id: 'ART-AND-1',
@@ -485,7 +485,7 @@ const initialOutputs: OutputArtifact[] = [
     storage: 'Notion-Kontext / Demo',
     status: 'Review',
     version: 'v0.3',
-    description: 'Entscheidungsvorlage fuer Backfill oder Aktivierung.',
+    description: 'Entscheidungsvorlage für Backfill oder Aktivierung.',
   },
   {
     id: 'ART-LEAD-1',
@@ -495,7 +495,7 @@ const initialOutputs: OutputArtifact[] = [
     storage: 'https://radar.getvoidra.com',
     status: 'Active',
     version: 'v0.1',
-    description: 'Demo-Radar fuer Lead-Priorisierung und Pipeline-Sicht.',
+    description: 'Demo-Radar für Lead-Priorisierung und Pipeline-Sicht.',
   },
 ];
 
@@ -508,17 +508,17 @@ const initialApprovals: Approval[] = [
     status: 'Wartet',
     risk: 'Mittel',
     agent: 'NOX',
-    description: 'Soll der Worker spaeter an die Workflowfabrik uebergeben werden?',
+    description: 'Soll der Worker später an die Workflowfabrik übergeben werden?',
   },
   {
     id: 'A-2',
-    title: 'OG-Scraper spaeter an Google Sheets anbinden?',
+    title: 'OG-Scraper später an Google Sheets anbinden?',
     project: 'LEADGEN',
     questId: 'LG-01',
     status: 'Blockiert',
     risk: 'Hoch',
     agent: 'Project X',
-    description: 'Wir brauchen erst das Freigabe-Gate fuer jeden Write.',
+    description: 'Wir brauchen erst das Freigabe-Gate für jeden Write.',
   },
   {
     id: 'A-3',
@@ -538,15 +538,15 @@ const initialAndromedaCommands: AndromedaCommand[] = [
     commandType: 'PREPARE_PROJECT_X_HANDOFF',
     projectId: 'PROJECT-X',
     questId: 'PX-01',
-    title: 'Project-X-Handoff fuer Workflowfabrik',
-    intent: 'Project X soll eine saubere Uebergabe-Spec fuer die Workflowfabrik vorbereiten.',
-    payloadSummary: 'Lokaler Demo-Command fuer Uebergabe, Dry-Run und Freigabe-Gate.',
+    title: 'Project-X-Handoff für Workflowfabrik',
+    intent: 'Project X soll eine saubere Uebergabe-Spec für die Workflowfabrik vorbereiten.',
+    payloadSummary: 'Lokaler Demo-Command für Uebergabe, Dry-Run und Freigabe-Gate.',
     requestedBy: 'NOX Operator',
     status: 'Freigabe noetig',
     riskLevel: 'Mittel',
     requiresApproval: true,
     createdAt: 'Heute',
-    history: ['Command lokal initialisiert.', 'Live-Ausfuehrung bleibt gesperrt.'],
+    history: ['Command lokal initialisiert.', 'Live-Ausführung bleibt gesperrt.'],
   },
 ];
 
@@ -557,7 +557,7 @@ const initialMilestones: Milestone[] = [
     dateLabel: 'v0.1',
     type: 'Layout',
     title: 'Grundlayout erstellt',
-    description: 'Sidebar, Startbereich und lokale Demo-Daten fuer das Operator-Cockpit angelegt.',
+    description: 'Sidebar, Startbereich und lokale Demo-Daten für das Operator-Cockpit angelegt.',
   },
   {
     id: 'M-APPX-2',
@@ -581,7 +581,7 @@ const initialMilestones: Milestone[] = [
     dateLabel: 'Heute',
     type: 'Output',
     title: 'Output-System vorbereitet',
-    description: 'Outputs und Artefakte koennen lokal als Demo-Drafts erzeugt werden.',
+    description: 'Outputs und Artefakte können lokal als Demo-Drafts erzeugt werden.',
   },
   {
     id: 'M-APPX-5',
@@ -589,7 +589,7 @@ const initialMilestones: Milestone[] = [
     dateLabel: 'Heute',
     type: 'Quest',
     title: 'Quest-System vorbereitet',
-    description: 'Verknuepfte Quests bleiben klickbar vorbereitet, ohne die globale Quest-Zentrale neu zu bauen.',
+    description: 'Verknüpfte Quests bleiben klickbar vorbereitet, ohne die globale Quest-Zentrale neu zu bauen.',
   },
   {
     id: 'M-AND-1',
@@ -597,7 +597,7 @@ const initialMilestones: Milestone[] = [
     dateLabel: 'Gestern',
     type: 'Stage 11B',
     title: 'Project-aware Patch vorbereitet',
-    description: 'Andromeda kann fuer den Backfill vorbereitet werden, sobald der UI-Stand freigegeben ist.',
+    description: 'Andromeda kann für den Backfill vorbereitet werden, sobald der UI-Stand freigegeben ist.',
   },
   {
     id: 'M-LG-1',
@@ -880,7 +880,7 @@ export default function OperatorCockpit() {
       agent: input.agent,
       goal: text,
       notes: text,
-      acceptanceCriteria: ['Ziel ist beschrieben', 'Projektbezug ist gesetzt', 'Naechste Aktion ist ableitbar'],
+      acceptanceCriteria: ['Ziel ist beschrieben', 'Projektbezug ist gesetzt', 'Nächste Aktion ist ableitbar'],
       requiresApproval: false,
       lastMovement: 'Quest-Draft lokal erstellt',
       history: [`Quest ${code} lokal vorgemerkt.`],
@@ -919,14 +919,14 @@ export default function OperatorCockpit() {
       projectId: quest.project,
       questId: quest.id,
       title: `Project-X-Handoff: ${quest.code}`,
-      intent: `Project X soll die naechste Umsetzung fuer "${quest.title}" trocken vorbereiten.`,
+      intent: `Project X soll die nächste Umsetzung für "${quest.title}" trocken vorbereiten.`,
       payloadSummary: `${quest.goal} Kontext: ${quest.notes}`,
       requestedBy: 'NOX Operator',
       status: 'Freigabe noetig',
       riskLevel,
       requiresApproval: true,
       createdAt,
-      history: [`Quest ${quest.code} fuer Project X vorbereitet.`, 'Keine Live-Ausfuehrung gestartet.'],
+      history: [`Quest ${quest.code} für Project X vorbereitet.`, 'Keine Live-Ausführung gestartet.'],
     };
     setAndromedaCommands((current) => [command, ...current]);
     updateQuest(quest.id, (current) => ({
@@ -934,7 +934,7 @@ export default function OperatorCockpit() {
       lastMovement: 'Uebergabe an Project X vorbereitet',
       history: ['Uebergabe an Project X vorbereitet.', ...current.history],
     }));
-    setNotice(`Project-X-Uebergabe fuer ${quest.code} lokal vorbereitet. Keine API, kein Runner-Call.`);
+    setNotice(`Project-X-Uebergabe für ${quest.code} lokal vorbereitet. Keine API, kein Runner-Call.`);
     if (switchToProjectX) {
       setActive('Projekt X');
     }
@@ -947,17 +947,17 @@ export default function OperatorCockpit() {
     const quest = command.questId ? quests.find((item) => item.id === command.questId) : undefined;
     const project = projects.find((item) => item.id === command.projectId);
     const result: DryRunResult = {
-      summary: `Project X kann die Uebergabe fuer ${quest?.code ?? command.title} vorbereiten.`,
+      summary: `Project X kann die Uebergabe für ${quest?.code ?? command.title} vorbereiten.`,
       estimatedImpact: `Projekt ${project?.name ?? command.projectId}: lokale Spec, Freigabe-Gate und Output-Draft werden vorbereitet.`,
       requiredInputs: ['finale Operator-Freigabe', 'Ziel-Repo oder Zielpfad', 'gewollter Output-Typ'],
       missingArtifacts: command.riskLevel === 'Hoch' ? ['explizite Freigabe', 'technischer Zielpfad'] : ['finale UI-Freigabe'],
       recommendedNextAction: 'Freigabe anfordern und danach eine Uebergabe-Spec als lokalen Output-Draft erzeugen.',
     };
-    addCommandHistory(commandId, 'Dry-Run lokal simuliert. Keine externe Ausfuehrung.', {
+    addCommandHistory(commandId, 'Dry-Run lokal simuliert. Keine externe Ausführung.', {
       dryRunResult: result,
       status: command.requiresApproval ? 'Freigabe noetig' : 'Dry-Run bereit',
     });
-    setNotice(`Dry-Run fuer ${command.title} lokal erzeugt.`);
+    setNotice(`Dry-Run für ${command.title} lokal erzeugt.`);
   }
 
   function requestCommandApproval(commandId: string) {
@@ -973,16 +973,16 @@ export default function OperatorCockpit() {
         status: 'Wartet',
         risk: command.riskLevel,
         agent: 'NOX',
-        description: `Demo-Freigabe fuer ${command.commandType}. Live-Ausfuehrung bleibt gesperrt.`,
+        description: `Demo-Freigabe für ${command.commandType}. Live-Ausführung bleibt gesperrt.`,
       },
       ...current,
     ]);
     addCommandHistory(commandId, 'Freigabe lokal angefordert.', { status: 'Freigabe noetig' });
-    setNotice(`Freigabe fuer ${command.title} lokal angefordert.`);
+    setNotice(`Freigabe für ${command.title} lokal angefordert.`);
   }
 
   function approveCommand(commandId: string) {
-    addCommandHistory(commandId, 'Command lokal freigegeben. Live-Ausfuehrung bleibt weiterhin gesperrt.', {
+    addCommandHistory(commandId, 'Command lokal freigegeben. Live-Ausführung bleibt weiterhin gesperrt.', {
       status: 'Freigegeben',
     });
   }
@@ -999,8 +999,8 @@ export default function OperatorCockpit() {
     const projectId = command?.projectId ?? 'PROJECT-X';
     const project = projects.find((item) => item.id === projectId);
     const description = quest
-      ? `Uebergabe-Spec fuer ${quest.code}: ${quest.goal} Blocker/Freigaben muessen vor Live-Ausfuehrung geprueft werden.`
-      : 'Uebergabe-Spec fuer Project X aus lokalem Demo-Kontext, offenen Commands und Freigaben.';
+      ? `Uebergabe-Spec für ${quest.code}: ${quest.goal} Blocker/Freigaben müssen vor Live-Ausführung geprüft werden.`
+      : 'Uebergabe-Spec für Project X aus lokalem Demo-Kontext, offenen Commands und Freigaben.';
 
     setOutputs((current) => [
       {
@@ -1017,7 +1017,7 @@ export default function OperatorCockpit() {
     ]);
     addMilestone(projectId, 'Project X', 'Project-X-Uebergabe-Spec vorbereitet', description);
     if (command) {
-      addCommandHistory(command.id, `Uebergabe-Spec fuer ${project?.name ?? projectId} lokal erzeugt.`);
+      addCommandHistory(command.id, `Uebergabe-Spec für ${project?.name ?? projectId} lokal erzeugt.`);
     }
     setNotice('Uebergabe-Spec lokal als Output-Draft erzeugt. Keine Datei, kein Download, kein externer Write.');
   }
@@ -1125,7 +1125,7 @@ export default function OperatorCockpit() {
               ) : null}
 
               {active === 'Team' ? (
-                <SimplePage eyebrow="Team / Benutzer" title="Rollen und Arbeitsbereiche" text="Mitarbeiter sehen spaeter nur eigene Leads, Quests und Reports. Owner bleibt einzige Kommando-Rolle." />
+                <SimplePage eyebrow="Team / Benutzer" title="Rollen und Arbeitsbereiche" text="Mitarbeiter sehen später nur eigene Leads, Quests und Reports. Owner bleibt einzige Kommando-Rolle." />
               ) : null}
 
               {active === 'Sprachsteuerung' ? (
@@ -1147,7 +1147,7 @@ export default function OperatorCockpit() {
               ) : null}
 
               {active === 'Lead Map' ? (
-                <SimplePage eyebrow="Lead Map" title="Demo-Map mit Dummy-Pins" text="Pins, Filter, Lead-Seitenleiste und Aktionen. Die finale Map wird spaeter integriert." />
+                <SimplePage eyebrow="Lead Map" title="Demo-Map mit Dummy-Pins" text="Pins, Filter, Lead-Seitenleiste und Aktionen. Die finale Map wird später integriert." />
               ) : null}
 
               {active === 'Lead-Eingang' ? (
@@ -1159,11 +1159,11 @@ export default function OperatorCockpit() {
               ) : null}
 
               {active === 'YouTube-Analyse' ? (
-                <SimplePage eyebrow="YouTube-Analyse" title="Video zu Transkript zu Insights" text="YouTube-Links werden spaeter transkribiert, analysiert und in Quests oder Entwuerfe verwandelt." />
+                <SimplePage eyebrow="YouTube-Analyse" title="Video zu Transkript zu Insights" text="YouTube-Links werden später transkribiert, analysiert und in Quests oder Entwürfe verwandelt." />
               ) : null}
 
               {active === 'OG-Scraper' ? (
-                <SimplePage eyebrow="OG-Scraper" title="Website zu Lead-Daten" text="OpenGraph und Website-Daten extrahieren und spaeter per Datenvertrag in Sheets aktualisieren." />
+                <SimplePage eyebrow="OG-Scraper" title="Website zu Lead-Daten" text="OpenGraph und Website-Daten extrahieren und später per Datenvertrag in Sheets aktualisieren." />
               ) : null}
 
               {active === 'Agenten-Chat' ? (
@@ -1233,7 +1233,7 @@ export default function OperatorCockpit() {
                     setOutputs((current) => [
                       {
                         id: `ART-${Date.now()}`,
-                        title: `Output fuer ${quest.code}`,
+                        title: `Output für ${quest.code}`,
                         project: quest.project,
                         outputType: 'Implementierungs-Prompt',
                         storage: 'Lokal / Demo-State',
@@ -1243,7 +1243,7 @@ export default function OperatorCockpit() {
                       },
                       ...current,
                     ]);
-                    addMilestone(quest.project, 'Output', `Output fuer ${quest.code} erstellt`, quest.goal);
+                    addMilestone(quest.project, 'Output', `Output für ${quest.code} erstellt`, quest.goal);
                   }}
                 />
               ) : null}
@@ -1360,7 +1360,7 @@ function HomeHeader({
             <Kpi label="Projekte" value={projects.length} hint="Uebersicht" onClick={() => navigate('Projekte')} />
             <Kpi label="Team" value="4" hint="Zugriff" onClick={() => navigate('Team')} />
             <Kpi label="Voice" value={voiceMode} hint="Sprach-Agent" onClick={() => navigate('Sprachsteuerung')} />
-            <Kpi label="Entwuerfe" value={draftsVisible ? 'Neu' : '0'} hint="Generiert" onClick={() => navigate('Quest-Generator')} />
+            <Kpi label="Entwürfe" value={draftsVisible ? 'Neu' : '0'} hint="Generiert" onClick={() => navigate('Quest-Generator')} />
             <Kpi label="Freigaben" value={initialApprovals.length} hint="Review noetig" danger onClick={() => navigate('Freigaben')} />
             <Kpi label="Pins" value="4" hint="Karte" onClick={() => navigate('Lead Map')} />
           </div>
@@ -1424,12 +1424,12 @@ function Home({
     <main className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_430px]">
       <div className="space-y-8">
         <Card>
-          <SectionTitle eyebrow="Start / Kommandozentrale" title="Naechste beste Aktion" />
+          <SectionTitle eyebrow="Start / Kommandozentrale" title="Nächste beste Aktion" />
           <div className="mt-6 grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
             <div className="rounded-[1.4rem] border border-amber-300/30 bg-gradient-to-br from-amber-300/15 via-black/40 to-[#2a0b12]/40 p-6">
               <div className="text-[13px] font-extrabold uppercase tracking-[0.24em] text-amber-100/80">Heute zuerst</div>
               <div className="mt-4 text-3xl font-black leading-tight text-[#fff7fb]">Schneider Beauty Group anrufen</div>
-              <p className="mt-4 text-base font-semibold leading-7 text-[#eadbe2]">Warum Nummer 1: Score 88, 1.800 Euro Pipeline, Status Call zuerst und klarer naechster Schritt.</p>
+              <p className="mt-4 text-base font-semibold leading-7 text-[#eadbe2]">Warum Nummer 1: Score 88, 1.800 Euro Pipeline, Status Call zuerst und klarer nächster Schritt.</p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button onClick={() => navigate('Lead-Eingang')}>Lead oeffnen</Button>
                 <Button tone="ghost" onClick={() => navigate('Pitch-Zentrale')}>Pitch vorbereiten</Button>
@@ -1545,11 +1545,11 @@ function OwnerVoice({
   return (
     <main className="grid gap-6 xl:grid-cols-[1fr_520px]">
       <Card>
-        <SectionTitle eyebrow="Sprachsteuerung" title="Mit NOX sprechen" subtitle="Push-to-talk, Transkript, Projekt-Kontext, Entwuerfe, Freigabe-Gate, Ausfuehrung." />
+        <SectionTitle eyebrow="Sprachsteuerung" title="Mit NOX sprechen" subtitle="Push-to-talk, Transkript, Projekt-Kontext, Entwürfe, Freigabe-Gate, Ausführung." />
         <div className="mt-8 flex flex-wrap gap-4">
           <Button onClick={() => { setVoiceMode('Demo aktiv'); registerDemoAction('Sprach-Demo gestartet'); }}>Push-to-talk simulieren</Button>
           <Button tone="ghost" onClick={() => navigate('Quest-Generator')}>Quest-Generator oeffnen</Button>
-          <Button tone="red" onClick={() => registerDemoAction('Owner Voice bleibt im Demo-Modus')}>Demo-Modus bestaetigen</Button>
+          <Button tone="red" onClick={() => registerDemoAction('Owner Voice bleibt im Demo-Modus')}>Demo-Modus bestätigen</Button>
         </div>
       </Card>
       <Card>
@@ -1557,7 +1557,7 @@ function OwnerVoice({
         <div className="mt-6 space-y-4">
           <MiniStat label="Verantwortung" value="Nur der Owner darf Kern-Agenten per Sprache steuern." />
           <MiniStat label="Gate" value="Keine System-Auswirkungen ohne Freigabe." />
-          <MiniStat label="Infrastruktur" value="WLAN, STT, TTS und LLM spaeter als isolierter MVP." />
+          <MiniStat label="Infrastruktur" value="WLAN, STT, TTS und LLM später als isolierter MVP." />
         </div>
       </Card>
     </main>
@@ -1586,12 +1586,12 @@ function QuestGenerator({
     setLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 700));
     const generated: QuestDraft[] = [
-      { id: `DRAFT-${Date.now()}-1`, title: 'Transkriptions-Pipeline aufsetzen', project: selectedProjectId, agent: 'Project X', prio: 'Hoch', summary: 'Workflow-Draft fuer YouTube-Link zu Transkript zu Insight vorbereiten.' },
-      { id: `DRAFT-${Date.now()}-2`, title: 'Creator-Muster Analyse', project: selectedProjectId, agent: 'NOX', prio: 'Normal', summary: 'Prompt-Template fuer Hooks, Patterns und Content-Playbooks erstellen.' },
+      { id: `DRAFT-${Date.now()}-1`, title: 'Transkriptions-Pipeline aufsetzen', project: selectedProjectId, agent: 'Project X', prio: 'Hoch', summary: 'Workflow-Draft für YouTube-Link zu Transkript zu Insight vorbereiten.' },
+      { id: `DRAFT-${Date.now()}-2`, title: 'Creator-Muster Analyse', project: selectedProjectId, agent: 'NOX', prio: 'Normal', summary: 'Prompt-Template für Hooks, Patterns und Content-Playbooks erstellen.' },
       { id: `DRAFT-${Date.now()}-3`, title: 'Quest-Erstellung vorbereiten', project: selectedProjectId, agent: 'Andromeda', prio: 'Kritisch', summary: 'Erkannte Playbooks in strukturierte Quest-Drafts umwandeln.' },
     ];
     setProjectDrafts((current) => [...generated, ...current]);
-    addMilestone(selectedProjectId, 'Quest', '3 Quest-Entwuerfe generiert', input);
+    addMilestone(selectedProjectId, 'Quest', '3 Quest-Entwürfe generiert', input);
     setLoading(false);
   }
 
@@ -1600,7 +1600,7 @@ function QuestGenerator({
       <Card>
         <SectionTitle eyebrow="Idee zu Quests" title="Quest-Generator" />
         <div className="mb-6 mt-6">
-          <FieldLabel>Ziel-Projekt auswaehlen</FieldLabel>
+          <FieldLabel>Ziel-Projekt auswählen</FieldLabel>
           <select value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)} className="w-full rounded-2xl border border-[#4a101b]/60 bg-[#120609] p-4 text-base font-bold text-[#fff7fb] outline-none focus:border-[#7a1526]/80">
             {projects.map((project) => (
               <option key={project.id} value={project.id}>{project.id} - {project.name}</option>
@@ -1609,11 +1609,11 @@ function QuestGenerator({
         </div>
         <textarea value={input} onChange={(event) => setInput(event.target.value)} className="min-h-[180px] w-full resize-none rounded-2xl border border-[#4a101b]/60 bg-[#120609] p-5 text-base font-semibold leading-8 text-[#fff7fb] outline-none focus:border-[#7a1526]" placeholder="Beschreibe deine Idee oder das Problem..." />
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button onClick={handleGenerate} disabled={loading}>{loading ? 'Strukturiere...' : 'Entwuerfe erzeugen'}</Button>
+          <Button onClick={handleGenerate} disabled={loading}>{loading ? 'Strukturiere...' : 'Entwürfe erzeugen'}</Button>
         </div>
       </Card>
       <Card>
-        <SectionTitle eyebrow="Entwuerfe" title="Generiert" />
+        <SectionTitle eyebrow="Entwürfe" title="Generiert" />
         <div className="mt-6 space-y-4">
           {draftsForProject.length > 0 ? draftsForProject.map((draft) => (
             <div key={draft.id} className="rounded-2xl border border-[#4a101b]/60 bg-black/40 p-5">
@@ -1621,7 +1621,7 @@ function QuestGenerator({
               <div className="mt-2 text-sm font-bold text-[#eadbe2]">Agent: {draft.agent} - Prio: {draft.prio}</div>
               <div className="mt-3 text-sm font-semibold leading-6 text-[#9f8d95]">{draft.summary}</div>
             </div>
-          )) : <div className="rounded-2xl border border-[#4a101b]/40 bg-[#120609]/40 p-5 text-center text-sm font-semibold text-[#9f8d95]">Noch keine Entwuerfe fuer dieses Projekt generiert.</div>}
+          )) : <div className="rounded-2xl border border-[#4a101b]/40 bg-[#120609]/40 p-5 text-center text-sm font-semibold text-[#9f8d95]">Noch keine Entwürfe für dieses Projekt generiert.</div>}
         </div>
       </Card>
     </main>
@@ -1631,7 +1631,7 @@ function QuestGenerator({
 function LeadsInbox({ navigate }: { navigate: (next: string) => void }) {
   return (
     <Card>
-      <SectionTitle eyebrow="Lead-Eingang" title="Leads nach Status" subtitle="Kanban und Tabelle: Pruefung noetig, Produktfit klaeren, Pitch bereit, Anruf zuerst." />
+      <SectionTitle eyebrow="Lead-Eingang" title="Leads nach Status" subtitle="Kanban und Tabelle: Pruefung noetig, Produktfit klären, Pitch bereit, Anruf zuerst." />
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {leads.map((lead) => (
           <div key={lead.id} className="rounded-2xl border border-[#4a101b]/60 bg-black/40 p-5">
@@ -1657,9 +1657,9 @@ function PitchCenter({ registerDemoAction }: { registerDemoAction: (title: strin
   const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? leads[0];
 
   function generatePitch() {
-    const text = `Hallo Team von ${selectedLead.company},\\n\\nwir haben euer Setup geprueft. Der klare Hebel ist: ${selectedLead.reason}.\\n\\nNOX Labs baut daraus eine fokussierte Operator-Struktur statt einer Standard-Loesung. Naechster Schritt: ${selectedLead.next}.\\n\\nBeste Gruesse\\nNOX Labs Operator`;
+    const text = `Hallo Team von ${selectedLead.company},\\n\\nwir haben euer Setup geprüft. Der klare Hebel ist: ${selectedLead.reason}.\\n\\nNOX Labs baut daraus eine fokussierte Operator-Struktur statt einer Standard-Lösung. Nächster Schritt: ${selectedLead.next}.\\n\\nBeste Grüße\\nNOX Labs Operator`;
     setPitch(text);
-    registerDemoAction(`Pitch fuer ${selectedLead.company} vorbereitet`);
+    registerDemoAction(`Pitch für ${selectedLead.company} vorbereitet`);
   }
 
   return (
@@ -1667,7 +1667,7 @@ function PitchCenter({ registerDemoAction }: { registerDemoAction: (title: strin
       <Card>
         <SectionTitle eyebrow="Pitch-Zentrale" title="Lead-Engager" />
         <div className="mb-6 mt-6">
-          <FieldLabel>Lead auswaehlen</FieldLabel>
+          <FieldLabel>Lead auswählen</FieldLabel>
           <select value={selectedLeadId} onChange={(event) => setSelectedLeadId(event.target.value)} className="w-full rounded-2xl border border-[#4a101b]/60 bg-[#120609] p-4 text-base font-bold text-[#fff7fb] outline-none focus:border-[#7a1526]/80">
             {leads.map((lead) => (
               <option key={lead.id} value={lead.id}>{lead.company} - Score: {lead.score} - {money(lead.value)}</option>
@@ -1676,8 +1676,8 @@ function PitchCenter({ registerDemoAction }: { registerDemoAction: (title: strin
         </div>
         <Button onClick={generatePitch}>Pitch entwerfen</Button>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <MiniStat label="Grund fuer Kontakt" value={selectedLead.reason} />
-          <MiniStat label="Naechster Schritt" value={selectedLead.next} />
+          <MiniStat label="Grund für Kontakt" value={selectedLead.reason} />
+          <MiniStat label="Nächster Schritt" value={selectedLead.next} />
         </div>
       </Card>
       <Card>
@@ -1685,6 +1685,35 @@ function PitchCenter({ registerDemoAction }: { registerDemoAction: (title: strin
         <textarea value={pitch} onChange={(event) => setPitch(event.target.value)} placeholder="Waehle links einen Lead aus und starte die Generierung..." className="mt-6 min-h-[320px] w-full resize-none rounded-2xl border border-[#4a101b]/60 bg-[#120609] p-5 text-base font-semibold leading-8 text-[#fff7fb] outline-none focus:border-[#7a1526]" />
       </Card>
     </main>
+  );
+}
+
+// Collapsible wrapper that hides the technical Notion/Auth surface
+// from the primary work flow. Operators who want it can expand it on
+// demand. Defaults to closed so the project page reads as work-first.
+function ExtendedContextSection({ projectCode }: { projectCode: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card className="!p-5 md:!p-6">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center justify-between gap-3 text-left"
+      >
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9f8d95]">Erweiterter Kontext</div>
+          <div className="mt-1 text-sm font-bold text-[#eadbe2]">
+            Projektkontext wird später aus Notion geladen. Phase 1: Demo-Kontext lokal.
+          </div>
+        </div>
+        <span className="text-xs font-black text-amber-200/80">{open ? 'Einklappen ▲' : 'Aufklappen ▼'}</span>
+      </button>
+      {open ? (
+        <div className="mt-5">
+          <LiveProjectContext projectId={projectCode} />
+        </div>
+      ) : null}
+    </Card>
   );
 }
 
@@ -1768,21 +1797,16 @@ function LiveProjectContext({ projectId }: { projectId: string }) {
   };
 
   return (
-    <Card className="!p-5 md:!p-6">
-      {/* Compact header: title + status chips + primary action in one row. */}
+    <div className="rounded-2xl border border-[#3a0c14]/60 bg-[#0c0506]/60 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-amber-200/80">Notion · read-only</div>
-          <h3 className="mt-1 text-lg font-black leading-tight text-[#fff7fb]">Live Projektkontext</h3>
-          <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
-            Project ID <span className="text-[#eadbe2]">{projectId || '—'}</span>
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9f8d95]">Projekt-Kontext (Entwickler)</div>
+          <h3 className="mt-1 text-base font-black leading-tight text-[#fff7fb]">Demo-Kontext lokal · Phase 1</h3>
+          <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7f6f76]">
+            Projekt-ID <span className="text-[#eadbe2]">{projectId || '—'}</span>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Pill tone="gold">read-only</Pill>
-          <Pill tone="red">execute locked</Pill>
-          {resultData ? <Pill>Geladen {new Date(resultData.loadedAt).toLocaleTimeString('de-DE')}</Pill> : null}
-        </div>
+        {resultData ? <Pill>Geladen {new Date(resultData.loadedAt).toLocaleTimeString('de-DE')}</Pill> : null}
       </div>
 
       {/* Primary actions row: load + reload + auth toggle. */}
@@ -1794,7 +1818,7 @@ function LiveProjectContext({ projectId }: { projectId: string }) {
           tone="secondary"
           onClick={() => setAuthOpen((open) => !open)}
         >
-          {authOpen ? 'Auth ausblenden' : hasKey ? 'Auth (Key gesetzt)' : 'Auth einblenden'}
+          {authOpen ? 'Entwickler-Auth ausblenden' : hasKey ? 'Entwickler-Auth (Key gesetzt)' : 'Entwickler-Auth einblenden'}
         </Button>
         {hasKey ? (
           <Button tone="ghost" onClick={handleClearKey} disabled={isLoading}>
@@ -1845,12 +1869,12 @@ function LiveProjectContext({ projectId }: { projectId: string }) {
             {hasKey ? (
               <>Noch nichts geladen. <b className="text-[#eadbe2]">Kontext laden</b> klicken.</>
             ) : (
-              <>Noch nichts geladen. Erst <b className="text-[#eadbe2]">Auth einblenden</b>, Key einsetzen, dann <b className="text-[#eadbe2]">Kontext laden</b>.</>
+              <>Noch nichts geladen. Erst <b className="text-[#eadbe2]">Entwickler-Auth einblenden</b>, Key einsetzen, dann <b className="text-[#eadbe2]">Kontext laden</b>.</>
             )}
           </div>
         ) : null}
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -2160,20 +2184,20 @@ function ProjectX({
         <SectionTitle
           eyebrow="Interne Steuerung"
           title="Project X · Workflowfabrik"
-          subtitle="Uebergaben, Dry-Runs, Freigaben und Ausfuehrungsplanung fuer Project X."
+          subtitle="Übergaben, Dry-Runs, Freigaben und Ausführungsplanung für Project X."
         />
         <div className="flex flex-wrap gap-3">
           <Button onClick={() => createHandoffSpec()}>Uebergabe-Spec erzeugen</Button>
-          <span title="Gesperrt: echte Ausfuehrung benoetigt Backend-Proxy, Secret-Schutz und explizite Operator-Freigabe.">
-            <Button tone="red" disabled>Live-Ausfuehrung starten</Button>
+          <span title="Gesperrt: echte Ausführung benoetigt Backend-Proxy, Secret-Schutz und explizite Operator-Freigabe.">
+            <Button tone="red" disabled>Live-Ausführung starten</Button>
           </span>
         </div>
       </section>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <ProjectXStatusCard label="Modus" value="Demo / Dry-Run" tone="gold" />
-        <ProjectXStatusCard label="Live-Ausfuehrung" value="Gesperrt" tone="red" note="Backend-Proxy + Freigabe noetig." />
-        <ProjectXStatusCard label="Offene Uebergaben" value={String(openHandoffs)} />
+        <ProjectXStatusCard label="Live-Ausführung" value="Gesperrt" tone="red" note="Backend-Proxy + Freigabe noetig." />
+        <ProjectXStatusCard label="Offene Übergaben" value={String(openHandoffs)} />
         <ProjectXStatusCard label="Freigaben noetig" value={String(approvalsNeeded)} tone={approvalsNeeded > 0 ? 'red' : 'gold'} />
         <ProjectXStatusCard label="Bereite Quests" value={String(readyQuests.length)} />
         <ProjectXStatusCard label="Letzter Dry-Run" value={latestDryRun ? latestDryRun.status : 'Noch keiner'} />
@@ -2184,7 +2208,7 @@ function ProjectX({
           <div>
             <div className="text-[12px] font-extrabold uppercase tracking-[0.24em] text-red-200/80">Sicherheitszustand</div>
             <p className="mt-3 text-base font-bold leading-7 text-red-100">
-              Live-Ausfuehrung ist gesperrt. Echte Jobs brauchen Backend-Proxy, Secret-Schutz und explizite Operator-Freigabe.
+              Live-Ausführung ist gesperrt. Echte Jobs brauchen Backend-Proxy, Secret-Schutz und explizite Operator-Freigabe.
             </p>
           </div>
           <Pill tone="red">Keine Browser-Calls</Pill>
@@ -2329,7 +2353,7 @@ function ProjectX({
               ))}
             </div>
             <div className="mt-7 flex justify-end">
-              <Button onClick={() => setSelectedCommandId(null)}>Schliessen</Button>
+              <Button onClick={() => setSelectedCommandId(null)}>Schließen</Button>
             </div>
           </Modal>
         ) : null}
@@ -2443,7 +2467,7 @@ function IntegrationStatus() {
     ['Andromeda API', 'Nicht verbunden'],
     ['Backend-Proxy', 'Fehlt'],
     ['Secret-Schutz', 'Fehlt'],
-    ['Live-Ausfuehrung', 'Gesperrt'],
+    ['Live-Ausführung', 'Gesperrt'],
     ['Backend-Spec', 'docs/operator-cockpit-andromeda-bridge-spec.md'],
   ];
 
@@ -2473,7 +2497,7 @@ function ProjectXSummary({ commands }: { commands: AndromedaCommand[] }) {
   return (
     <Card className="!border-amber-300/30 !bg-amber-300/10">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <SectionTitle eyebrow="Project X" title="Workflowfabrik-Steuerung" subtitle="Kurzstatus fuer Project-X-Commands. Hauptsteuerung bleibt im Project-X-Screen." />
+        <SectionTitle eyebrow="Project X" title="Workflowfabrik-Steuerung" subtitle="Kurzstatus für Project-X-Commands. Hauptsteuerung bleibt im Project-X-Screen." />
         <Pill tone="gold">Dry-Run only</Pill>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
@@ -2967,6 +2991,8 @@ function ProjectsDeepDive({
   const [talkText, setTalkText] = useState('');
   const [outputType, setOutputType] = useState(outputTypes[0]);
   const [outputPrompt, setOutputPrompt] = useState('');
+  const [plannerSelectedStep, setPlannerSelectedStep] = useState<number | null>(null);
+  const [outputDetail, setOutputDetail] = useState<OutputArtifact | null>(null);
 
   const projectQuests = useMemo(() => quests.filter((quest) => quest.project === project.id), [quests, project.id]);
   const projectOutputs = useMemo(() => outputs.filter((output) => output.project === project.id), [outputs, project.id]);
@@ -2981,7 +3007,7 @@ function ProjectsDeepDive({
   }
 
   function createTalkEntry(kind: 'Quest-Draft' | 'Output-Draft' | 'Freigabe') {
-    const text = talkText.trim() || 'Projektgespraech ohne Detailtext';
+    const text = talkText.trim() || 'Projektgespräch ohne Detailtext';
     if (kind === 'Output-Draft') {
       setOutputs((current) => [
         {
@@ -3024,7 +3050,7 @@ function ProjectsDeepDive({
     setOutputs((current) => [
       {
         id: `ART-${Date.now()}`,
-        title: `${outputType} fuer ${project.code}`,
+        title: `${outputType} für ${project.code}`,
         project: project.id,
         outputType,
         storage: 'Lokal / Demo-State',
@@ -3044,9 +3070,9 @@ function ProjectsDeepDive({
     { label: 'Fortschritt plausibel', status: project.progress > 0 && project.progress <= 100 ? 'OK' : 'Pruefen' },
     { label: 'Quests vorhanden', status: projectQuests.length > 0 ? 'OK' : 'Fehlt' },
     { label: 'Outputs vorhanden', status: projectOutputs.length > 0 ? 'OK' : 'Fehlt' },
-    { label: 'Freigaben geprueft', status: projectApprovals.length > 0 ? 'Pruefen' : 'OK' },
+    { label: 'Freigaben geprüft', status: projectApprovals.length > 0 ? 'Pruefen' : 'OK' },
     { label: 'Blocker erklaert', status: project.blockers.length > 0 ? 'Pruefen' : 'OK' },
-    { label: 'Naechster Schritt klar', status: project.nextAction ? 'OK' : 'Fehlt' },
+    { label: 'Nächster Schritt klar', status: project.nextAction ? 'OK' : 'Fehlt' },
     { label: 'Uebergabe-Spec vorhanden', status: projectOutputs.some((output) => output.outputType === 'Uebergabe-Spec') ? 'OK' : 'Fehlt' },
   ];
 
@@ -3077,7 +3103,7 @@ function ProjectsDeepDive({
       title: 'Quest-Reihe vorschlagen',
       agent: 'NOX Agent',
       gate: 'Operator-Freigabe',
-      output: `${Math.max(3, projectQuests.length)} Quest-Entwuerfe (lokal)`,
+      output: `${Math.max(3, projectQuests.length)} Quest-Entwürfe (lokal)`,
       risk: 'Niedrig',
     },
     {
@@ -3107,9 +3133,9 @@ function ProjectsDeepDive({
   ];
 
   function approvalRecommendation(approval: Approval): string {
-    if (approval.risk === 'Hoch') return 'Vor Freigabe: Rueckfrage stellen und Risiko klein schneiden.';
-    if (approval.status === 'Blockiert') return 'Blocker zuerst aufloesen, danach Freigabe pruefen.';
-    if (approval.status === 'Pruefung') return 'Pruefen und sofort Freigabe oder Rueckfrage waehlen.';
+    if (approval.risk === 'Hoch') return 'Vor Freigabe: Rückfrage stellen und Risiko klein schneiden.';
+    if (approval.status === 'Blockiert') return 'Blocker zuerst auflösen, danach Freigabe pruefen.';
+    if (approval.status === 'Pruefung') return 'Prüfen und sofort Freigabe oder Rückfrage wählen.';
     return 'Plausibel — Freigabe kann nach kurzer Pruefung erfolgen.';
   }
 
@@ -3128,7 +3154,7 @@ function ProjectsDeepDive({
         storage: 'Lokal / Demo-State',
         status: 'Draft',
         version: 'v0.1',
-        description: `Lokaler Quest-Reihen-Entwurf fuer ${project.name} (NOX Agent / Project Auto Planner).\n\n${planText}`,
+        description: `Lokaler Quest-Reihen-Entwurf für ${project.name} (NOX Agent / Project Auto Planner).\n\n${planText}`,
       },
       ...current,
     ]);
@@ -3138,68 +3164,84 @@ function ProjectsDeepDive({
 
   return (
     <div className="space-y-6">
-      {/* APP-X-UI-01 — Compact command header: eyebrow + title + project picker
-          + status chips in one structured row. No mega-H1 wall. */}
+      {/* Top workspace card — minimal, work-first. Project picker is part
+          of the header; identity snapshot stays compact. No technical
+          read-only / execute / Auth pills. Progress and next action are
+          the visual anchors. */}
       <Card className="!p-5 md:!p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <div className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/80">Projekt-Zentrale</div>
             <h1 className="mt-1 text-2xl font-black leading-tight tracking-tight text-[#fff7fb] md:text-3xl">{project.name}</h1>
-            <p className="mt-1 text-sm font-semibold leading-6 text-[#9f8d95]">{project.code} · {project.type}</p>
+            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7f6f76]">{project.code}</p>
+            <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-[#eadbe2]">{project.vision}</p>
           </div>
-          <div className="flex flex-col items-stretch gap-3 lg:items-end">
-            <div className="relative w-full lg:w-72">
+          <div className="w-full lg:w-80">
+            <label className="block text-[10px] font-extrabold uppercase tracking-[0.24em] text-[#9f8d95]">Projekt wählen</label>
+            <div className="relative mt-2">
               <select
                 value={selectedProjectId}
                 onChange={(event) => setSelectedProjectId(event.target.value)}
-                className="w-full appearance-none rounded-2xl border border-[#4a101b]/70 bg-[#120609] p-3 pr-10 text-sm font-black text-[#fff7fb] outline-none transition focus:border-amber-300/70"
+                className="w-full appearance-none rounded-2xl border border-[#3a0c14]/80 bg-gradient-to-br from-[#160709] to-[#0c0506] px-4 py-3 pr-10 text-base font-black tracking-tight text-[#fff7fb] outline-none transition hover:border-amber-300/40 focus:border-amber-300/70"
               >
                 {projects.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.code} — {item.name}
+                    {item.name}
                   </option>
                 ))}
               </select>
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-amber-200">V</span>
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <Pill tone="gold">Notion read-only</Pill>
-              <Pill tone="red">execute locked</Pill>
-              <Pill>Status: {project.status}</Pill>
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-amber-200/70">▾</span>
             </div>
           </div>
         </div>
-        <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-[#eadbe2]">Vision: {project.vision}</p>
 
-        {/* Projekt-Identity-Snapshot: kompakte Faktenleiste fuer
-            Project Auto Planner. Phase 1: rein lokal, kein Fetch. */}
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <MiniStat label="Projekt-ID" value={project.code} />
-          <MiniStat label="Status" value={project.status} />
-          <MiniStat label="Phase" value={project.stand || project.type} />
-          <MiniStat label="Fortschritt" value={`${project.progress}%`} />
-          <MiniStat label="Letzter Meilenstein" value={project.lastMilestone || '—'} />
-          <MiniStat label="Naechste Aktion" value={project.nextAction || '—'} />
+        {/* Big progress + compact next step / status. Phase-1 demo. */}
+        <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          <div className="rounded-2xl border border-[#3a0c14]/70 bg-[#0c0506]/60 p-5">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Projektfortschritt</div>
+                <div className="mt-2 flex items-end gap-2">
+                  <span className="text-5xl font-black leading-none text-amber-300">{project.progress}</span>
+                  <span className="pb-1 text-xl font-black text-amber-100/80">%</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#9f8d95]">Status</div>
+                <div className="mt-1 text-sm font-black text-[#fff7fb]">{project.status}</div>
+                <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7f6f76]">Phase 1 · Demo</div>
+              </div>
+            </div>
+            <div className="mt-4 h-3 w-full overflow-hidden rounded-full border border-[#3a0c14]/60 bg-[#0a0405]">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${project.progress}%` }}
+                transition={{ duration: 0.9, ease: 'easeOut' }}
+                className="h-full rounded-full bg-gradient-to-r from-amber-700 via-amber-500 to-amber-200 shadow-[0_0_18px_rgba(245,158,11,0.4)]"
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3 text-[11px] font-semibold text-[#9f8d95]">
+              <span>{completedQuests} / {projectQuests.length} Quests erledigt</span>
+              <span>{projectOutputs.length} Outputs · {projectApprovals.length} offene Freigaben</span>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            <div className="rounded-2xl border border-amber-300/25 bg-amber-300/8 p-4">
+              <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/80">Nächste Aktion</div>
+              <div className="mt-2 text-base font-black leading-6 text-amber-50">{project.nextAction || '—'}</div>
+            </div>
+            <div className="rounded-2xl border border-[#3a0c14]/55 bg-black/30 p-4">
+              <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#9f8d95]">Letzter Meilenstein</div>
+              <div className="mt-2 text-sm font-bold leading-5 text-[#fff7fb]">{project.lastMilestone || '—'}</div>
+            </div>
+          </div>
         </div>
       </Card>
-
-      {/* APP-X-UI-01 — Live Projektkontext at the top of the project page.
-          Bound to the picker's project id, so swapping projects swaps which
-          Notion projection the operator can pull. */}
-      <LiveProjectContext projectId={project.code} />
-
-      <ProgressPanel
-        project={project}
-        completedQuests={completedQuests}
-        totalQuests={projectQuests.length}
-        outputsCount={projectOutputs.length}
-        approvalsCount={projectApprovals.length}
-      />
 
       <ProjectAutoPlannerActions
         openTalk={() => setModal('talk')}
         openPlanner={() => setModal('planner')}
-        openApprovals={() => setModal('approvals')}
         openOutputsViewer={() => setModal('outputsViewer')}
         openAudit={() => setModal('audit')}
         openOutputCreate={() => setModal('output')}
@@ -3208,7 +3250,7 @@ function ProjectsDeepDive({
         questsCount={projectQuests.length}
       />
 
-      <DecisionBlockers project={project} />
+      <DecisionBlockers project={project} approvals={projectApprovals} recommend={approvalRecommendation} />
 
       {project.id === 'PROJECT-X' ? <ProjectXSummary commands={projectCommands} /> : null}
 
@@ -3217,20 +3259,30 @@ function ProjectsDeepDive({
 
       <LinkedQuests quests={projectQuests} openQuest={openQuest} />
 
-      <OutputsSection outputs={projectOutputs} project={project} registerDemoAction={registerDemoAction} />
+      <OutputsSection
+        outputs={projectOutputs}
+        project={project}
+        registerDemoAction={registerDemoAction}
+        onOpenDetail={(output) => setOutputDetail(output)}
+      />
 
       <MilestonesSection milestones={projectMilestones} />
+
+      {/* Erweiterter Kontext — collapsed by default. The technical
+          Notion / Auth surface is kept available for operators who want
+          it but no longer dominates the top of the project page. */}
+      <ExtendedContextSection projectCode={project.code} />
 
       <AnimatePresence>
         {modal === 'talk' ? (
           <Modal onClose={closeModal}>
-            <SectionTitle eyebrow="NOX" title="NOX · Projektgespraech" />
+            <SectionTitle eyebrow="NOX" title="NOX · Projektgespräch" />
             <div className="mt-7 space-y-5">
               <textarea
                 value={talkText}
                 onChange={(event) => setTalkText(event.target.value)}
                 className="min-h-[180px] w-full resize-none rounded-2xl border border-[#4a101b]/70 bg-[#120609] p-5 text-base font-semibold leading-8 text-[#fff7fb] outline-none focus:border-amber-300/70"
-                placeholder="Kippe deine Idee, Frage oder Aenderung hier rein..."
+                placeholder="Kippe deine Idee, Frage oder Änderung hier rein..."
               />
               <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-5 text-base font-semibold leading-7 text-amber-50">
                 Ich pruefe Projektstand, Quests, Outputs und Freigaben. Daraus kann ich einen Quest-Draft, einen Output oder eine Freigabe vorbereiten.
@@ -3239,7 +3291,7 @@ function ProjectsDeepDive({
                 <Button tone="ghost" onClick={() => createTalkEntry('Quest-Draft')}>Als Quest-Draft vormerken</Button>
                 <Button tone="ghost" onClick={() => createTalkEntry('Output-Draft')}>Als Output-Draft vormerken</Button>
                 <Button tone="ghost" onClick={() => createTalkEntry('Freigabe')}>Als Freigabe vormerken</Button>
-                <Button onClick={closeModal}>Schliessen</Button>
+                <Button onClick={closeModal}>Schließen</Button>
               </div>
             </div>
           </Modal>
@@ -3260,12 +3312,12 @@ function ProjectsDeepDive({
               <div className="text-[12px] font-extrabold uppercase tracking-[0.24em] text-amber-200/80">Empfehlung von NOX</div>
               <p className="mt-3 text-base font-semibold leading-7 text-amber-50">
                 {projectOutputs.some((output) => output.outputType === 'Uebergabe-Spec')
-                  ? 'Projektkontext ist arbeitsfaehig. Naechste Aktion ausfuehren und offene Freigaben klein halten.'
-                  : 'Erzeuge als naechsten Output eine Uebergabe-Spec, damit Project X ohne Kontextverlust weiterarbeiten kann.'}
+                  ? 'Projektkontext ist arbeitsfähig. Nächste Aktion ausführen und offene Freigaben klein halten.'
+                  : 'Erzeuge als nächsten Output eine Uebergabe-Spec, damit Project X ohne Kontextverlust weiterarbeiten kann.'}
               </p>
             </div>
             <div className="mt-7 flex justify-end">
-              <Button onClick={() => setModal(null)}>Schliessen</Button>
+              <Button onClick={() => setModal(null)}>Schließen</Button>
             </div>
           </Modal>
         ) : null}
@@ -3279,7 +3331,7 @@ function ProjectsDeepDive({
             />
             <div className="mt-7 space-y-5">
               <div>
-                <FieldLabel>Output-Typ auswaehlen</FieldLabel>
+                <FieldLabel>Output-Typ auswählen</FieldLabel>
                 <select
                   value={outputType}
                   onChange={(event) => setOutputType(event.target.value)}
@@ -3296,10 +3348,10 @@ function ProjectsDeepDive({
                 value={outputPrompt}
                 onChange={(event) => setOutputPrompt(event.target.value)}
                 className="min-h-[180px] w-full resize-none rounded-2xl border border-[#4a101b]/70 bg-[#120609] p-5 text-base font-semibold leading-8 text-[#fff7fb] outline-none focus:border-amber-300/70"
-                placeholder="Was soll NOX daraus machen? Beispiel: Erstelle eine Uebergabe-Spec fuer Project X mit Ziel, Kontext, offenen Freigaben und naechster Implementierungsaufgabe."
+                placeholder="Was soll NOX daraus machen? Beispiel: Erstelle eine Uebergabe-Spec für Project X mit Ziel, Kontext, offenen Freigaben und nächster Implementierungsaufgabe."
               />
               <div className="flex justify-end gap-3 border-t border-[#4a101b]/50 pt-6">
-                <Button tone="ghost" onClick={() => setModal(null)}>Schliessen</Button>
+                <Button tone="ghost" onClick={() => setModal(null)}>Schließen</Button>
                 <Button onClick={createOutputDraft}>Output-Draft erzeugen</Button>
               </div>
             </div>
@@ -3307,11 +3359,11 @@ function ProjectsDeepDive({
         ) : null}
 
         {modal === 'planner' ? (
-          <Modal onClose={() => setModal(null)}>
+          <Modal onClose={() => { setModal(null); setPlannerSelectedStep(null); }}>
             <SectionTitle
               eyebrow="NOX Agent · Project Auto Planner"
-              title="Projekt in Quest-Reihe zerlegen"
-              subtitle="Lokaler Entwurf — kein API-Call, kein Notion-Write, kein Dispatcher."
+              title="Lokaler Quest-Reihen-Entwurf"
+              subtitle="Diese Quests sind noch nicht erstellt. Sie sind ein lokaler Entwurf. Später erzeugt NOX Agent daraus echte Quests nach Operator-Freigabe."
             />
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-amber-300/25 bg-amber-300/5 p-4">
@@ -3319,51 +3371,123 @@ function ProjectsDeepDive({
                 <p className="mt-2 text-sm font-semibold leading-6 text-[#fff7fb]">{project.vision}</p>
               </div>
               <div className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 p-4">
-                <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Naechste Entscheidung</div>
+                <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Nächste Entscheidung</div>
                 <p className="mt-2 text-sm font-semibold leading-6 text-[#eadbe2]">
-                  {project.nextAction || 'Quest-Reihe pruefen und freigeben.'}
+                  {project.nextAction || 'Quest-Reihe prüfen und freigeben.'}
                 </p>
               </div>
             </div>
 
-            <div className="mt-5 overflow-hidden rounded-2xl border border-[#4a101b]/60">
-              <table className="w-full table-fixed text-left text-sm">
-                <thead className="bg-[#120609]/80 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">
-                  <tr>
-                    <th className="w-12 px-3 py-3">#</th>
-                    <th className="px-3 py-3">Quest</th>
-                    <th className="px-3 py-3">Agent</th>
-                    <th className="px-3 py-3">Freigabe-Gate</th>
-                    <th className="px-3 py-3">Output / Artefakt</th>
-                    <th className="px-3 py-3">Risiko</th>
-                  </tr>
-                </thead>
-                <tbody className="text-[#eadbe2]">
-                  {questSeriesPlan.map((row) => (
-                    <tr key={row.step} className="border-t border-[#4a101b]/40">
-                      <td className="px-3 py-3 align-top font-black text-amber-200">{row.step}</td>
-                      <td className="px-3 py-3 align-top font-semibold leading-5 text-[#fff7fb]">{row.title}</td>
-                      <td className="px-3 py-3 align-top">{row.agent}</td>
-                      <td className="px-3 py-3 align-top">{row.gate}</td>
-                      <td className="px-3 py-3 align-top">{row.output}</td>
-                      <td className="px-3 py-3 align-top">
-                        <Pill tone={row.risk === 'Hoch' ? 'red' : row.risk === 'Mittel' ? 'gold' : 'default'}>
-                          {row.risk}
-                        </Pill>
-                      </td>
+            <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
+              <div className="overflow-hidden rounded-2xl border border-[#4a101b]/60">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-[#120609]/80 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">
+                    <tr>
+                      <th className="w-10 px-3 py-3">#</th>
+                      <th className="px-3 py-3">Quest (Entwurf)</th>
+                      <th className="px-3 py-3">Risiko</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="text-[#eadbe2]">
+                    {questSeriesPlan.map((row) => {
+                      const selected = plannerSelectedStep === row.step;
+                      return (
+                        <tr
+                          key={row.step}
+                          onClick={() => setPlannerSelectedStep(row.step)}
+                          className={`cursor-pointer border-t border-[#4a101b]/40 transition ${selected ? 'bg-amber-300/10' : 'hover:bg-[#1a080d]'}`}
+                        >
+                          <td className="px-3 py-3 align-top font-black text-amber-200">{row.step}</td>
+                          <td className="px-3 py-3 align-top">
+                            <div className="font-semibold leading-5 text-[#fff7fb]">{row.title}</div>
+                            <div className="mt-1 text-[11px] font-semibold text-[#9f8d95]">Entwurf · noch nicht in Notion</div>
+                          </td>
+                          <td className="px-3 py-3 align-top">
+                            <Pill tone={row.risk === 'Hoch' ? 'red' : row.risk === 'Mittel' ? 'gold' : 'default'}>
+                              {row.risk}
+                            </Pill>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="rounded-2xl border border-amber-300/25 bg-[#0c0506]/70 p-5">
+                {(() => {
+                  const sel = plannerSelectedStep !== null ? questSeriesPlan.find((s) => s.step === plannerSelectedStep) : null;
+                  if (!sel) {
+                    return (
+                      <div className="text-sm font-semibold text-[#9f8d95]">
+                        Klick auf eine Quest links, um Details, Agent, Freigabe-Gate, Output und Risiko zu sehen.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="space-y-3">
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/80">Schritt {sel.step}</div>
+                      <h3 className="text-lg font-black text-[#fff7fb]">{sel.title}</h3>
+                      <div className="grid gap-3 sm:grid-cols-2 text-sm text-[#eadbe2]">
+                        <div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Ziel</div>
+                          <div className="mt-1 font-semibold leading-5">{sel.output}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Empfohlener Agent</div>
+                          <div className="mt-1 font-semibold leading-5">{sel.agent}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Freigabe-Gate</div>
+                          <div className="mt-1 font-semibold leading-5">{sel.gate}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Erwarteter Output</div>
+                          <div className="mt-1 font-semibold leading-5">{sel.output}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Risiko</div>
+                          <div className="mt-1"><Pill tone={sel.risk === 'Hoch' ? 'red' : sel.risk === 'Mittel' ? 'gold' : 'default'}>{sel.risk}</Pill></div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Status</div>
+                          <div className="mt-1"><Pill tone="default">Entwurf</Pill></div>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-amber-300/25 bg-amber-300/5 p-3 text-[12px] font-semibold leading-5 text-amber-100">
+                        Hinweis: Noch nicht in Notion / Master Tasks erstellt.
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
 
             <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-semibold leading-6 text-amber-50">
-              Phase 1: lokaler Entwurf. Echte Quest-Erzeugung erfolgt spaeter ueber NOX Agent nach Operator-Freigabe.
+              Phase 1: lokaler Entwurf. Echte Quest-Erzeugung erfolgt später über NOX Agent nach Operator-Freigabe.
               Kein Notion-Write, kein Dispatcher, kein Telegram-Trigger, kein Agent-Run.
             </div>
 
             <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-[#4a101b]/50 pt-6">
-              <Button tone="ghost" onClick={() => setModal(null)}>Schliessen</Button>
+              <Button
+                tone="secondary"
+                onClick={() => {
+                  const text = questSeriesPlan
+                    .map((s) => `${s.step}. ${s.title} (${s.agent}) — Gate: ${s.gate} — Output: ${s.output} — Risiko: ${s.risk}`)
+                    .join('\n');
+                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                    void navigator.clipboard.writeText(text);
+                  }
+                }}
+              >
+                Entwurf kopieren
+              </Button>
+              <span title="Phase 2 — Quest-Erzeugung folgt später über NOX Agent.">
+                <Button tone="ghost" disabled className="!cursor-not-allowed !opacity-50">
+                  Später als Quest erzeugen (Phase 2)
+                </Button>
+              </span>
+              <Button tone="ghost" onClick={() => { setModal(null); setPlannerSelectedStep(null); }}>Schließen</Button>
               <Button onClick={vormerkenAlsPlanOutput}>Als Plan-Output vormerken</Button>
             </div>
           </Modal>
@@ -3402,7 +3526,7 @@ function ProjectsDeepDive({
                         Freigeben (Phase 2)
                       </Button>
                       <Button tone="ghost" disabled className="!cursor-not-allowed !opacity-50">
-                        Rueckfrage stellen (Phase 2)
+                        Rückfrage stellen (Phase 2)
                       </Button>
                       <Button tone="ghost" disabled className="!cursor-not-allowed !opacity-50">
                         Ablehnen (Phase 2)
@@ -3413,15 +3537,42 @@ function ProjectsDeepDive({
               </div>
             ) : (
               <div className="mt-6 rounded-2xl border border-dashed border-[#4a101b]/60 bg-[#120609]/35 p-6 text-center text-sm font-bold text-[#9f8d95]">
-                Keine offenen Freigaben fuer dieses Projekt.
+                Keine offenen Freigaben für dieses Projekt.
               </div>
             )}
             <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-semibold leading-6 text-amber-50">
-              Phase 1: lokale Anzeige. Echte Freigaben laufen spaeter ueber NOX Agent nach Operator-Klick mit Audit-Log
+              Phase 1: lokale Anzeige. Echte Freigaben laufen später ueber NOX Agent nach Operator-Klick mit Audit-Log
               und HMAC-geschuetztem Backend.
             </div>
             <div className="mt-6 flex justify-end">
-              <Button onClick={() => setModal(null)}>Schliessen</Button>
+              <Button onClick={() => setModal(null)}>Schließen</Button>
+            </div>
+          </Modal>
+        ) : null}
+
+        {outputDetail ? (
+          <Modal onClose={() => setOutputDetail(null)}>
+            <SectionTitle
+              eyebrow={`${outputDetail.outputType} · Read-only`}
+              title={outputDetail.title}
+              subtitle="Detailansicht eines Output-Eintrags. Phase 1: rein lokal."
+            />
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <MiniStat label="Typ" value={outputDetail.outputType} />
+              <MiniStat label="Version" value={outputDetail.version} />
+              <MiniStat label="Status" value={outputDetail.status} />
+              <MiniStat label="Speicherort" value={outputDetail.storage} />
+              <MiniStat label="Projekt" value={outputDetail.project} />
+            </div>
+            <div className="mt-5 rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 p-4">
+              <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">Beschreibung</div>
+              <p className="mt-2 whitespace-pre-line text-sm font-semibold leading-6 text-[#eadbe2]">{outputDetail.description}</p>
+            </div>
+            <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-semibold leading-6 text-amber-50">
+              Phase 1: read-only. Persistenz, Drive- und Notion-Sync folgen später nach Operator-Freigabe.
+            </div>
+            <div className="mt-6 flex justify-end gap-3 border-t border-[#4a101b]/50 pt-6">
+              <Button onClick={() => setOutputDetail(null)}>Schließen</Button>
             </div>
           </Modal>
         ) : null}
@@ -3431,7 +3582,7 @@ function ProjectsDeepDive({
             <SectionTitle
               eyebrow="Output · Read-only"
               title={`Outputs ansehen — ${project.code}`}
-              subtitle="Read-only Anzeige der lokalen Outputs/Artefakte fuer dieses Projekt."
+              subtitle="Read-only Anzeige der lokalen Outputs/Artefakte für dieses Projekt."
             />
             {projectOutputs.length > 0 ? (
               <div className="mt-6 space-y-4">
@@ -3456,16 +3607,16 @@ function ProjectsDeepDive({
               </div>
             ) : (
               <div className="mt-6 rounded-2xl border border-dashed border-[#4a101b]/60 bg-[#120609]/35 p-6 text-center text-sm font-bold text-[#9f8d95]">
-                Noch keine Outputs fuer dieses Projekt. Lokal anlegen ueber das Talk-Modal oder das Output-Modal.
+                Noch keine Outputs für dieses Projekt. Lokal anlegen ueber das Talk-Modal oder das Output-Modal.
               </div>
             )}
             <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-semibold leading-6 text-amber-50">
-              Phase 1: read-only. NOX Agent erzeugt spaeter automatische Artefakte (Plan, Report, Design, Code-Aenderung,
+              Phase 1: read-only. NOX Agent erzeugt später automatische Artefakte (Plan, Report, Design, Code-Änderung,
               Review-Ergebnis) nach Operator-Freigabe.
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <Button tone="ghost" onClick={() => setModal('output')}>Neuen Output anlegen</Button>
-              <Button onClick={() => setModal(null)}>Schliessen</Button>
+              <Button onClick={() => setModal(null)}>Schließen</Button>
             </div>
           </Modal>
         ) : null}
@@ -3474,74 +3625,9 @@ function ProjectsDeepDive({
   );
 }
 
-function ProgressPanel({
-  project,
-  completedQuests,
-  totalQuests,
-  outputsCount,
-  approvalsCount,
-}: {
-  project: Project;
-  completedQuests: number;
-  totalQuests: number;
-  outputsCount: number;
-  approvalsCount: number;
-}) {
-  const stats = [
-    { label: 'Quests erledigt / gesamt', value: `${completedQuests} / ${totalQuests}` },
-    { label: 'Outputs / Artefakte', value: String(outputsCount) },
-    { label: 'Offene Freigaben', value: String(approvalsCount) },
-  ];
-
-  return (
-    <Card className="!p-7">
-      <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-        <div>
-          <div className="text-[13px] font-extrabold uppercase tracking-[0.24em] text-[#9f8d95]">Projekt-Fertigstellung</div>
-          <div className="mt-4 flex items-end gap-3">
-            <span className="text-6xl font-black leading-none text-amber-300">{project.progress}</span>
-            <span className="pb-2 text-2xl font-black text-amber-100">%</span>
-          </div>
-        </div>
-
-        <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-3 xl:max-w-3xl">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 p-4">
-              <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">{stat.label}</div>
-              <div className="mt-2 text-2xl font-black text-[#fff7fb]">{stat.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-6 h-4 w-full overflow-hidden rounded-full border border-[#4a101b]/50 bg-[#120609]">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${project.progress}%` }}
-          transition={{ duration: 0.9, ease: 'easeOut' }}
-          className="h-full rounded-full bg-gradient-to-r from-amber-700 via-amber-500 to-amber-200 shadow-[0_0_20px_rgba(245,158,11,0.45)]"
-        />
-      </div>
-
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-[#4a101b]/60 bg-black/35 p-5">
-          <div className="text-[12px] font-extrabold uppercase tracking-[0.22em] text-[#9f8d95]">Letzter Meilenstein</div>
-          <div className="mt-3 text-lg font-black text-[#fff7fb]">{project.lastMilestone}</div>
-          <p className="mt-2 text-sm font-semibold leading-6 text-[#cbbbc3]">{project.stand}</p>
-        </div>
-        <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-5">
-          <div className="text-[12px] font-extrabold uppercase tracking-[0.22em] text-amber-200/80">Naechste Aktion</div>
-          <div className="mt-3 text-lg font-black leading-7 text-amber-50">{project.nextAction}</div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
 function ProjectAutoPlannerActions({
   openTalk,
   openPlanner,
-  openApprovals,
   openOutputsViewer,
   openAudit,
   openOutputCreate,
@@ -3551,7 +3637,6 @@ function ProjectAutoPlannerActions({
 }: {
   openTalk: () => void;
   openPlanner: () => void;
-  openApprovals: () => void;
   openOutputsViewer: () => void;
   openAudit: () => void;
   openOutputCreate: () => void;
@@ -3562,8 +3647,8 @@ function ProjectAutoPlannerActions({
   // NOX Agent / Project Auto Planner — Phase 1 control surface for the
   // project route. Every button is local-only. The component intentionally
   // does NOT trigger Notion writes, API calls, dispatcher runs or
-  // agent execution. The secondary row exposes the audit modal and the
-  // existing output-create flow without crowding the primary CTA row.
+  // agent execution. Freigaben are not a primary CTA here — they live in
+  // "Offene Entscheidungen & Blocker" below.
   return (
     <Card>
       <div className="flex flex-col gap-5">
@@ -3572,30 +3657,26 @@ function ProjectAutoPlannerActions({
             <div className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/80">NOX Agent</div>
             <h2 className="mt-1 text-2xl font-black leading-tight text-[#fff7fb]">Project Auto Planner</h2>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#cbbbc3]">
-              Lies Projektkontext, schlage eine Quest-Reihe vor, hole Freigaben im Projekt-/Quest-Kontext und zeige
-              Outputs. Phase 1: nur lokale Entwuerfe. Keine API, keine Notion-Writes, kein Dispatcher.
+              Liest den Projektkontext, schlägt eine Quest-Reihe vor und zeigt die Outputs. Phase 1: nur lokale Entwürfe. Keine API, keine Notion-Writes, kein Dispatcher.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Pill>{questsCount} Quests</Pill>
-            <Pill tone={approvalsCount > 0 ? 'red' : 'gold'}>{approvalsCount} Freigaben</Pill>
+            <Pill tone={approvalsCount > 0 ? 'red' : 'gold'}>{approvalsCount} offene Freigaben</Pill>
             <Pill tone="gold">{outputsCount} Outputs</Pill>
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button onClick={openTalk}>Mit NOX besprechen</Button>
           <Button tone="ghost" onClick={openPlanner}>
-            Projekt in Quests zerlegen
-          </Button>
-          <Button tone="ghost" onClick={openApprovals}>
-            Freigaben pruefen
+            Quest-Reihe entwerfen
           </Button>
           <Button tone="ghost" onClick={openOutputsViewer}>
             Outputs ansehen
           </Button>
         </div>
         <div className="flex flex-wrap gap-3 border-t border-[#4a101b]/40 pt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
-          <span className="self-center">Sekundaer:</span>
+          <span className="self-center">Sekundär:</span>
           <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={openAudit}>
             Projektkontext-Audit
           </Button>
@@ -3608,12 +3689,21 @@ function ProjectAutoPlannerActions({
   );
 }
 
-function DecisionBlockers({ project }: { project: Project }) {
+function DecisionBlockers({
+  project,
+  approvals,
+  recommend,
+}: {
+  project: Project;
+  approvals: Approval[];
+  recommend: (approval: Approval) => string;
+}) {
+  const total = project.blockers.length + approvals.length;
   return (
     <Card>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <SectionTitle eyebrow="Blocker" title="Offene Entscheidungen & Blocker" />
-        <Pill tone={project.blockers.length > 0 ? 'red' : 'gold'}>{project.blockers.length}</Pill>
+        <SectionTitle eyebrow="Entscheidungen" title="Offene Entscheidungen & Blocker" />
+        <Pill tone={total > 0 ? 'red' : 'gold'}>{total}</Pill>
       </div>
 
       {project.blockers.length > 0 ? (
@@ -3629,11 +3719,51 @@ function DecisionBlockers({ project }: { project: Project }) {
             </div>
           ))}
         </div>
-      ) : (
-        <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-5 text-base font-bold text-amber-50">
-          Keine kritischen Blocker. Naechste Aktion weiter ausfuehrbar.
+      ) : null}
+
+      {approvals.length > 0 ? (
+        <div className={`${project.blockers.length > 0 ? 'mt-6' : ''} space-y-4`}>
+          <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-amber-200/80">Freigaben in diesem Projekt</div>
+          {approvals.map((approval) => (
+            <div key={approval.id} className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">{approval.id}</div>
+                  <h3 className="mt-1 text-lg font-black leading-tight text-[#fff7fb]">{approval.title}</h3>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-[#eadbe2]">{approval.description}</p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <Pill tone={approval.risk === 'Hoch' ? 'red' : approval.risk === 'Mittel' ? 'gold' : 'default'}>
+                    Risiko: {approval.risk}
+                  </Pill>
+                  <Pill tone={approval.status === 'Blockiert' ? 'red' : 'default'}>{approval.status}</Pill>
+                </div>
+              </div>
+              <div className="mt-4 rounded-xl border border-amber-300/25 bg-amber-300/5 p-4 text-sm font-semibold leading-6 text-amber-50">
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">Empfehlung NOX Agent:</span>{' '}
+                {recommend(approval)}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button tone="ghost" disabled className="!cursor-not-allowed !opacity-50">
+                  Freigeben (Phase 2)
+                </Button>
+                <Button tone="ghost" disabled className="!cursor-not-allowed !opacity-50">
+                  Rückfrage stellen (Phase 2)
+                </Button>
+                <Button tone="ghost" disabled className="!cursor-not-allowed !opacity-50">
+                  Ablehnen (Phase 2)
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      ) : null}
+
+      {total === 0 ? (
+        <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-5 text-base font-bold text-amber-50">
+          Keine kritischen Blocker. Nächste Aktion weiter ausführbar.
+        </div>
+      ) : null}
     </Card>
   );
 }
@@ -3642,7 +3772,7 @@ function LinkedQuests({ quests: projectQuests, openQuest }: { quests: Quest[]; o
   return (
     <Card>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <SectionTitle eyebrow="Quests" title="Verknuepfte Quests" />
+        <SectionTitle eyebrow="Quests" title="Verknüpfte Quests" />
         <Pill tone="gold">{projectQuests.length}</Pill>
       </div>
 
@@ -3669,7 +3799,7 @@ function LinkedQuests({ quests: projectQuests, openQuest }: { quests: Quest[]; o
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-[#4a101b]/60 bg-[#120609]/35 p-6 text-center text-sm font-bold text-[#9f8d95]">
-          Aktuell keine verknuepften Quests fuer dieses Projekt.
+          Aktuell keine verknüpften Quests für dieses Projekt.
         </div>
       )}
     </Card>
@@ -3680,55 +3810,87 @@ function OutputsSection({
   outputs,
   project,
   registerDemoAction,
+  onOpenDetail,
 }: {
   outputs: OutputArtifact[];
   project: Project;
   registerDemoAction: (project: string, title: string) => void;
+  onOpenDetail: (output: OutputArtifact) => void;
 }) {
+  // Tabular, database-like view. Phase 1: row actions are local-only
+  // demo no-ops (no Drive write, no Notion write, no real download).
+  const actions = ['Öffnen', 'Aktualisieren', 'In Google Drive speichern', 'In Notion speichern', 'Herunterladen'];
   return (
     <Card>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <SectionTitle eyebrow="Outputs" title="Outputs & Artefakte" />
+        <SectionTitle eyebrow="Outputs" title="Outputs & Artefakte" subtitle="Tabellarische Übersicht aller Projekt-Artefakte. Phase 1: Aktionen lokal/Demo." />
         <Pill tone="gold">{outputs.length}</Pill>
       </div>
 
       {outputs.length > 0 ? (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {outputs.map((output) => (
-            <div key={output.id} className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/75 p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-xl font-black text-[#fff7fb]">{output.title}</h3>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-[#eadbe2]">{output.description}</p>
-                </div>
-                <Pill tone={output.status === 'Active' ? 'gold' : 'default'}>{output.status}</Pill>
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <MiniStat label="Output-Typ" value={output.outputType} />
-                <MiniStat label="Version" value={output.version} />
-                <MiniStat label="Speicherort" value={output.storage} />
-                <MiniStat label="Projekt" value={output.project} />
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                {['Oeffnen', 'Aktualisieren', 'In Google Drive speichern', 'In Notion speichern', 'Herunterladen'].map((action) => (
-                  <Button
-                    key={action}
-                    tone="secondary"
-                    className="!px-3 !py-2 !text-xs"
-                    onClick={() => registerDemoAction(project.id, `${action}: ${output.title}`)}
-                  >
-                    {action}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          ))}
+        <div className="overflow-x-auto rounded-2xl border border-[#4a101b]/60 bg-[#0c0506]/60">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="bg-[#120609]/80 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">
+              <tr>
+                <th className="px-3 py-3">Typ</th>
+                <th className="px-3 py-3">Titel</th>
+                <th className="px-3 py-3">Version</th>
+                <th className="px-3 py-3">Status</th>
+                <th className="px-3 py-3">Speicherort</th>
+                <th className="px-3 py-3">Projekt</th>
+                <th className="px-3 py-3">Aktionen</th>
+              </tr>
+            </thead>
+            <tbody className="text-[#eadbe2]">
+              {outputs.map((output) => (
+                <tr key={output.id} className="border-t border-[#4a101b]/40 hover:bg-[#1a080d]/60">
+                  <td className="px-3 py-3 align-top">
+                    <Pill>{output.outputType}</Pill>
+                  </td>
+                  <td className="px-3 py-3 align-top">
+                    <button
+                      type="button"
+                      onClick={() => onOpenDetail(output)}
+                      className="text-left font-bold text-[#fff7fb] underline-offset-2 hover:underline"
+                    >
+                      {output.title}
+                    </button>
+                  </td>
+                  <td className="px-3 py-3 align-top text-[#cbbbc3]">{output.version}</td>
+                  <td className="px-3 py-3 align-top">
+                    <Pill tone={output.status === 'Active' ? 'gold' : 'default'}>{output.status}</Pill>
+                  </td>
+                  <td className="px-3 py-3 align-top text-[#cbbbc3]">{output.storage}</td>
+                  <td className="px-3 py-3 align-top text-[#cbbbc3]">{output.project}</td>
+                  <td className="px-3 py-3 align-top">
+                    <div className="flex flex-wrap gap-2">
+                      {actions.map((action) => (
+                        <span key={action} title="Phase 1: lokale Demo-Aktion. Persistenz folgt später.">
+                          <Button
+                            tone="secondary"
+                            className="!px-2 !py-1 !text-[11px]"
+                            onClick={() => {
+                              if (action === 'Öffnen') {
+                                onOpenDetail(output);
+                              } else {
+                                registerDemoAction(project.id, `${action}: ${output.title}`);
+                              }
+                            }}
+                          >
+                            {action}
+                          </Button>
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-[#4a101b]/60 bg-[#120609]/35 p-6 text-center text-sm font-bold text-[#9f8d95]">
-          Noch keine Outputs fuer dieses Projekt. Nutze "Output erstellen", um lokal einen Draft anzulegen.
+          Noch keine Outputs für dieses Projekt. Nutze "Output anlegen", um lokal einen Draft anzulegen.
         </div>
       )}
     </Card>
@@ -3862,7 +4024,7 @@ function QuestCenter({
         <SectionTitle
           eyebrow="Global"
           title="Quest-Zentrale"
-          subtitle="Alle Aufgaben, Agenten-Uebergaben, Freigaben und Projekt-Quests an einem Ort."
+          subtitle="Alle Aufgaben, Agenten-Übergaben, Freigaben und Projekt-Quests an einem Ort."
         />
         <Button onClick={() => setDraftModalOpen(true)}>Neue Quest vormerken</Button>
       </div>
@@ -3890,7 +4052,7 @@ function QuestCenter({
           <FilterSelect label="Projekt" value={projectFilter} onChange={setProjectFilter} options={['Alle Projekte', ...projects.map((project) => project.id)]} renderOption={(value) => (value === 'Alle Projekte' ? value : `${value} - ${projectName(value)}`)} />
           <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={statusFilterOptions} />
           <FilterSelect label="Agent" value={agentFilter} onChange={setAgentFilter} options={['Alle', ...agentOptions]} />
-          <FilterSelect label="Prioritaet" value={priorityFilter} onChange={setPriorityFilter} options={['Alle', ...priorityOptions]} />
+          <FilterSelect label="Priorität" value={priorityFilter} onChange={setPriorityFilter} options={['Alle', ...priorityOptions]} />
         </div>
       </Card>
 
@@ -3923,16 +4085,16 @@ function QuestCenter({
               <textarea
                 value={draftText}
                 onChange={(event) => setDraftText(event.target.value)}
-                placeholder="Beschreibe die Aufgabe, Idee oder Aenderung..."
+                placeholder="Beschreibe die Aufgabe, Idee oder Änderung..."
                 className="min-h-[180px] w-full resize-none rounded-2xl border border-[#4a101b]/70 bg-[#120609] p-5 text-base font-semibold leading-8 text-[#fff7fb] outline-none placeholder:text-[#7f6b73] focus:border-amber-300/70"
               />
               <div className="grid gap-4 md:grid-cols-3">
                 <FilterSelect label="Projekt" value={draftProject} onChange={setDraftProject} options={projects.map((project) => project.id)} renderOption={(value) => `${value} - ${projectName(value)}`} />
-                <FilterSelect label="Prioritaet" value={draftPriority} onChange={setDraftPriority} options={priorityOptions} />
+                <FilterSelect label="Priorität" value={draftPriority} onChange={setDraftPriority} options={priorityOptions} />
                 <FilterSelect label="Agent" value={draftAgent} onChange={setDraftAgent} options={agentOptions} />
               </div>
               <div className="flex flex-wrap justify-end gap-3 border-t border-[#4a101b]/50 pt-6">
-                <Button tone="ghost" onClick={() => setDraftModalOpen(false)}>Schliessen</Button>
+                <Button tone="ghost" onClick={() => setDraftModalOpen(false)}>Schließen</Button>
                 <Button onClick={submitDraft} disabled={!draftText.trim()}>Quest-Draft erzeugen</Button>
               </div>
             </div>
@@ -4159,13 +4321,13 @@ function QuestDetail({
             <SectionTitle eyebrow="Aktionen" title="NOX Aktionen" />
             <div className="mt-5 flex flex-col gap-3">
               <Button tone="ghost" onClick={openTalk}>Mit NOX besprechen</Button>
-              <Button tone="ghost" onClick={() => createProjectXHandoff(quest)}>An Project X uebergeben</Button>
+              <Button tone="ghost" onClick={() => createProjectXHandoff(quest)}>An Project X übergeben</Button>
               <Button onClick={() => createOutput(quest)}>Output erstellen</Button>
             </div>
           </Card>
 
           <Card>
-            <SectionTitle eyebrow="Outputs" title="Verknuepfte Outputs & Artefakte" />
+            <SectionTitle eyebrow="Outputs" title="Verknüpfte Outputs & Artefakte" />
             <div className="mt-5 space-y-3">
               {questOutputs.length > 0 ? questOutputs.map((output) => (
                 <div key={output.id} className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 p-4">
@@ -4211,7 +4373,7 @@ function GlobalOutputs({
             <h3 className="text-xl font-black text-[#fff7fb]">{output.title}</h3>
             <p className="mt-3 text-sm font-semibold leading-6 text-[#eadbe2]">{output.description}</p>
             <div className="mt-5">
-              <Button tone="secondary" onClick={() => registerDemoAction(output.project, `Output global geprueft: ${output.title}`)}>Demo-Aktion vormerken</Button>
+              <Button tone="secondary" onClick={() => registerDemoAction(output.project, `Output global geprüft: ${output.title}`)}>Demo-Aktion vormerken</Button>
             </div>
           </Card>
         ))}
@@ -4229,7 +4391,7 @@ function GlobalApprovals({
 }) {
   return (
     <div className="space-y-8">
-      <SectionTitle eyebrow="Global" title="Freigaben" subtitle="Telegram bleibt spaeter Alarmkanal. Diese Ansicht ist nur lokaler Demo-State." />
+      <SectionTitle eyebrow="Global" title="Freigaben" subtitle="Telegram bleibt später Alarmkanal. Diese Ansicht ist nur lokaler Demo-State." />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {approvals.map((approval) => (
           <Card key={approval.id}>
