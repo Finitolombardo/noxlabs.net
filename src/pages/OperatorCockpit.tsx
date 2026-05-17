@@ -2951,6 +2951,120 @@ function FactoryApprovalGate() {
   );
 }
 
+// Local quest-series plan step. Editable in the React state of the
+// Project Auto Planner panel. Phase 1: never persisted to Notion or any
+// backend — lives only in the running session.
+type PlanStep = {
+  id: string;
+  step: number;
+  title: string;
+  ziel: string;
+  agent: string;
+  output: string;
+  risk: 'Niedrig' | 'Mittel' | 'Hoch';
+  gate: string;
+};
+
+// Pure, rule-based generator. No AI, no API. Picks a small set of
+// keyword cues from the operator's goal text and uses them to colour
+// the seven base steps. If the goal text is empty we fall back to a
+// neutral demo prompt so the UI never shows an empty plan.
+function generateLocalPlan(goalRaw: string): PlanStep[] {
+  const goal =
+    goalRaw.trim().length > 0
+      ? goalRaw.trim()
+      : 'Demo-Projektziel — Beispiel für lokalen Plan-Entwurf';
+  const lower = goal.toLowerCase();
+  const mentionsLead = /(lead|sales|outreach|pitch|kund|akquise)/.test(lower);
+  const mentionsAgent = /(nox agent|agent|automat|workflow|n8n)/.test(lower);
+  const mentionsContent = /(youtube|video|content|creator|hook)/.test(lower);
+  const mentionsTest = /(dropshipping|test|experiment|mvp|prototyp)/.test(lower);
+
+  const stamp = Date.now();
+  const sid = (n: number) => `step-${stamp}-${n}`;
+
+  return [
+    {
+      id: sid(1),
+      step: 1,
+      title: 'Ziel klären',
+      ziel: `Schärfen: „${goal.length > 80 ? goal.slice(0, 77) + '…' : goal}"`,
+      agent: 'NOX Agent',
+      output: 'Ziel-Kurzformel (1 Satz)',
+      risk: 'Niedrig',
+      gate: 'Kein Gate',
+    },
+    {
+      id: sid(2),
+      step: 2,
+      title: 'Kontext sammeln',
+      ziel: mentionsContent
+        ? 'Relevante Creator/Quellen, Hooks und bestehende Notion-Notizen einsammeln.'
+        : 'Bestehende Notion-Kontexte, Outputs und Quests für dieses Ziel zusammenfassen.',
+      agent: mentionsContent ? 'Claude' : 'NOX Agent',
+      output: 'Kontext-Zusammenfassung',
+      risk: 'Niedrig',
+      gate: 'Kein Gate',
+    },
+    {
+      id: sid(3),
+      step: 3,
+      title: 'Risiken & Blocker prüfen',
+      ziel: mentionsTest
+        ? 'Hypothesen-Risiken, Kostenrisiko und Stopp-Kriterien für den Test definieren.'
+        : 'Bekannte Blocker, offene Entscheidungen und Risiken priorisieren.',
+      agent: 'NOX Agent',
+      output: 'Risiko-/Blockerliste',
+      risk: 'Mittel',
+      gate: 'Operator-Freigabe',
+    },
+    {
+      id: sid(4),
+      step: 4,
+      title: 'Quest-Reihe definieren',
+      ziel: mentionsLead
+        ? 'Quests für Lead-Erfassung, Qualifikation, Pitch und Conversion abstecken.'
+        : 'Konkrete Quest-Folge mit klaren Endzuständen je Schritt abstecken.',
+      agent: 'NOX Agent',
+      output: 'Quest-Entwurfsliste',
+      risk: 'Niedrig',
+      gate: 'Operator-Freigabe',
+    },
+    {
+      id: sid(5),
+      step: 5,
+      title: 'Agenten zuweisen',
+      ziel: mentionsAgent
+        ? 'NOX Agent steuert, Codex implementiert, Claude prüft Sprache/Strategie.'
+        : 'Pro Quest verantwortlichen Agent setzen (NOX Agent / Codex / Claude / Operator).',
+      agent: 'Operator + NOX Agent',
+      output: 'Quest-zu-Agent-Mapping',
+      risk: 'Niedrig',
+      gate: 'Operator-Freigabe',
+    },
+    {
+      id: sid(6),
+      step: 6,
+      title: 'Output-Artefakte planen',
+      ziel: 'Pro Quest erwartetes Artefakt (Plan, Report, Spec, Code-Änderung) + Speicherort planen.',
+      agent: 'NOX Agent',
+      output: 'Artefakt-Liste mit Speicherort-Vorschlag',
+      risk: 'Niedrig',
+      gate: 'Kein Gate',
+    },
+    {
+      id: sid(7),
+      step: 7,
+      title: 'Review & Freigabe vorbereiten',
+      ziel: 'Übergabe-Spec, offene Freigaben und Reihenfolge der Operator-Klicks vorbereiten.',
+      agent: 'NOX Agent',
+      output: 'Übergabe-Spec v0.x (Entwurf)',
+      risk: 'Mittel',
+      gate: 'Operator-Freigabe (vor Live-Run)',
+    },
+  ];
+}
+
 function ProjectsDeepDive({
   project,
   selectedProjectId,
@@ -2991,8 +3105,78 @@ function ProjectsDeepDive({
   const [talkText, setTalkText] = useState('');
   const [outputType, setOutputType] = useState(outputTypes[0]);
   const [outputPrompt, setOutputPrompt] = useState('');
-  const [plannerSelectedStep, setPlannerSelectedStep] = useState<number | null>(null);
   const [outputDetail, setOutputDetail] = useState<OutputArtifact | null>(null);
+  // Project-goal text and editable plan steps live in this component.
+  // Both are intentionally not persisted (no localStorage) — Phase 1
+  // is reset-on-reload to make the local-only nature obvious.
+  const [projektZiel, setProjektZiel] = useState<string>('');
+  const [planSteps, setPlanSteps] = useState<PlanStep[]>(() => generateLocalPlan(''));
+  const [plannerSelectedStepId, setPlannerSelectedStepId] = useState<string | null>(null);
+
+  function regeneratePlan(goal: string) {
+    const next = generateLocalPlan(goal);
+    setPlanSteps(next);
+    setPlannerSelectedStepId(next[0]?.id ?? null);
+  }
+
+  function resetPlan() {
+    setProjektZiel('');
+    const next = generateLocalPlan('');
+    setPlanSteps(next);
+    setPlannerSelectedStepId(null);
+  }
+
+  function updateStep(id: string, patch: Partial<PlanStep>) {
+    setPlanSteps((curr) => curr.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  }
+
+  function removeStep(id: string) {
+    setPlanSteps((curr) => curr.filter((s) => s.id !== id).map((s, idx) => ({ ...s, step: idx + 1 })));
+    setPlannerSelectedStepId((sel) => (sel === id ? null : sel));
+  }
+
+  function addStep() {
+    const id = `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    setPlanSteps((curr) => [
+      ...curr,
+      {
+        id,
+        step: curr.length + 1,
+        title: 'Neuer Schritt',
+        ziel: 'Ziel beschreiben…',
+        agent: 'NOX Agent',
+        output: 'Output beschreiben…',
+        risk: 'Niedrig',
+        gate: 'Kein Gate',
+      },
+    ]);
+    setPlannerSelectedStepId(id);
+  }
+
+  function moveStep(id: string, direction: -1 | 1) {
+    setPlanSteps((curr) => {
+      const idx = curr.findIndex((s) => s.id === id);
+      if (idx < 0) return curr;
+      const target = idx + direction;
+      if (target < 0 || target >= curr.length) return curr;
+      const next = curr.slice();
+      const [item] = next.splice(idx, 1);
+      next.splice(target, 0, item);
+      return next.map((s, i) => ({ ...s, step: i + 1 }));
+    });
+  }
+
+  function copyPlanToClipboard() {
+    const text = planSteps
+      .map(
+        (s) =>
+          `${s.step}. ${s.title}\n   Ziel: ${s.ziel}\n   Agent: ${s.agent}\n   Output: ${s.output}\n   Risiko: ${s.risk}\n   Freigabe-Gate: ${s.gate}\n   Status: Entwurf`,
+      )
+      .join('\n\n');
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      void navigator.clipboard.writeText(`Projektziel: ${projektZiel || '(Demo)'}\n\n${text}`);
+    }
+  }
 
   const projectQuests = useMemo(() => quests.filter((quest) => quest.project === project.id), [quests, project.id]);
   const projectOutputs = useMemo(() => outputs.filter((output) => output.project === project.id), [outputs, project.id]);
@@ -3076,62 +3260,6 @@ function ProjectsDeepDive({
     { label: 'Uebergabe-Spec vorhanden', status: projectOutputs.some((output) => output.outputType === 'Uebergabe-Spec') ? 'OK' : 'Fehlt' },
   ];
 
-  // Local-only Quest-Reihen-Entwurf for the Project Auto Planner. Pure
-  // derivation from existing demo state — no fetch, no Notion call.
-  // The order encodes a defensible default planning flow that the
-  // operator can read top-to-bottom: read context, identify gaps,
-  // generate quests, request approvals, deliver outputs.
-  const questSeriesPlan = [
-    {
-      step: 1,
-      title: 'Projektkontext lesen',
-      agent: 'NOX Agent',
-      gate: 'Kein Gate',
-      output: 'Kontext-Zusammenfassung',
-      risk: 'Niedrig',
-    },
-    {
-      step: 2,
-      title: project.blockers.length > 0 ? 'Blocker entschaerfen' : 'Luecken identifizieren',
-      agent: 'NOX Agent',
-      gate: project.blockers.length > 0 ? 'Operator-Freigabe' : 'Kein Gate',
-      output: 'Risiko-/Lueckenliste',
-      risk: project.blockers.length > 0 ? 'Mittel' : 'Niedrig',
-    },
-    {
-      step: 3,
-      title: 'Quest-Reihe vorschlagen',
-      agent: 'NOX Agent',
-      gate: 'Operator-Freigabe',
-      output: `${Math.max(3, projectQuests.length)} Quest-Entwürfe (lokal)`,
-      risk: 'Niedrig',
-    },
-    {
-      step: 4,
-      title: 'Agent pro Quest zuweisen',
-      agent: 'Operator + NOX Agent',
-      gate: 'Operator-Freigabe',
-      output: 'Quest-zu-Agent-Mapping',
-      risk: 'Niedrig',
-    },
-    {
-      step: 5,
-      title: 'Outputs/Artefakte planen',
-      agent: 'NOX Agent',
-      gate: 'Kein Gate',
-      output: 'Artefakt-Liste mit Speicherort-Vorschlag',
-      risk: 'Niedrig',
-    },
-    {
-      step: 6,
-      title: 'Uebergabe-Spec vorbereiten',
-      agent: 'NOX Agent',
-      gate: 'Operator-Freigabe (vor Live-Run)',
-      output: 'Uebergabe-Spec v0.x',
-      risk: 'Mittel',
-    },
-  ];
-
   function approvalRecommendation(approval: Approval): string {
     if (approval.risk === 'Hoch') return 'Vor Freigabe: Rückfrage stellen und Risiko klein schneiden.';
     if (approval.status === 'Blockiert') return 'Blocker zuerst auflösen, danach Freigabe pruefen.';
@@ -3142,9 +3270,13 @@ function ProjectsDeepDive({
   // Local "Plan-Output vormerken" — turns the current Quest-Reihen-Entwurf
   // into a new local OutputArtifact draft. No backend, no Notion write.
   function vormerkenAlsPlanOutput() {
-    const planText = questSeriesPlan
-      .map((s) => `${s.step}. ${s.title} (${s.agent}) — Gate: ${s.gate} — Output: ${s.output} — Risiko: ${s.risk}`)
-      .join('\n');
+    const planText = planSteps
+      .map(
+        (s) =>
+          `${s.step}. ${s.title}\n   Ziel: ${s.ziel}\n   Agent: ${s.agent}\n   Output: ${s.output}\n   Risiko: ${s.risk}\n   Freigabe-Gate: ${s.gate}\n   Status: Entwurf`,
+      )
+      .join('\n\n');
+    const goalLine = `Projektziel: ${projektZiel.trim() || '(Demo-Projektziel)'}`;
     setOutputs((current) => [
       {
         id: `ART-${Date.now()}`,
@@ -3154,11 +3286,11 @@ function ProjectsDeepDive({
         storage: 'Lokal / Demo-State',
         status: 'Draft',
         version: 'v0.1',
-        description: `Lokaler Quest-Reihen-Entwurf für ${project.name} (NOX Agent / Project Auto Planner).\n\n${planText}`,
+        description: `Lokaler Quest-Reihen-Entwurf für ${project.name} (NOX Agent / Project Auto Planner).\n\n${goalLine}\n\n${planText}`,
       },
       ...current,
     ]);
-    addMilestone(project.id, 'Plan', `Quest-Reihen-Entwurf vorgemerkt`, planText);
+    addMilestone(project.id, 'Plan', `Quest-Reihen-Entwurf vorgemerkt`, `${goalLine}\n\n${planText}`);
     setModal(null);
   }
 
@@ -3238,6 +3370,17 @@ function ProjectsDeepDive({
           </div>
         </div>
       </Card>
+
+      <ProjectGoalComposer
+        value={projektZiel}
+        onChange={setProjektZiel}
+        onGenerate={() => {
+          regeneratePlan(projektZiel);
+          setModal('planner');
+        }}
+        onReset={resetPlan}
+        stepCount={planSteps.length}
+      />
 
       <ProjectAutoPlannerActions
         openTalk={() => setModal('talk')}
@@ -3359,103 +3502,173 @@ function ProjectsDeepDive({
         ) : null}
 
         {modal === 'planner' ? (
-          <Modal onClose={() => { setModal(null); setPlannerSelectedStep(null); }}>
+          <Modal onClose={() => { setModal(null); setPlannerSelectedStepId(null); }}>
             <SectionTitle
               eyebrow="NOX Agent · Project Auto Planner"
               title="Lokaler Quest-Reihen-Entwurf"
               subtitle="Diese Quests sind noch nicht erstellt. Sie sind ein lokaler Entwurf. Später erzeugt NOX Agent daraus echte Quests nach Operator-Freigabe."
             />
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-amber-300/25 bg-amber-300/5 p-4">
-                <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">Projektziel</div>
-                <p className="mt-2 text-sm font-semibold leading-6 text-[#fff7fb]">{project.vision}</p>
+
+            <div className="mt-5 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200/80">Projektziel · lokaler Entwurf</div>
+                  <p className="mt-1 text-sm font-bold leading-6 text-amber-50">
+                    {projektZiel.trim() ? projektZiel : 'Demo-Projektziel — Beispiel für lokalen Plan-Entwurf'}
+                  </p>
+                </div>
+                <Button tone="secondary" className="!px-3 !py-1.5 !text-[11px]" onClick={() => regeneratePlan(projektZiel)}>
+                  Plan neu erzeugen
+                </Button>
               </div>
-              <div className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/70 p-4">
-                <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Nächste Entscheidung</div>
-                <p className="mt-2 text-sm font-semibold leading-6 text-[#eadbe2]">
-                  {project.nextAction || 'Quest-Reihe prüfen und freigeben.'}
-                </p>
+              <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-100/70">
+                Lokaler Entwurf · noch nicht erstellt · keine Notion-Speicherung
               </div>
             </div>
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
+            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
               <div className="overflow-hidden rounded-2xl border border-[#4a101b]/60">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-[#120609]/80 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">
                     <tr>
                       <th className="w-10 px-3 py-3">#</th>
-                      <th className="px-3 py-3">Quest (Entwurf)</th>
-                      <th className="px-3 py-3">Risiko</th>
+                      <th className="px-3 py-3">Schritt</th>
+                      <th className="w-20 px-3 py-3">Risiko</th>
+                      <th className="w-20 px-3 py-3 text-right">Reihenfolge</th>
                     </tr>
                   </thead>
                   <tbody className="text-[#eadbe2]">
-                    {questSeriesPlan.map((row) => {
-                      const selected = plannerSelectedStep === row.step;
+                    {planSteps.map((row, idx) => {
+                      const selected = plannerSelectedStepId === row.id;
                       return (
                         <tr
-                          key={row.step}
-                          onClick={() => setPlannerSelectedStep(row.step)}
+                          key={row.id}
+                          onClick={() => setPlannerSelectedStepId(row.id)}
                           className={`cursor-pointer border-t border-[#4a101b]/40 transition ${selected ? 'bg-amber-300/10' : 'hover:bg-[#1a080d]'}`}
                         >
                           <td className="px-3 py-3 align-top font-black text-amber-200">{row.step}</td>
                           <td className="px-3 py-3 align-top">
                             <div className="font-semibold leading-5 text-[#fff7fb]">{row.title}</div>
-                            <div className="mt-1 text-[11px] font-semibold text-[#9f8d95]">Entwurf · noch nicht in Notion</div>
+                            <div className="mt-1 text-[11px] font-semibold text-[#9f8d95]">Status: Entwurf · noch nicht in Notion</div>
                           </td>
                           <td className="px-3 py-3 align-top">
                             <Pill tone={row.risk === 'Hoch' ? 'red' : row.risk === 'Mittel' ? 'gold' : 'default'}>
                               {row.risk}
                             </Pill>
                           </td>
+                          <td className="px-3 py-3 align-top">
+                            <div className="flex justify-end gap-1">
+                              <button
+                                type="button"
+                                title="Nach oben"
+                                disabled={idx === 0}
+                                onClick={(event) => { event.stopPropagation(); moveStep(row.id, -1); }}
+                                className="rounded-md border border-[#4a101b]/60 bg-[#120609]/70 px-1.5 py-0.5 text-[10px] font-black text-amber-200 disabled:cursor-not-allowed disabled:opacity-30"
+                              >▲</button>
+                              <button
+                                type="button"
+                                title="Nach unten"
+                                disabled={idx === planSteps.length - 1}
+                                onClick={(event) => { event.stopPropagation(); moveStep(row.id, 1); }}
+                                className="rounded-md border border-[#4a101b]/60 bg-[#120609]/70 px-1.5 py-0.5 text-[10px] font-black text-amber-200 disabled:cursor-not-allowed disabled:opacity-30"
+                              >▼</button>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#4a101b]/40 bg-[#0c0506]/60 px-3 py-2 text-[11px] font-semibold text-[#9f8d95]">
+                  <span>{planSteps.length} Schritte · lokal · keine Persistenz</span>
+                  <Button tone="ghost" className="!px-2 !py-1 !text-[11px]" onClick={addStep}>+ Schritt hinzufügen</Button>
+                </div>
               </div>
 
               <div className="rounded-2xl border border-amber-300/25 bg-[#0c0506]/70 p-5">
                 {(() => {
-                  const sel = plannerSelectedStep !== null ? questSeriesPlan.find((s) => s.step === plannerSelectedStep) : null;
+                  const sel = plannerSelectedStepId ? planSteps.find((s) => s.id === plannerSelectedStepId) : null;
                   if (!sel) {
                     return (
                       <div className="text-sm font-semibold text-[#9f8d95]">
-                        Klick auf eine Quest links, um Details, Agent, Freigabe-Gate, Output und Risiko zu sehen.
+                        Klick auf einen Schritt links, um Titel, Ziel, Agent, Output, Risiko und Freigabe-Gate zu bearbeiten.
                       </div>
                     );
                   }
+                  const inputClass =
+                    'mt-1 w-full rounded-xl border border-[#4a101b]/60 bg-[#120609]/70 px-3 py-2 text-sm font-semibold text-[#fff7fb] outline-none transition focus:border-amber-300/60';
                   return (
                     <div className="space-y-3">
-                      <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/80">Schritt {sel.step}</div>
-                      <h3 className="text-lg font-black text-[#fff7fb]">{sel.title}</h3>
-                      <div className="grid gap-3 sm:grid-cols-2 text-sm text-[#eadbe2]">
-                        <div>
-                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Ziel</div>
-                          <div className="mt-1 font-semibold leading-5">{sel.output}</div>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/80">Schritt {sel.step}</div>
+                        <div className="flex gap-2">
+                          <Pill tone="default">Status: Entwurf</Pill>
+                          <Button
+                            tone="ghost"
+                            className="!px-2 !py-1 !text-[11px]"
+                            onClick={() => removeStep(sel.id)}
+                          >
+                            Schritt entfernen
+                          </Button>
                         </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Titel</div>
+                        <input
+                          value={sel.title}
+                          onChange={(event) => updateStep(sel.id, { title: event.target.value })}
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Ziel</div>
+                        <textarea
+                          value={sel.ziel}
+                          rows={2}
+                          onChange={(event) => updateStep(sel.id, { ziel: event.target.value })}
+                          className={`${inputClass} resize-none`}
+                        />
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <div>
                           <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Empfohlener Agent</div>
-                          <div className="mt-1 font-semibold leading-5">{sel.agent}</div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Freigabe-Gate</div>
-                          <div className="mt-1 font-semibold leading-5">{sel.gate}</div>
+                          <input
+                            value={sel.agent}
+                            onChange={(event) => updateStep(sel.id, { agent: event.target.value })}
+                            className={inputClass}
+                          />
                         </div>
                         <div>
                           <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Erwarteter Output</div>
-                          <div className="mt-1 font-semibold leading-5">{sel.output}</div>
+                          <input
+                            value={sel.output}
+                            onChange={(event) => updateStep(sel.id, { output: event.target.value })}
+                            className={inputClass}
+                          />
                         </div>
                         <div>
                           <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Risiko</div>
-                          <div className="mt-1"><Pill tone={sel.risk === 'Hoch' ? 'red' : sel.risk === 'Mittel' ? 'gold' : 'default'}>{sel.risk}</Pill></div>
+                          <select
+                            value={sel.risk}
+                            onChange={(event) => updateStep(sel.id, { risk: event.target.value as PlanStep['risk'] })}
+                            className={inputClass}
+                          >
+                            <option value="Niedrig">Niedrig</option>
+                            <option value="Mittel">Mittel</option>
+                            <option value="Hoch">Hoch</option>
+                          </select>
                         </div>
                         <div>
-                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Status</div>
-                          <div className="mt-1"><Pill tone="default">Entwurf</Pill></div>
+                          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9f8d95]">Freigabe-Gate</div>
+                          <input
+                            value={sel.gate}
+                            onChange={(event) => updateStep(sel.id, { gate: event.target.value })}
+                            className={inputClass}
+                          />
                         </div>
                       </div>
                       <div className="rounded-xl border border-amber-300/25 bg-amber-300/5 p-3 text-[12px] font-semibold leading-5 text-amber-100">
-                        Hinweis: Noch nicht in Notion / Master Tasks erstellt.
+                        Hinweis: Noch nicht in Notion / Master Tasks erstellt. Änderungen leben nur im Cockpit-State.
                       </div>
                     </div>
                   );
@@ -3469,17 +3682,7 @@ function ProjectsDeepDive({
             </div>
 
             <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-[#4a101b]/50 pt-6">
-              <Button
-                tone="secondary"
-                onClick={() => {
-                  const text = questSeriesPlan
-                    .map((s) => `${s.step}. ${s.title} (${s.agent}) — Gate: ${s.gate} — Output: ${s.output} — Risiko: ${s.risk}`)
-                    .join('\n');
-                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                    void navigator.clipboard.writeText(text);
-                  }
-                }}
-              >
+              <Button tone="secondary" onClick={copyPlanToClipboard}>
                 Entwurf kopieren
               </Button>
               <span title="Phase 2 — Quest-Erzeugung folgt später über NOX Agent.">
@@ -3487,7 +3690,7 @@ function ProjectsDeepDive({
                   Später als Quest erzeugen (Phase 2)
                 </Button>
               </span>
-              <Button tone="ghost" onClick={() => { setModal(null); setPlannerSelectedStep(null); }}>Schließen</Button>
+              <Button tone="ghost" onClick={() => { setModal(null); setPlannerSelectedStepId(null); }}>Schließen</Button>
               <Button onClick={vormerkenAlsPlanOutput}>Als Plan-Output vormerken</Button>
             </div>
           </Modal>
@@ -3622,6 +3825,66 @@ function ProjectsDeepDive({
         ) : null}
       </AnimatePresence>
     </div>
+  );
+}
+
+function ProjectGoalComposer({
+  value,
+  onChange,
+  onGenerate,
+  onReset,
+  stepCount,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  onGenerate: () => void;
+  onReset: () => void;
+  stepCount: number;
+}) {
+  // Local-only goal composer. Pure UI on top of the planner state.
+  // No fetch, no Notion write, no dispatcher. Empty input becomes a
+  // demo goal in the rule-based generator.
+  return (
+    <Card className="!p-5 md:!p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/80">Projektziel</span>
+            <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-100/80">
+              Lokaler Entwurf · noch nicht erstellt · keine Notion-Speicherung
+            </span>
+          </div>
+          <h2 className="mt-2 text-xl font-black leading-tight text-[#fff7fb] md:text-2xl">Was soll als nächstes entstehen?</h2>
+          <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-[#cbbbc3]">
+            Schreib ein konkretes Ziel. Der lokale Plan-Generator (regelbasiert, keine KI, keine API) macht daraus einen
+            editierbaren Quest-Reihen-Entwurf.
+          </p>
+        </div>
+        <div className="text-right text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
+          {stepCount} Schritte im Entwurf
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <textarea
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          rows={3}
+          placeholder="Beschreibe ein Ziel, z. B. Dropshipping-Test in 30 Tagen starten oder NOX Agent in echte Quest-Erzeugung bringen."
+          className="w-full resize-none rounded-2xl border border-[#3a0c14]/70 bg-gradient-to-br from-[#160709] to-[#0a0405] px-4 py-3 text-sm font-semibold leading-6 text-[#fff7fb] outline-none transition placeholder:text-[#7f6f76] focus:border-amber-300/60"
+        />
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <span className="text-[11px] font-semibold leading-5 text-[#7f6f76]">
+          Phase 1 · regelbasiert · keine API · keine Notion-Writes
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <Button tone="ghost" onClick={onReset}>Zurücksetzen</Button>
+          <Button onClick={onGenerate}>Lokalen Plan entwerfen</Button>
+        </div>
+      </div>
+    </Card>
   );
 }
 
