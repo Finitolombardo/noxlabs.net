@@ -11,6 +11,7 @@
 
 import type {
   PlanPreviewResponseWire,
+  PlanValidationReportWire,
   ProjectPlanDraftRequest,
 } from '../types/projectPlanner';
 import type { OperatorApiErrorBody } from '../types/operatorContext';
@@ -114,6 +115,128 @@ export async function fetchPlanPreview(
   if (resp.ok) {
     if (body && typeof body === 'object') {
       return { ok: true, status: resp.status, data: body as PlanPreviewResponseWire };
+    }
+    return {
+      ok: false,
+      status: resp.status,
+      errorCode: 'invalid_response',
+      errorMessage: 'Antwort enthielt keinen verwertbaren JSON-Body.',
+    };
+  }
+
+  if (body && typeof body === 'object') {
+    const env = body as Partial<OperatorApiErrorBody>;
+    return {
+      ok: false,
+      status: resp.status,
+      errorCode: typeof env.error === 'string' ? env.error : undefined,
+      errorMessage: typeof env.message === 'string' ? env.message : undefined,
+      raw: body,
+    };
+  }
+  return { ok: false, status: resp.status };
+}
+
+// Phase 2B — Schema validation call. Same payload as preview, but the
+// server additionally reads the live Notion schema (read-only) and
+// returns a PlanValidationReport. No Notion writes happen on this path.
+export type PlanValidateResult =
+  | {
+      ok: true;
+      status: number;
+      data: PlanValidationReportWire;
+    }
+  | {
+      ok: false;
+      status: number;
+      errorCode?: string;
+      errorMessage?: string;
+      raw?: unknown;
+    };
+
+export interface FetchPlanValidateArgs {
+  projectId: string;
+  apiKey: string;
+  draft: ProjectPlanDraftRequest;
+  signal?: AbortSignal;
+}
+
+export async function fetchPlanValidate(
+  args: FetchPlanValidateArgs,
+): Promise<PlanValidateResult> {
+  const trimmedProjectId = args.projectId.trim();
+  const trimmedKey = args.apiKey.trim();
+
+  if (!trimmedProjectId) {
+    return {
+      ok: false,
+      status: 0,
+      errorCode: 'client_validation',
+      errorMessage: 'Project ID darf nicht leer sein.',
+    };
+  }
+  if (!trimmedKey) {
+    return {
+      ok: false,
+      status: 0,
+      errorCode: 'client_validation',
+      errorMessage: 'Operator API Key darf nicht leer sein.',
+    };
+  }
+  if (!args.draft.projectGoal.trim()) {
+    return {
+      ok: false,
+      status: 0,
+      errorCode: 'client_validation',
+      errorMessage: 'Projektziel darf nicht leer sein.',
+    };
+  }
+  if (args.draft.planSteps.length === 0) {
+    return {
+      ok: false,
+      status: 0,
+      errorCode: 'client_validation',
+      errorMessage: 'Mindestens ein Plan-Schritt erforderlich.',
+    };
+  }
+
+  const url = `${ENDPOINT_BASE}/${encodeURIComponent(trimmedProjectId)}/plan/validate`;
+
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'x-nox-operator-key': trimmedKey,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+      signal: args.signal,
+      body: JSON.stringify(args.draft),
+    });
+  } catch (err) {
+    const aborted = err instanceof Error && err.name === 'AbortError';
+    return {
+      ok: false,
+      status: 0,
+      errorCode: aborted ? 'aborted' : 'network_error',
+      errorMessage: aborted
+        ? 'Anfrage abgebrochen.'
+        : 'Netzwerkfehler beim Aufruf der Schema-Validierung.',
+    };
+  }
+
+  let body: unknown = null;
+  try {
+    body = await resp.json();
+  } catch {
+    // Non-JSON body — fall through to status-only handling.
+  }
+
+  if (resp.ok) {
+    if (body && typeof body === 'object') {
+      return { ok: true, status: resp.status, data: body as PlanValidationReportWire };
     }
     return {
       ok: false,

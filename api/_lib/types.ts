@@ -373,3 +373,136 @@ export interface PlanPreviewResponse {
     liveExecution: 'locked';
   };
 }
+
+// =============================================================================
+// Phase 2B — Project Auto Planner Schema Validation wire-format.
+//
+// `POST /api/operator/projects/:projectId/plan/validate`
+//
+// Same payload shape as Phase 2A (`ProjectPlanDraft`). The handler is
+// STRICTLY read-only against Notion:
+//   - GET /v1/databases/{id}      -> schema header (no mutation)
+//   - POST /v1/databases/{id}/query -> Projects-DB row lookup for the
+//                                       project relation (read semantic)
+// No POST /v1/pages. No PATCH. No schema-add. No dispatcher.
+//
+// The handler reads the SAME read-only token used by /context
+// (`NOX_NOTION_READONLY_TOKEN`). It does NOT read any write-scoped token,
+// and the architecture intentionally keeps write-token plumbing out of
+// Phase 2B entirely (it lives in Phase 2C).
+//
+// The browser mirror lives in `src/types/projectPlanner.ts`. Keep both
+// in lockstep when extending the wire format.
+// =============================================================================
+
+// Server-side allowlist of Master-Tasks properties that Phase 2C *might*
+// write. Phase 2B re-uses this list to flag proposed mutations against
+// properties outside the allowlist as `unsafe` (they would never make it
+// past Phase 2C even if the live Notion schema accepted them).
+//
+// IMPORTANT: 🤖-prefixed properties are operator-managed AI status fields
+// and are deliberately OUT of the write allowlist. Phase 2B will report
+// them as `unsafe_property` so the operator knows up front that Phase 2C
+// will not touch them.
+export const ALLOWED_MASTER_TASKS_WRITE_PROPERTIES: readonly string[] = [
+  'Titel',
+  'Agent',
+  'Project',
+  'Plan Draft ID',
+  'Plan Draft Digest',
+  'Schritt-Reihenfolge',
+  'Reason',
+  'Operator-Check',
+];
+
+export type PlanValidationIssueCode =
+  | 'project_not_found'
+  | 'project_relation_skipped'
+  | 'project_id_mismatch'
+  | 'master_tasks_db_missing'
+  | 'master_tasks_schema_unreadable'
+  | 'projects_db_missing'
+  | 'projects_schema_unreadable'
+  | 'property_missing'
+  | 'property_type_mismatch'
+  | 'unsafe_property'
+  | 'select_option_missing'
+  | 'plan_too_large'
+  | 'agent_not_allowed';
+
+export interface PlanValidationIssue {
+  code: PlanValidationIssueCode;
+  planStepId?: string;
+  notionPropertyName?: string;
+  expected?: string;
+  actual?: string;
+  message: string;
+}
+
+export interface PlanValidationWarning {
+  code: string;
+  message: string;
+}
+
+export interface PlanCheckedDatabase {
+  // Logical role of the DB inside Phase 2B — operator never sees the
+  // raw env name in error paths.
+  role: 'master_tasks' | 'projects';
+  // Source of the DB id (env var name). Used purely as a diagnostic label
+  // so the operator can find which env knob to set if `ok: false`.
+  envVar: string;
+  ok: boolean;
+  // Status the operator should react to:
+  //   - 'ok'                 -> schema fetched and parsed
+  //   - 'not_configured'     -> env var unset
+  //   - 'upstream_error'     -> Notion returned 4xx/5xx or timed out
+  //   - 'project_not_found'  -> Projects DB lookup found no row (only on
+  //                             role='projects' and mapping-mode active)
+  status:
+    | 'ok'
+    | 'not_configured'
+    | 'upstream_error'
+    | 'project_not_found'
+    | 'skipped';
+  // Optional short summary string (no token, no header, no env values).
+  summary?: string;
+}
+
+export interface PlanProposedPropertyCheck {
+  notionPropertyName: string;
+  expectedType: PlanProposedPropertyType;
+  // 'safe'         -> in allowlist, exists in schema, type matches
+  // 'unsafe'       -> not in allowlist; Phase 2C would skip
+  // 'missing'      -> in allowlist but property missing from Notion schema
+  // 'type_mismatch'-> in allowlist, property exists but wrong type
+  // 'skipped'      -> schema not available (e.g. master_tasks read failed)
+  status: 'safe' | 'unsafe' | 'missing' | 'type_mismatch' | 'skipped';
+  // Actual Notion type if the property was found in the schema.
+  actualType?: string;
+}
+
+export interface PlanValidationReport {
+  ok: true;
+  projectId: string;
+  normalisedPlan: PlanStepWire[];
+  plannedMutations: PlanMutation[];
+  echoedDigest: string;
+  idempotencyKey: string;
+  schemaOk: boolean;
+  wouldCreateNTasks: number;
+  wouldUpdateNTasks: number;
+  checkedDatabases: PlanCheckedDatabase[];
+  propertyChecks: PlanProposedPropertyCheck[];
+  missingProperties: string[];
+  typeMismatches: Array<{ notionPropertyName: string; expectedType: string; actualType: string }>;
+  unsafeProperties: string[];
+  issues: PlanValidationIssue[];
+  warnings: PlanValidationWarning[];
+  meta: {
+    skeleton: false;
+    phase: '2b';
+    readOnly: true;
+    notionWritesEnabled: false;
+    liveExecution: 'locked';
+  };
+}

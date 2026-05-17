@@ -4,6 +4,7 @@ import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { fetchOperatorProjectContext } from '../lib/operatorContextClient';
 import {
   fetchPlanPreview,
+  fetchPlanValidate,
   generatePreviewIdempotencyKey,
 } from '../lib/projectPlannerClient';
 import type {
@@ -13,6 +14,7 @@ import type {
 import type {
   PlanPreviewResponseWire,
   PlanStepWire,
+  PlanValidationReportWire,
 } from '../types/projectPlanner';
 import {
   FACTORY_APPROVAL,
@@ -3220,6 +3222,18 @@ function ProjectsDeepDive({
     errorMessage?: string;
   } | null>(null);
   const apiPreviewAbortRef = useRef<AbortController | null>(null);
+  // Phase 2B — schema validation state. Lives inside the same modal so
+  // the operator can compare preview vs validate side-by-side. No
+  // separate api key — the same `apiPreviewKey` is reused (page-session,
+  // never persisted).
+  const [apiValidateLoading, setApiValidateLoading] = useState<boolean>(false);
+  const [apiValidateData, setApiValidateData] = useState<PlanValidationReportWire | null>(null);
+  const [apiValidateError, setApiValidateError] = useState<{
+    status: number;
+    errorCode?: string;
+    errorMessage?: string;
+  } | null>(null);
+  const apiValidateAbortRef = useRef<AbortController | null>(null);
   const [talkText, setTalkText] = useState('');
   const [outputType, setOutputType] = useState(outputTypes[0]);
   const [outputPrompt, setOutputPrompt] = useState('');
@@ -3530,6 +3544,71 @@ function ProjectsDeepDive({
       setApiPreviewData(result.data);
     } else {
       setApiPreviewError({
+        status: result.status,
+        errorCode: result.errorCode,
+        errorMessage: result.errorMessage,
+      });
+    }
+  }
+
+  // Phase 2B — call the read-only schema-validation endpoint. Same
+  // payload as preview, but the server additionally reads the live
+  // Notion schema (read-only) and reports per-property safety.
+  async function handleApiValidate() {
+    setApiValidateError(null);
+    setApiValidateData(null);
+    const trimmedGoal = projektZiel.trim();
+    if (!trimmedGoal) {
+      setApiValidateError({
+        status: 0,
+        errorCode: 'client_validation',
+        errorMessage: 'Bitte erst ein Projektziel eingeben.',
+      });
+      return;
+    }
+    if (planSteps.length === 0) {
+      setApiValidateError({
+        status: 0,
+        errorCode: 'client_validation',
+        errorMessage: 'Plan-Reihe ist leer.',
+      });
+      return;
+    }
+    if (apiValidateAbortRef.current) apiValidateAbortRef.current.abort();
+    const controller = new AbortController();
+    apiValidateAbortRef.current = controller;
+    setApiValidateLoading(true);
+    const wireSteps: PlanStepWire[] = planSteps.map((s) => ({
+      id: s.id,
+      step: s.step,
+      title: s.title,
+      ziel: s.ziel,
+      agent: s.agent,
+      output: s.output,
+      risk: s.risk,
+      gate: s.gate,
+      reason: s.reason,
+      feedback: s.feedback,
+      rating: s.rating,
+    }));
+    const result = await fetchPlanValidate({
+      projectId: project.id,
+      apiKey: apiPreviewKey,
+      signal: controller.signal,
+      draft: {
+        projectId: project.id,
+        projectGoal: trimmedGoal,
+        planSteps: wireSteps,
+        idempotencyKey: generatePreviewIdempotencyKey('plan-validate'),
+      },
+    });
+    if (apiValidateAbortRef.current !== controller) return;
+    apiValidateAbortRef.current = null;
+    setApiValidateLoading(false);
+    if (result.ok) {
+      setApiValidateData(result.data);
+    } else {
+      setApiValidateError({
         status: result.status,
         errorCode: result.errorCode,
         errorMessage: result.errorMessage,
@@ -3856,8 +3935,11 @@ function ProjectsDeepDive({
             size="wide"
             onClose={() => {
               if (apiPreviewAbortRef.current) apiPreviewAbortRef.current.abort();
+              if (apiValidateAbortRef.current) apiValidateAbortRef.current.abort();
               apiPreviewAbortRef.current = null;
+              apiValidateAbortRef.current = null;
               setApiPreviewLoading(false);
+              setApiValidateLoading(false);
               setModal(null);
             }}
           >
@@ -3904,15 +3986,24 @@ function ProjectsDeepDive({
                     >
                       {apiPreviewLoading ? 'Lädt…' : apiPreviewData ? 'Erneut prüfen' : 'Preview anfordern'}
                     </Button>
+                    <Button
+                      tone="secondary"
+                      onClick={() => void handleApiValidate()}
+                      disabled={apiValidateLoading || !apiPreviewKey.trim() || planSteps.length === 0}
+                    >
+                      {apiValidateLoading ? 'Validiert…' : apiValidateData ? 'Schema erneut validieren' : 'Schema validieren'}
+                    </Button>
                     {apiPreviewKey ? (
                       <Button
                         tone="ghost"
                         onClick={() => {
                           if (apiPreviewAbortRef.current) apiPreviewAbortRef.current.abort();
+                          if (apiValidateAbortRef.current) apiValidateAbortRef.current.abort();
                           apiPreviewAbortRef.current = null;
+                          apiValidateAbortRef.current = null;
                           setApiPreviewKey('');
                         }}
-                        disabled={apiPreviewLoading}
+                        disabled={apiPreviewLoading || apiValidateLoading}
                       >
                         Key löschen
                       </Button>
@@ -3921,11 +4012,11 @@ function ProjectsDeepDive({
                 </div>
 
                 <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-[12px] font-semibold leading-5 text-amber-50">
-                  <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200">Phase 2A · Read-only</div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200">Phase 2A + 2B · Read-only</div>
                   <ul className="mt-2 list-disc space-y-1 pl-4">
-                    <li>Backend validiert Payload und antwortet mit normalisiertem Plan, Mutations-Liste und Digest.</li>
-                    <li>Kein Notion-Read. Kein Notion-Write. Kein Dispatcher. Kein Agent-Run.</li>
-                    <li>Phase 2B prüft später dieselbe Payload gegen das Notion-Schema.</li>
+                    <li><span className="font-black">Preview</span>: Backend echoed normalisierten Plan, Mutations-Liste und Digest. Kein Notion-Call.</li>
+                    <li><span className="font-black">Schema validieren</span>: Backend liest Notion-Schema read-only und prüft jede geplante Property gegen die Master-Tasks-DB. Kein Notion-Write.</li>
+                    <li>Kein Dispatcher. Kein Agent-Run. Kein Write-Token. Kein Phase-2C-Commit.</li>
                   </ul>
                 </div>
               </div>
@@ -4010,6 +4101,125 @@ function ProjectsDeepDive({
                     Kein Preview geladen. Operator-Key eingeben und „Preview anfordern" klicken.
                   </div>
                 ) : null}
+
+                {/* Phase 2B — Schema validation report */}
+                {apiValidateError ? (
+                  <div className="rounded-2xl border border-rose-500/50 bg-rose-500/10 p-4 text-sm font-semibold leading-6 text-rose-100">
+                    <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-rose-200">
+                      Validate-Fehler {apiValidateError.status > 0 ? `· HTTP ${apiValidateError.status}` : ''}
+                    </div>
+                    <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-rose-200/90">
+                      {apiValidateError.errorCode || '—'}
+                    </div>
+                    <p className="mt-2">{apiValidateError.errorMessage || 'Unbekannter Fehler.'}</p>
+                  </div>
+                ) : null}
+
+                {apiValidateData ? (
+                  <div className="rounded-2xl border border-cyan-400/40 bg-cyan-500/10 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-cyan-200">
+                        Phase 2B · Schema-Validierung {apiValidateData.schemaOk ? '· OK' : '· Fehler'}
+                      </div>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] ${apiValidateData.schemaOk ? 'border border-emerald-300/50 bg-emerald-400/15 text-emerald-100' : 'border border-rose-300/50 bg-rose-400/15 text-rose-100'}`}>
+                        schemaOk: {String(apiValidateData.schemaOk)}
+                      </span>
+                    </div>
+
+                    <div className="mt-2 grid gap-1 text-[12px] font-semibold leading-5 text-cyan-50 sm:grid-cols-2">
+                      <div>Würde anlegen: <span className="font-black">{apiValidateData.wouldCreateNTasks}</span> Quests</div>
+                      <div>Würde updaten: <span className="font-black">{apiValidateData.wouldUpdateNTasks}</span></div>
+                      <div>Digest: <span className="font-mono">{apiValidateData.echoedDigest}</span></div>
+                      <div>Notion-Writes: <span className="font-black">{apiValidateData.meta?.notionWritesEnabled === false ? 'aus (read-only)' : '?'}</span></div>
+                    </div>
+
+                    {/* Checked databases */}
+                    <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-300/5 p-3">
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-200/90">Geprüfte Datenbanken</div>
+                      <ul className="mt-2 space-y-1 text-[11px] font-semibold leading-5 text-cyan-50/90">
+                        {apiValidateData.checkedDatabases.map((db) => (
+                          <li key={`${db.role}-${db.envVar}`} className="flex flex-wrap items-baseline gap-2">
+                            <span className="text-cyan-200">{db.role}</span>
+                            <span className="text-[#9f8d95]">({db.envVar})</span>
+                            <span className={`rounded px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.16em] ${db.ok ? 'bg-emerald-400/20 text-emerald-100' : db.status === 'skipped' ? 'bg-[#4a101b]/40 text-[#9f8d95]' : 'bg-rose-400/20 text-rose-100'}`}>
+                              {db.status}
+                            </span>
+                            {db.summary ? <span className="text-cyan-50/70">{db.summary}</span> : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Property checks table */}
+                    {apiValidateData.propertyChecks.length > 0 ? (
+                      <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-300/5 p-3">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-200/90">
+                          Property-Checks ({apiValidateData.propertyChecks.length})
+                        </div>
+                        <ul className="mt-2 space-y-1 text-[11px] font-semibold leading-5">
+                          {apiValidateData.propertyChecks.map((c) => {
+                            const toneClass =
+                              c.status === 'safe'
+                                ? 'bg-emerald-400/20 text-emerald-100'
+                                : c.status === 'unsafe'
+                                  ? 'bg-amber-300/25 text-amber-100'
+                                  : c.status === 'skipped'
+                                    ? 'bg-[#4a101b]/40 text-[#9f8d95]'
+                                    : 'bg-rose-400/20 text-rose-100';
+                            return (
+                              <li key={c.notionPropertyName} className="flex flex-wrap items-baseline gap-2">
+                                <span className="text-cyan-50">{c.notionPropertyName}</span>
+                                <span className="text-[#9f8d95]">({c.expectedType}{c.actualType && c.actualType !== c.expectedType ? ` ≠ ${c.actualType}` : ''})</span>
+                                <span className={`rounded px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.16em] ${toneClass}`}>
+                                  {c.status}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {/* Issues */}
+                    {apiValidateData.issues.length > 0 ? (
+                      <div className="mt-3 rounded-xl border border-rose-400/30 bg-rose-500/10 p-3">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-rose-200">
+                          Issues ({apiValidateData.issues.length})
+                        </div>
+                        <ul className="mt-2 space-y-1 text-[11px] font-semibold leading-5 text-rose-50">
+                          {apiValidateData.issues.map((iss, idx) => (
+                            <li key={`${iss.code}-${idx}`}>
+                              <span className="text-rose-200">{iss.code}</span>
+                              {iss.notionPropertyName ? <span className="text-rose-100"> · {iss.notionPropertyName}</span> : null}
+                              <span className="text-rose-50/90"> — {iss.message}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {/* Warnings */}
+                    {apiValidateData.warnings.length > 0 ? (
+                      <div className="mt-3 rounded-xl border border-amber-300/30 bg-amber-300/10 p-3">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">
+                          Warnings ({apiValidateData.warnings.length})
+                        </div>
+                        <ul className="mt-2 space-y-1 text-[11px] font-semibold leading-5 text-amber-50">
+                          {apiValidateData.warnings.map((w, idx) => (
+                            <li key={`${w.code}-${idx}`}>
+                              <span className="text-amber-200">{w.code}</span>
+                              <span className="text-amber-50/90"> — {w.message}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    <div className="mt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-200/70">
+                      Phase 2B: nur Validierung. Kein Notion-Write. Kein Commit. Kein Dispatcher.
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -4018,10 +4228,15 @@ function ProjectsDeepDive({
                 tone="ghost"
                 onClick={() => {
                   if (apiPreviewAbortRef.current) apiPreviewAbortRef.current.abort();
+                  if (apiValidateAbortRef.current) apiValidateAbortRef.current.abort();
                   apiPreviewAbortRef.current = null;
+                  apiValidateAbortRef.current = null;
                   setApiPreviewLoading(false);
+                  setApiValidateLoading(false);
                   setApiPreviewData(null);
                   setApiPreviewError(null);
+                  setApiValidateData(null);
+                  setApiValidateError(null);
                   setModal(null);
                 }}
               >

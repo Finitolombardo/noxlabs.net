@@ -322,6 +322,188 @@ export function propUrl(props: Record<string, unknown>, name: string): string {
   return typeof u === 'string' ? u.trim() : '';
 }
 
+// ---- Phase 2B — Read-only database schema fetch ----
+//
+// Calls `GET /v1/databases/{id}` (Notion's read endpoint for database
+// metadata). No mutation, no POST, no PATCH. Returns the property map
+// so the Phase 2B validator can check that each planned property name
+// exists with the expected type. The same token / timeout / error
+// diagnostics pattern as `queryDatabase` is reused, so behaviour stays
+// consistent across all read-only Notion calls.
+//
+// IMPORTANT: this function never creates, updates, deletes, or otherwise
+// touches Notion. It exists purely to read the schema header so the
+// operator gets a deterministic "this property does/doesn't exist" answer
+// before Phase 2C ever attempts a write.
+
+export type NotionSchemaResult =
+  | { ok: true; properties: Record<string, NotionDatabaseProperty> }
+  | {
+      ok: false;
+      reason: 'upstream_error';
+      statusCode?: number;
+      summary: string;
+      upstreamStatus?: number;
+      upstreamCode?: string;
+      upstreamMessage?: string;
+    };
+
+export interface NotionDatabaseProperty {
+  // Notion's `type` discriminator string (e.g. "title", "rich_text",
+  // "select", "checkbox", "number", "relation", "url", "multi_select",
+  // "people", "date", "files", "url", "email", "phone_number",
+  // "formula", "rollup", "status", "created_time", "last_edited_time",
+  // "created_by", "last_edited_by"). Phase 2B only inspects this string.
+  type: string;
+  // Notion's internal property id (UUID-style or short string).
+  id?: string;
+  // Notion's display name (Phase 2B uses the key in the property map,
+  // which Notion already sets to the display name; this is kept here for
+  // completeness in case Notion ever returns a separate `name` field).
+  name?: string;
+  // Discriminant-typed sub-options. Phase 2B inspects:
+  //   - `select.options` for select properties (option name allowlist)
+  //   - `multi_select.options` for multi-select
+  //   - `relation.database_id` for relation
+  select?: { options?: Array<{ name?: string; id?: string }> };
+  multi_select?: { options?: Array<{ name?: string; id?: string }> };
+  relation?: { database_id?: string };
+}
+
+/**
+ * Read-only Notion database schema fetch. GET /v1/databases/{id}.
+ * No writes. No mutation. Identical timeout + diagnostic pattern as
+ * `queryDatabase`.
+ */
+export async function getDatabaseSchema(
+  token: string,
+  dbId: string,
+): Promise<NotionSchemaResult> {
+  const timeoutMs = resolveFetchTimeoutMs();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let resp: Response;
+  try {
+    resp = await fetch(`${NOTION_API}/databases/${encodeURIComponent(dbId)}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Notion-Version': NOTION_VERSION,
+      },
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const aborted = err instanceof Error && err.name === 'AbortError';
+    return {
+      ok: false,
+      reason: 'upstream_error',
+      summary: aborted
+        ? `notion_timeout after ${timeoutMs}ms`
+        : `notion fetch failed: ${err instanceof Error ? err.name : 'unknown'}`,
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!resp.ok) {
+    const diag = await readNotionErrorDiagnostics(resp);
+    const codePart = diag.upstreamCode ? ` ${diag.upstreamCode}` : '';
+    return {
+      ok: false,
+      reason: 'upstream_error',
+      statusCode: resp.status,
+      summary: `notion schema returned HTTP ${resp.status}${codePart}`,
+      upstreamStatus: resp.status,
+      ...(diag.upstreamCode ? { upstreamCode: diag.upstreamCode } : {}),
+      ...(diag.upstreamMessage ? { upstreamMessage: diag.upstreamMessage } : {}),
+    };
+  }
+
+  let json: unknown;
+  try {
+    json = await resp.json();
+  } catch {
+    return {
+      ok: false,
+      reason: 'upstream_error',
+      statusCode: resp.status,
+      summary: 'invalid json from notion schema',
+    };
+  }
+
+  if (!json || typeof json !== 'object') {
+    return {
+      ok: false,
+      reason: 'upstream_error',
+      statusCode: resp.status,
+      summary: 'unexpected notion schema payload shape',
+    };
+  }
+  const obj = json as { properties?: unknown };
+  if (!obj.properties || typeof obj.properties !== 'object') {
+    return {
+      ok: false,
+      reason: 'upstream_error',
+      statusCode: resp.status,
+      summary: 'notion schema payload missing properties',
+    };
+  }
+
+  const out: Record<string, NotionDatabaseProperty> = {};
+  for (const [name, raw] of Object.entries(obj.properties as Record<string, unknown>)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const r = raw as Record<string, unknown>;
+    const type = typeof r.type === 'string' ? r.type : 'unknown';
+    const prop: NotionDatabaseProperty = { type };
+    if (typeof r.id === 'string') prop.id = r.id;
+    if (typeof r.name === 'string') prop.name = r.name;
+    // Select / multi-select option lists (defensive).
+    const sel = r.select;
+    if (sel && typeof sel === 'object') {
+      const opts = (sel as { options?: unknown }).options;
+      if (Array.isArray(opts)) {
+        const cleaned: Array<{ name?: string; id?: string }> = [];
+        for (const opt of opts) {
+          if (opt && typeof opt === 'object') {
+            const o = opt as { name?: unknown; id?: unknown };
+            const entry: { name?: string; id?: string } = {};
+            if (typeof o.name === 'string') entry.name = o.name;
+            if (typeof o.id === 'string') entry.id = o.id;
+            cleaned.push(entry);
+          }
+        }
+        prop.select = { options: cleaned };
+      }
+    }
+    const ms = r.multi_select;
+    if (ms && typeof ms === 'object') {
+      const opts = (ms as { options?: unknown }).options;
+      if (Array.isArray(opts)) {
+        const cleaned: Array<{ name?: string; id?: string }> = [];
+        for (const opt of opts) {
+          if (opt && typeof opt === 'object') {
+            const o = opt as { name?: unknown; id?: unknown };
+            const entry: { name?: string; id?: string } = {};
+            if (typeof o.name === 'string') entry.name = o.name;
+            if (typeof o.id === 'string') entry.id = o.id;
+            cleaned.push(entry);
+          }
+        }
+        prop.multi_select = { options: cleaned };
+      }
+    }
+    const rel = r.relation;
+    if (rel && typeof rel === 'object') {
+      const dbId = (rel as { database_id?: unknown }).database_id;
+      prop.relation = typeof dbId === 'string' ? { database_id: dbId } : {};
+    }
+    out[name] = prop;
+  }
+
+  return { ok: true, properties: out };
+}
+
 // ---- APP-X-BRIDGE-04c — Notion Project Relation Mapping helpers ----
 
 /**

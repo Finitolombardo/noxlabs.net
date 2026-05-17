@@ -44,7 +44,16 @@ export type AuditEventType =
   // event is emitted only on the 200 success path.
   | 'PLAN_PREVIEW_REQUESTED'
   | 'PLAN_PREVIEW_VALIDATION_FAILED'
-  | 'PLAN_PREVIEW_RESPONDED';
+  | 'PLAN_PREVIEW_RESPONDED'
+  // Phase 2B — Project Auto Planner schema validation. Read-only Notion
+  // schema fetch (GET /v1/databases/{id}) + Projects-DB row lookup. No
+  // Notion writes, no dispatcher, no Phase-2C execution path.
+  | 'PLAN_VALIDATE_REQUESTED'
+  | 'PLAN_VALIDATE_VALIDATION_FAILED'
+  | 'PLAN_VALIDATE_NOT_CONFIGURED'
+  | 'PLAN_VALIDATE_UPSTREAM_FAILED'
+  | 'PLAN_VALIDATE_SCHEMA_OK'
+  | 'PLAN_VALIDATE_SCHEMA_MISMATCH';
 
 export type AuditOutcome = 'success' | 'attempt' | 'blocked' | 'failure';
 
