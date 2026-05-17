@@ -100,7 +100,7 @@ Der Projekte-Bereich im Operator Cockpit ist der erste echte NOX-Agent-Hauptpfad
 
 #### Editierbare Quest-Reihe
 
-Im Planner-Modal sind die Felder eines Schrittes editierbar (Titel, Ziel, Agent, Output, Risiko, Freigabe-Gate). Änderungen leben nur im React-State der Projekte-Seite (`planSteps`), keine Persistenz, kein localStorage, kein Notion-Write. Verfügbare Aktionen:
+Im Planner-Modal sind die Felder eines Schrittes editierbar (Titel, Ziel, Agent, Output, Risiko, Freigabe-Gate). Änderungen werden automatisch in `localStorage` unter dem Key `nox.projectPlanner.localDraft.v1` persistiert (siehe „Lokale Persistenz" unten). Kein Notion-Write, kein Backend. Verfügbare Aktionen:
 
 - **+ Schritt hinzufügen** (Footer unter der Tabelle)
 - **Schritt entfernen** (im Detailpanel rechts)
@@ -109,6 +109,21 @@ Im Planner-Modal sind die Felder eines Schrittes editierbar (Titel, Ziel, Agent,
 - **Entwurf kopieren** (Clipboard mit Projektziel + allen Feldern pro Schritt + Status)
 - **Als Plan-Output vormerken** (lokaler `Plan`-Output mit dem Projektziel im Beschreibungstext)
 - **Später als Quest erzeugen (Phase 2)** — bewusst deaktiviert
+
+#### Lokale Persistenz
+
+- **Key**: `nox.projectPlanner.localDraft.v1` (versioniert; bei späterem Schemawechsel wird ein neuer Key vergeben, keine Migration).
+- **Gespeichert**: `projectId`, `projectGoal`, `planSteps`, `selectedStepId`, `updatedAt` (ISO-Zeitstempel).
+- **Scope**: nur der Entwurf des **aktuell gewählten Projekts**. Wechsel auf ein anderes Projekt lädt dessen Entwurf bzw. setzt den Generator-Default ein.
+- **Auto-Save**: `useEffect` schreibt nach jeder Änderung an `projektZiel`, `planSteps` oder `plannerSelectedStepId`. Erste Auto-Save-Runde wird unterdrückt, bis die Hydrierung für die aktuelle Projekt-ID abgeschlossen ist, damit der gespeicherte Draft nicht vom Generator-Output überschrieben wird.
+- **Hydrierung**: Mount und Projektwechsel lesen `localStorage` defensiv (try/catch, Strukturprüfung auf `PlanStep`-Felder, Risiko-Whitelist). Kaputter JSON-Inhalt wird stillschweigend ignoriert, kein Crash.
+- **Restore-Hinweis**: Ein cyan-getöntes Banner „Lokaler Entwurf wiederhergestellt" mit `Stand: …`-Zeitstempel wird in der Composer-Card angezeigt, wenn ein Draft tatsächlich aus `localStorage` gelesen wurde. Banner ist mit `OK` schließbar.
+- **Buttons**:
+  - `Lokalen Entwurf löschen` — entfernt den Key aus `localStorage`, setzt Zustand auf Generator-Default zurück.
+  - `Zurücksetzen` — verwirft nur den aktuellen Composer-State (auto-saved direkt wieder als leerer Entwurf).
+  - `Lokalen Plan entwerfen` — schließt das Restore-Banner, regeneriert aus dem aktuellen Projektziel und öffnet das Planner-Modal.
+- **Keine Migration**: Versionierter Key + Strukturprüfung machen Migrationsskripte überflüssig. Bei Schemawechsel wird `v1` ignoriert und ein `v2`-Key eingeführt.
+- **Keine Cross-Browser-Sync**: rein lokal pro Browser-Profil — kein Notion, kein Backend, kein API-Call.
 4. **Offene Entscheidungen & Blocker** — übernimmt die Freigaben-Funktion. Zeigt projektbezogene Blocker plus eine Liste offener Freigaben (Titel, Beschreibung, Risiko, Status, NOX-Agent-Empfehlung) mit drei deaktivierten Phase-2-Buttons (`Freigeben`, `Rückfrage stellen`, `Ablehnen`). Wenn weder Blocker noch Freigaben offen sind: Hinweis „Keine kritischen Blocker. Nächste Aktion weiter ausführbar."
 5. **Verknüpfte Quests** — projektbezogen, klickbar zum Quest-Detail.
 6. **Outputs & Artefakte (Tabelle)** — datenbankartige Tabelle mit Spalten `Typ`, `Titel`, `Version`, `Status`, `Speicherort`, `Projekt`, `Aktionen`. Titel ist klickbar und öffnet ein **Output-Detail-Modal** (Typ, Version, Status, Speicherort, Projekt, Beschreibung). Pro Zeile fünf Aktions-Buttons als lokale Demo-Aktion mit Tooltip „Phase 1: lokale Demo-Aktion. Persistenz folgt später.": `Öffnen`, `Aktualisieren`, `In Google Drive speichern`, `In Notion speichern`, `Herunterladen`. Keine echten Writes, kein Drive, kein Notion, kein realer Download.

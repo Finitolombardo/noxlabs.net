@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { fetchOperatorProjectContext } from '../lib/operatorContextClient';
 import type {
@@ -3065,6 +3065,78 @@ function generateLocalPlan(goalRaw: string): PlanStep[] {
   ];
 }
 
+// Phase-1 local persistence for the Project Auto Planner draft.
+// Lives in localStorage under a versioned key so future schemas can
+// ignore old drafts cleanly. No API, no Notion, no backend.
+const PLAN_DRAFT_KEY = 'nox.projectPlanner.localDraft.v1';
+
+type PlanDraft = {
+  projectId: string;
+  projectGoal: string;
+  planSteps: PlanStep[];
+  selectedStepId: string | null;
+  updatedAt: string;
+};
+
+function isPlanStep(value: unknown): value is PlanStep {
+  if (!value || typeof value !== 'object') return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.id === 'string' &&
+    typeof v.step === 'number' &&
+    typeof v.title === 'string' &&
+    typeof v.ziel === 'string' &&
+    typeof v.agent === 'string' &&
+    typeof v.output === 'string' &&
+    (v.risk === 'Niedrig' || v.risk === 'Mittel' || v.risk === 'Hoch') &&
+    typeof v.gate === 'string'
+  );
+}
+
+function loadPlanDraftSafely(projectId: string): PlanDraft | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(PLAN_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const p = parsed as Record<string, unknown>;
+    if (typeof p.projectId !== 'string' || p.projectId !== projectId) return null;
+    if (typeof p.projectGoal !== 'string') return null;
+    if (!Array.isArray(p.planSteps) || !p.planSteps.every(isPlanStep)) return null;
+    const selected = typeof p.selectedStepId === 'string' ? p.selectedStepId : null;
+    const updatedAt = typeof p.updatedAt === 'string' ? p.updatedAt : new Date().toISOString();
+    return {
+      projectId: p.projectId,
+      projectGoal: p.projectGoal,
+      planSteps: p.planSteps,
+      selectedStepId: selected,
+      updatedAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function savePlanDraftSafely(draft: PlanDraft) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(PLAN_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // Quota/serialization errors are ignored — Phase-1 persistence is
+    // best-effort and must never break the cockpit UI.
+  }
+}
+
+function clearPlanDraftSafely() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(PLAN_DRAFT_KEY);
+  } catch {
+    // ignore — see savePlanDraftSafely
+  }
+}
+
 function ProjectsDeepDive({
   project,
   selectedProjectId,
@@ -3107,11 +3179,59 @@ function ProjectsDeepDive({
   const [outputPrompt, setOutputPrompt] = useState('');
   const [outputDetail, setOutputDetail] = useState<OutputArtifact | null>(null);
   // Project-goal text and editable plan steps live in this component.
-  // Both are intentionally not persisted (no localStorage) — Phase 1
-  // is reset-on-reload to make the local-only nature obvious.
+  // Persisted to localStorage under `nox.projectPlanner.localDraft.v1`,
+  // scoped per project id. Still no API, no Notion, no backend.
   const [projektZiel, setProjektZiel] = useState<string>('');
   const [planSteps, setPlanSteps] = useState<PlanStep[]>(() => generateLocalPlan(''));
   const [plannerSelectedStepId, setPlannerSelectedStepId] = useState<string | null>(null);
+  const [restoredAt, setRestoredAt] = useState<string | null>(null);
+  // Tracks whether the current state was already hydrated for this
+  // project id. We delay persistence until after hydration so the
+  // first auto-save does not overwrite the stored draft with a fresh
+  // generator output.
+  const hydrationProjectIdRef = useRef<string | null>(null);
+
+  // Hydrate from localStorage whenever the active project changes.
+  // Falls back to the default generator output when no draft is
+  // stored for this project id, or when the stored payload is
+  // structurally broken.
+  useEffect(() => {
+    const draft = loadPlanDraftSafely(project.id);
+    if (draft) {
+      setProjektZiel(draft.projectGoal);
+      setPlanSteps(draft.planSteps);
+      setPlannerSelectedStepId(draft.selectedStepId);
+      setRestoredAt(draft.updatedAt);
+    } else {
+      setProjektZiel('');
+      setPlanSteps(generateLocalPlan(''));
+      setPlannerSelectedStepId(null);
+      setRestoredAt(null);
+    }
+    hydrationProjectIdRef.current = project.id;
+  }, [project.id]);
+
+  // Auto-persist on every relevant change, but only after the project
+  // has been hydrated to avoid clobbering an existing stored draft
+  // with the default generator output during the first render pass.
+  useEffect(() => {
+    if (hydrationProjectIdRef.current !== project.id) return;
+    savePlanDraftSafely({
+      projectId: project.id,
+      projectGoal: projektZiel,
+      planSteps,
+      selectedStepId: plannerSelectedStepId,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [project.id, projektZiel, planSteps, plannerSelectedStepId]);
+
+  function deleteLocalDraft() {
+    clearPlanDraftSafely();
+    setProjektZiel('');
+    setPlanSteps(generateLocalPlan(''));
+    setPlannerSelectedStepId(null);
+    setRestoredAt(null);
+  }
 
   function regeneratePlan(goal: string) {
     const next = generateLocalPlan(goal);
@@ -3376,10 +3496,14 @@ function ProjectsDeepDive({
         onChange={setProjektZiel}
         onGenerate={() => {
           regeneratePlan(projektZiel);
+          setRestoredAt(null);
           setModal('planner');
         }}
         onReset={resetPlan}
+        onDeleteDraft={deleteLocalDraft}
         stepCount={planSteps.length}
+        restoredAt={restoredAt}
+        onDismissRestoreNotice={() => setRestoredAt(null)}
       />
 
       <ProjectAutoPlannerActions
@@ -3833,17 +3957,34 @@ function ProjectGoalComposer({
   onChange,
   onGenerate,
   onReset,
+  onDeleteDraft,
   stepCount,
+  restoredAt,
+  onDismissRestoreNotice,
 }: {
   value: string;
   onChange: (next: string) => void;
   onGenerate: () => void;
   onReset: () => void;
+  onDeleteDraft: () => void;
   stepCount: number;
+  restoredAt: string | null;
+  onDismissRestoreNotice: () => void;
 }) {
   // Local-only goal composer. Pure UI on top of the planner state.
   // No fetch, no Notion write, no dispatcher. Empty input becomes a
-  // demo goal in the rule-based generator.
+  // demo goal in the rule-based generator. Persistence is opaque
+  // localStorage and lives in the parent — the composer just shows
+  // the restore notice and exposes a delete-draft button.
+  const restoredAtLabel = restoredAt
+    ? new Date(restoredAt).toLocaleString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null;
   return (
     <Card className="!p-5 md:!p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -3857,13 +3998,29 @@ function ProjectGoalComposer({
           <h2 className="mt-2 text-xl font-black leading-tight text-[#fff7fb] md:text-2xl">Was soll als nächstes entstehen?</h2>
           <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-[#cbbbc3]">
             Schreib ein konkretes Ziel. Der lokale Plan-Generator (regelbasiert, keine KI, keine API) macht daraus einen
-            editierbaren Quest-Reihen-Entwurf.
+            editierbaren Quest-Reihen-Entwurf. Änderungen werden automatisch lokal in deinem Browser gespeichert.
           </p>
         </div>
         <div className="text-right text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
           {stepCount} Schritte im Entwurf
         </div>
       </div>
+
+      {restoredAt ? (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-3 text-[12px] font-semibold leading-5 text-cyan-100">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-200/80">Lokaler Entwurf wiederhergestellt</span>
+            {restoredAtLabel ? <span className="text-cyan-100/80">Stand: {restoredAtLabel}</span> : null}
+          </div>
+          <button
+            type="button"
+            onClick={onDismissRestoreNotice}
+            className="rounded-md border border-cyan-300/30 bg-cyan-300/5 px-2 py-1 text-[11px] font-bold text-cyan-100 transition hover:bg-cyan-300/15"
+          >
+            OK
+          </button>
+        </div>
+      ) : null}
 
       <div className="mt-5">
         <textarea
@@ -3877,9 +4034,10 @@ function ProjectGoalComposer({
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <span className="text-[11px] font-semibold leading-5 text-[#7f6f76]">
-          Phase 1 · regelbasiert · keine API · keine Notion-Writes
+          Phase 1 · regelbasiert · automatische localStorage-Speicherung · keine API · keine Notion-Writes
         </span>
         <div className="flex flex-wrap gap-2">
+          <Button tone="ghost" onClick={onDeleteDraft}>Lokalen Entwurf löschen</Button>
           <Button tone="ghost" onClick={onReset}>Zurücksetzen</Button>
           <Button onClick={onGenerate}>Lokalen Plan entwerfen</Button>
         </div>
