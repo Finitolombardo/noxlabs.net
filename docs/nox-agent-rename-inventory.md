@@ -3,10 +3,13 @@
 > Read-only Inventar aller `Andromeda` / `ANDROMEDA` Vorkommen im Repo.
 > Stand: 2026-05-17. Quelle: `rg -i "andromeda" docs/ api/ src/ public/`.
 >
-> **Keine Renames ausgefuehrt.** Diese Datei klassifiziert nur, was spaeter
-> sicher umbenannt werden kann (visible-text) und wo eine eigene
-> Migrations-Quest noetig ist (internal-identifier, env-vars,
-> API-Kontrakte, Dateinamen, Notion-Property-Names).
+> **Stufe 1 (visible-text) wurde ausgefuehrt.** Sichtbare UI-Texte, Doku-Prosa
+> und Kommentare ohne Contract-Funktion sind in dieser Quest auf `NOX Agent`
+> umgestellt. Risiken-Cluster 1–6 (Env-Variablen, Notion-Property-Name,
+> API-Contract-Feld `andromedaContext`, Projekt-ID-Literal `'ANDROMEDA'`,
+> TS-Typnamen, Dateinamen) bleiben **bewusst unveraendert** und werden ueber
+> separate Migrationsquests adressiert. Andromeda ist Altname, NOX Agent ist
+> der kanonische Produktname.
 
 ## Klassifikations-Schluessel
 

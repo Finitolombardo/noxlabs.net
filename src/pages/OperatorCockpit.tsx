@@ -166,9 +166,9 @@ const projects: Project[] = [
   {
     id: 'ANDROMEDA',
     code: 'ANDROMEDA',
-    name: 'Andromeda',
+    name: 'NOX Agent',
     type: 'Quest-Orchestrator',
-    owner: 'Andromeda',
+    owner: 'NOX Agent',
     status: 'Stage 11B',
     progress: 72,
     vision: 'Aufgaben strukturieren, Quests vorbereiten, Worker vorschlagen und Übergaben koordinieren.',
@@ -234,7 +234,7 @@ const projects: Project[] = [
     code: 'YOUTUBE-INTEL',
     name: 'YouTube Intelligence',
     type: 'Wissen',
-    owner: 'Andromeda',
+    owner: 'NOX Agent',
     status: 'Geplant',
     progress: 12,
     vision: 'NOX lernt aus Top-Creator-Videos und erzeugt daraus Content-Playbooks und Quests.',
@@ -382,8 +382,8 @@ const initialQuests: Quest[] = [
     status: 'In Arbeit',
     active: false,
     priority: 'Hoch',
-    agent: 'Andromeda',
-    goal: 'Andromeda strukturiert Aufgaben als Unter-Orchestrator, ohne NOX als sichtbares Gehirn zu verdraengen.',
+    agent: 'NOX Agent',
+    goal: 'NOX Agent strukturiert Aufgaben als Unter-Orchestrator, ohne NOX als sichtbares Gehirn zu verdrängen.',
     notes: 'Project-aware Kontext, Backfill und Aktivierungslogik müssen zusammenpassen.',
     acceptanceCriteria: ['NOX bleibt primaerer Ansprechpartner', 'Projektkontext wird erkannt', 'Übergaben sind nachvollziehbar'],
     requiresApproval: false,
@@ -398,7 +398,7 @@ const initialQuests: Quest[] = [
     status: 'Offen',
     active: false,
     priority: 'Normal',
-    agent: 'Andromeda',
+    agent: 'NOX Agent',
     goal: 'Freigaben werden als Review-Gate vorbereitet, nicht als automatische Ausführung.',
     notes: 'Telegram ist später Approval-/Alarm-Kanal, nicht Hauptsteuerzentrale.',
     acceptanceCriteria: ['Freigabearten beschrieben', 'Risiko sichtbar', 'Keine echten Sends'],
@@ -597,7 +597,7 @@ const initialMilestones: Milestone[] = [
     dateLabel: 'Gestern',
     type: 'Stage 11B',
     title: 'Project-aware Patch vorbereitet',
-    description: 'Andromeda kann für den Backfill vorbereitet werden, sobald der UI-Stand freigegeben ist.',
+    description: 'NOX Agent kann für den Backfill vorbereitet werden, sobald der UI-Stand freigegeben ist.',
   },
   {
     id: 'M-LG-1',
@@ -688,7 +688,7 @@ const routeAliasForSidebar: Record<string, string> = {
   Canvas: 'Faehigkeiten',
 };
 
-const agentOptions = ['NOX', 'Andromeda', 'Claude', 'Project X', 'Owner'];
+const agentOptions = ['NOX', 'NOX Agent', 'Claude', 'Project X', 'Owner'];
 const statusFilterOptions = ['Alle', 'Offen', 'Aktiv', 'In Arbeit', 'Pruefung noetig', 'Blockiert', 'Erledigt'];
 const priorityOptions = ['Hoch', 'Normal', 'Niedrig'];
 
@@ -1258,7 +1258,7 @@ export default function OperatorCockpit() {
                 <SimplePage
                   eyebrow="Workflow-Zonen"
                   title="Handoff-, Dry-Run- und Approval-Zonen"
-                  text="Project-X-Handoffs, Andromeda-Commands und Quest-Generator leben jetzt im jeweiligen Projektkontext. Oeffne ein Projekt, um die Commands, Dry-Runs und Outputs an dieser Stelle zu sehen."
+                  text="Project-X-Handoffs, NOX-Agent-Commands und Quest-Generator leben jetzt im jeweiligen Projektkontext. Öffne ein Projekt, um die Commands, Dry-Runs und Outputs an dieser Stelle zu sehen."
                 />
               ) : null}
 
@@ -1588,7 +1588,7 @@ function QuestGenerator({
     const generated: QuestDraft[] = [
       { id: `DRAFT-${Date.now()}-1`, title: 'Transkriptions-Pipeline aufsetzen', project: selectedProjectId, agent: 'Project X', prio: 'Hoch', summary: 'Workflow-Draft für YouTube-Link zu Transkript zu Insight vorbereiten.' },
       { id: `DRAFT-${Date.now()}-2`, title: 'Creator-Muster Analyse', project: selectedProjectId, agent: 'NOX', prio: 'Normal', summary: 'Prompt-Template für Hooks, Patterns und Content-Playbooks erstellen.' },
-      { id: `DRAFT-${Date.now()}-3`, title: 'Quest-Erstellung vorbereiten', project: selectedProjectId, agent: 'Andromeda', prio: 'Kritisch', summary: 'Erkannte Playbooks in strukturierte Quest-Drafts umwandeln.' },
+      { id: `DRAFT-${Date.now()}-3`, title: 'Quest-Erstellung vorbereiten', project: selectedProjectId, agent: 'NOX Agent', prio: 'Kritisch', summary: 'Erkannte Playbooks in strukturierte Quest-Drafts umwandeln.' },
     ];
     setProjectDrafts((current) => [...generated, ...current]);
     addMilestone(selectedProjectId, 'Quest', '3 Quest-Entwürfe generiert', input);
@@ -2027,7 +2027,7 @@ function LiveContextDataView({ data }: { data: ProjectContextResponse }) {
             <LiveContextField label="Nächste Aktion" value={project.nextAction} />
             <LiveContextField label="Aktueller Stand" value={project.currentState} />
             <LiveContextField label="Vision" value={project.vision} />
-            <LiveContextField label="Andromeda Kontext" value={project.andromedaContext} />
+            <LiveContextField label="NOX-Agent-Kontext" value={project.andromedaContext} />
           </dl>
           {(project.allowedActions || project.forbiddenActions) ? (
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
@@ -2219,7 +2219,7 @@ function ProjectX({
         <div className="space-y-8">
           <Card>
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <SectionTitle eyebrow="Andromeda" title="Command Queue" />
+              <SectionTitle eyebrow="NOX Agent" title="Command Queue" />
               <Pill tone="gold">{commands.length}</Pill>
             </div>
 
@@ -2464,7 +2464,7 @@ function DryRunResultPanel({ result, compact = false }: { result: DryRunResult; 
 function IntegrationStatus() {
   const rows = [
     ['Frontend Demo-State', 'Aktiv'],
-    ['Andromeda API', 'Nicht verbunden'],
+    ['NOX-Agent-API', 'Nicht verbunden'],
     ['Backend-Proxy', 'Fehlt'],
     ['Secret-Schutz', 'Fehlt'],
     ['Live-Ausführung', 'Gesperrt'],
@@ -2475,7 +2475,7 @@ function IntegrationStatus() {
     <Card>
       <SectionTitle eyebrow="Sicherheit" title="Integrationsstatus" />
       <p className="mt-5 text-sm font-semibold leading-6 text-[#eadbe2]">
-        Direkte Browser-Verbindung zu Andromeda ist absichtlich deaktiviert. Der echte Anschluss muss ueber einen serverseitigen Proxy mit HMAC/Secret-Schutz erfolgen.
+        Direkte Browser-Verbindung zum NOX Agent ist absichtlich deaktiviert. Der echte Anschluss muss über einen serverseitigen Proxy mit HMAC/Secret-Schutz erfolgen.
       </p>
       <div className="mt-5 space-y-3">
         {rows.map(([label, value]) => (

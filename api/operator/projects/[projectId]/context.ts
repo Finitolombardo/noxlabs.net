@@ -1,6 +1,6 @@
 // APP-X-BRIDGE-04a + APP-X-BRIDGE-04c — GET /api/operator/projects/:projectId/context
 //
-// Read-only Notion projection. No writes. No Andromeda upstream calls.
+// Read-only Notion projection. No writes. No NOX Agent upstream calls.
 // No uploads. No Drive/Miro. No Telegram.
 //
 // Pipeline:

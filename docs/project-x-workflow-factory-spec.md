@@ -3,7 +3,7 @@
 > Spezifikation. Nicht Implementation. Keine Backend-Verdrahtung in dieser
 > Runde. Keine echten n8n-Writes, keine Workflow-Aktivierungen, keine
 > Agent-Executes. Dient als gemeinsame Wahrheit zwischen Operator,
-> Andromeda und allen Workern (OpenCode, Codex, AntiGravity, Noxreel,
+> NOX Agent und allen Workern (OpenCode, Codex, AntiGravity, Noxreel,
 > Claude), damit kuenftige Build-Quests nicht erneut "Was ist Project X?"
 > diskutieren muessen.
 
@@ -14,7 +14,7 @@
 | Begriff       | Rolle                                                                                                  |
 | ------------- | ------------------------------------------------------------------------------------------------------ |
 | **APP-X**     | Cockpit (UI). Zeigt Projekte, Quests, Freigaben, Live-Notion-Kontext, Operator-Aktionen.               |
-| **Andromeda** | Orchestrator/Gehirn. Zerlegt Ziele in Quests, verteilt an Worker, prueft Grenzen + Freigaben.          |
+| **NOX Agent** | Orchestrator/Gehirn. Zerlegt Ziele in Quests, verteilt an Worker, prueft Grenzen + Freigaben.          |
 | **Project X** | **Workflow-Fabrik**. Inventarisiert, modularisiert, testet, verbessert n8n-Workflows und Produktmodule. |
 | **Leadgen**   | Erstes Produkt-/Use-Case-Modul, das ueber Project X gebaut wird.                                       |
 | **n8n**       | Runtime (`n8n.getvoidra.com`). Hostet Workflows. Wird von Project X *gepflegt*, nicht *bedient*.       |
@@ -159,7 +159,7 @@ AutomationOpportunity {
 ```
 
 Phase 1: rein deskriptiv (Operator entscheidet). Spaeter koennen
-Andromeda-Sub-Quests automatisch Suggested-Module zur Pruefung anlegen.
+NOX-Agent-Sub-Quests automatisch Suggested-Module zur Pruefung anlegen.
 
 ### F — Workflow Lab / A-B-Testing
 
@@ -223,7 +223,7 @@ DryRunResult {
 ```
 
 Approval-Gate ist immer **Operator-bound**. Kein Worker, kein Agent, kein
-Andromeda-Sub-Quest darf das Gate selbst durchschalten. Phase 1: nur
+NOX-Agent-Sub-Quest darf das Gate selbst durchschalten. Phase 1: nur
 Anzeige, kein Deploy. Phase 8+: kontrollierter n8n-Import nach Freigabe.
 
 ### I — Evolution Engine
@@ -301,7 +301,7 @@ mit echten Daten):
 | Kunden-Setup       | Liste CustomerSetup pro Template                            | ja         | Setup Wizard starten (P4)                        |
 | Dry-runs           | DryRunResult-Historie, expandable                            | ja         | Erneut Dry-runnen (P5)                           |
 | Produktmodule      | Module-Inventar mit Version + Tag                           | ja         | Modul in Template einsetzen (P3+)                |
-| Agent Tasks        | offene Andromeda-Sub-Quests zu Project X                    | ja         | —                                                |
+| Agent Tasks        | offene NOX-Agent-Sub-Quests zu Project X                    | ja         | —                                                |
 
 Designprinzipien (kompatibel zu APP-X-UI-01):
 - Eine Section pro Card, mehrere Cards untereinander
@@ -706,7 +706,7 @@ ausgefuehrt.**
 - **Notion read-only fuer Phase 1–3.** Schreibzugriff auf Notion
   (z.B. Workflow-Catalog-DB Updates, AI-Systeme-Status-Updates) ist
   eigene Quest mit eigenem Approval.
-- **Kein Bypass ueber Andromeda.** Andromeda darf Quests anlegen, die
+- **Kein Bypass über NOX Agent.** NOX Agent darf Quests anlegen, die
   Approvals *vorbereiten*, aber niemals Approvals *erteilen*.
 
 ---
@@ -791,7 +791,7 @@ die folgenden Sections — **alle Read-only/Demo mit lokalen Mock-Daten**:
 - Echte Drive-OAuth oder Drive-Inhaltsabruf
 - AI-Systeme-Status-Update
 - n8n-Import oder -Aktivierung
-- Andromeda-Sub-Quest-Dispatch
+- NOX-Agent-Sub-Quest-Dispatch
 - Operator-Approval-Persistenz
 
 ### Erfolgskriterium

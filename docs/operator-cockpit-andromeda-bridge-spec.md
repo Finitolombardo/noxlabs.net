@@ -1,10 +1,10 @@
-# NOX Operator Cockpit · Andromeda / Project X Bridge Spec
+# NOX Operator Cockpit · NOX Agent / Project X Bridge Spec
 
 ## 1. Zweck
 
-Diese Bridge beschreibt, wie das interne NOX Operator Cockpit spaeter sicher mit Andromeda und Project X verbunden werden soll.
+Diese Bridge beschreibt, wie das interne NOX Operator Cockpit spaeter sicher mit dem NOX Agent und Project X verbunden werden soll.
 
-Das NOX Operator Cockpit ist die interne UI fuer Projekte, Quests, Freigaben, Outputs und Operator-Arbeit. NOX bleibt dabei das sichtbare Gehirn und die fuehrende Bedienoberflaeche. Andromeda ist der Orchestrator fuer Projekt- und Quest-Uebergaben. Project X ist die Workflowfabrik, die aus freigegebenen Uebergaben verwertbare Spezifikationen, Runner-Aufgaben oder Workflow-Schritte vorbereitet.
+Das NOX Operator Cockpit ist die interne UI fuer Projekte, Quests, Freigaben, Outputs und Operator-Arbeit. NOX bleibt dabei das sichtbare Gehirn und die fuehrende Bedienoberflaeche. NOX Agent ist der Orchestrator für Projekt- und Quest-Übergaben. Project X ist die Workflowfabrik, die aus freigegebenen Uebergaben verwertbare Spezifikationen, Runner-Aufgaben oder Workflow-Schritte vorbereitet.
 
 Das Frontend darf niemals Secrets, HMAC-Schluessel, private Worker-URLs oder direkte Runner-Endpunkte enthalten. Jede echte Ausfuehrung muss ueber einen serverseitigen Backend-Proxy laufen.
 
@@ -15,7 +15,7 @@ Zielarchitektur:
 ```text
 Operator Cockpit Frontend
   -> Backend Proxy
-  -> Andromeda Orchestrator
+  -> NOX Agent Orchestrator
   -> Project X / Runner / Workflowfabrik
   -> Rueckmeldung an Backend
   -> UI State / Audit Log
@@ -25,7 +25,7 @@ Rollen:
 
 - Operator Cockpit Frontend: zeigt Commands, Dry-Runs, Freigaben, Outputs und Audit-Status.
 - Backend Proxy: validiert Requests, schuetzt Secrets, signiert/verifiziert Commands und schreibt Audit-Logs.
-- Andromeda Orchestrator: uebersetzt freigegebene Operator-Intents in strukturierte Uebergaben.
+- NOX Agent Orchestrator: uebersetzt freigegebene Operator-Intents in strukturierte Uebergaben.
 - Project X / Runner / Workflowfabrik: bereitet Workflows, Specs oder spaetere Ausfuehrungen vor.
 - Audit Log: speichert jede Command-Erstellung, Dry-Run-Aktion, Freigabe, Ablehnung und Ausfuehrung.
 
@@ -44,7 +44,7 @@ Rollen:
 
 ## 4. Command Contract
 
-Der aktuelle lokale Andromeda Command Contract im Cockpit dient als Frontend-Demo-Modell und spaetere API-Vorlage.
+Der aktuelle lokale NOX-Agent-Command-Contract im Cockpit dient als Frontend-Demo-Modell und spaetere API-Vorlage.
 
 Felder:
 
@@ -432,7 +432,7 @@ api/
 
 - Kein `fetch`, kein `http.request`, kein `node-fetch`-Import in `api/`.
 - Keine Umgebungsvariablen werden gelesen (`process.env` taucht nicht auf).
-- Kein Notion-, Telegram-, n8n- oder Andromeda-Call.
+- Kein Notion-, Telegram-, n8n- oder NOX-Agent-Call.
 - `commandType` wird serverseitig gegen `ALLOWED_COMMAND_TYPES` validiert.
 - `riskLevel` wird serverseitig gegen `ALLOWED_RISK_LEVELS` validiert.
 - `action` wird serverseitig gegen `ALLOWED_ACTIONS` validiert.
@@ -442,10 +442,10 @@ api/
 
 ### Was noch fehlt fuer echte Integration
 
-- **HMAC-Signatur** zwischen Backend-Proxy und Andromeda-Upstream (Replay-Schutz via Timestamp + Nonce).
+- **HMAC-Signatur** zwischen Backend-Proxy und NOX-Agent-Upstream (Replay-Schutz via Timestamp + Nonce).
 - **Echte Auth** auf den Endpunkten (z.B. Operator-Session-Cookie / Vercel OIDC / Supabase Row-Level-Security).
 - **Persistenz-Layer mit Audit-Log** (Supabase / Postgres / Vercel KV). Aktueller Store ist In-Memory und ueberlebt keinen Cold-Start.
-- **Andromeda-Upstream-URL** als serverseitige Env-Variable (`ANDROMEDA_DISPATCH_URL` + `ANDROMEDA_HMAC_SECRET`), nie im Frontend.
+- **NOX-Agent-Upstream-URL** als serverseitige Env-Variable (`ANDROMEDA_DISPATCH_URL` + `ANDROMEDA_HMAC_SECRET`), nie im Frontend.
 - **Notion-Callback-/Read-Write-Safety** mit getrennten Tokens und Field-Allowlist.
 - **Telegram-Approval-Integration** als separater eingehender Webhook, niemals direkter Browser-Call.
 - **Rate Limits** pro Operator-Identitaet (z.B. Upstash Ratelimit oder Vercel KV).
@@ -513,8 +513,8 @@ Reines Bootstrap-Gate, das die Stub-Endpunkte inert haelt, solange der Operator 
 - User/Session-Auth (Vercel OIDC, Supabase Auth, oder mind. Cloudflare-Access vor der Route)
 - Rate Limits pro Identitaet (Upstash, Vercel KV) inkl. Burst-Limit
 - Persistenz-Layer fuer Commands + Audit Log
-- HMAC-Signatur Backend Proxy <-> Andromeda Upstream
-- Andromeda-Upstream-Allowlist + getrennte Env-Variable `ANDROMEDA_DISPATCH_URL`
+- HMAC-Signatur Backend Proxy <-> NOX-Agent-Upstream
+- NOX-Agent-Upstream-Allowlist + getrennte Env-Variable `ANDROMEDA_DISPATCH_URL`
 - Replay-Schutz via Timestamp + Nonce auf jedem Upstream-Call
 - `execute`-Unlock nur durch explizite Server-Config UND vorhandene Freigabe UND HMAC-Verifikation
 
@@ -600,7 +600,7 @@ GET /api/operator/audit
 - **Keine persistente DB**: Ring-Buffer und Bucket-Map sterben beim Cold-Start.
 - **Kein WAF**: Vercel-Edge macht nichts Zusaetzliches; das hier ist ein
   In-Process-Drossel, kein DDoS-Schutz.
-- **Kein Upstream-Call**: Andromeda/Notion/Telegram werden weiterhin nicht
+- **Kein Upstream-Call**: NOX Agent / Notion / Telegram werden weiterhin nicht
   beruehrt.
 - **Kein `execute`-Unlock**: bleibt hartcodiert auf 423.
 
@@ -611,7 +611,7 @@ GET /api/operator/audit
 - **Geteilter Rate-Limit-Store** quer ueber Serverless-Instances (Upstash /
   Vercel KV).
 - **Per-User-Auth** statt eines gemeinsamen Schluessels.
-- **HMAC-Upstream** zwischen Backend-Proxy und Andromeda inkl. Timestamp +
+- **HMAC-Upstream** zwischen Backend-Proxy und NOX Agent inkl. Timestamp +
   Nonce.
 - **Replay-Schutz** auf Idempotency-Keys mit TTL.
 - **Persistente Idempotency-Liste** statt nur In-Memory-Map.
@@ -620,7 +620,7 @@ GET /api/operator/audit
 
 Neuer Endpoint, der erstmals eine externe Quelle anbindet: die Notion
 Master-Tasks-DB. Strikt **read-only**. Kein Schreiben, kein Anlegen, keine
-Schema-Mutation. Kein Andromeda-Upstream. Keine Uploads.
+Schema-Mutation. Kein NOX-Agent-Upstream. Keine Uploads.
 
 ### Implementiert
 
@@ -709,7 +709,7 @@ Neue `AuditEventType`-Werte:
 
 - Kein Schreibzugriff auf Notion (kein PATCH, kein POST ausser dem
   read-only Query-Endpoint, kein Block-Append).
-- Kein Andromeda/n8n-Aufruf.
+- Kein NOX-Agent-/n8n-Aufruf.
 - Kein Telegram-Send.
 - Token wird je Request aus `process.env` gelesen — kein Modul-State.
 - Notion-Body-Errors landen nicht im Response-Body — nur ein kurzer Code.
@@ -718,7 +718,7 @@ Neue `AuditEventType`-Werte:
 ### Nicht-Ziele
 
 - Keine Notion-Schreibzugriffe (auch nicht „nur Status").
-- Kein Andromeda-Trigger.
+- Kein NOX-Agent-Trigger.
 - Kein Cockpit-Frontend-Connect (eigene Quest BRIDGE-05).
 - Kein Caching-Layer (eigene Quest, sobald Lasttests es rechtfertigen).
 - Keine Cursor-Pagination (eine Page mit 100 Tasks reicht im MVP).
@@ -737,7 +737,7 @@ Neue `AuditEventType`-Werte:
 
 ### ReferenceArtifact (definiert, **nicht implementiert**)
 
-`ReferenceArtifact` ist die geteilte Struktur, mit der Andromeda und APP-X
+`ReferenceArtifact` ist die geteilte Struktur, mit der NOX Agent und APP-X
 spaeter visuelle/dokumentarische Referenzen an Commands, Quests oder
 ganze Projekte anhaengen. Aktuell **nur als Type** in `api/_lib/types.ts` —
 keine Storage-Logik, keine Upload-Pipeline, keine Ingestion.
@@ -925,7 +925,7 @@ Audit-Eintrag — nur kurze `detailsSummary`-Strings.
 ### Sicherheitsgrenzen (unveraendert)
 
 - Kein Notion-Write (kein PATCH, kein Page-Update, kein Block-Append).
-- Kein Andromeda/n8n-Aufruf.
+- Kein NOX-Agent-/n8n-Aufruf.
 - Kein Telegram.
 - Kein Upload, kein Drive-/Miro-OAuth.
 - `execute` bleibt 423.
@@ -992,7 +992,7 @@ sind.
 - Keine neuen Dependencies (`AbortController` ist Web-/Node-Standard).
 - `fetch` weiterhin nur in `api/_lib/notion.ts`.
 - Einzige externe URL bleibt `https://api.notion.com`.
-- Kein Andromeda-/n8n-/Telegram-Aufruf.
+- Kein NOX-Agent-/n8n-/Telegram-Aufruf.
 - Token wird je Request aus `process.env` gelesen, niemals geloggt, niemals
   in Response oder Audit-Detail eingebettet.
 - `execute` bleibt 423.
@@ -1097,7 +1097,7 @@ optional. Wenn Notion keinen JSON-Body schickt (z.B. Netzwerk-Abort durch
   unveraendert.
 - Keine zusaetzliche Notion-API-Verb-Surface. Weiterhin nur
   `POST /v1/databases/{id}/query`.
-- Kein Telegram, kein Andromeda, kein Execute-Unlock.
+- Kein Telegram, kein NOX Agent, kein Execute-Unlock.
 
 ### Erwartete Diagnose-Use-Cases
 
@@ -1136,7 +1136,7 @@ Nicht in 05a:
 - `api/`-Aenderungen (Backend-Verhalten unveraendert)
 - `vercel.json`, `package.json`, `package-lock.json`, `.env*`
 - Public Landing Home / Navbar / Routes
-- Telegram/n8n/Andromeda-Code
+- Telegram/n8n/NOX-Agent-Code
 - Execute-Unlock — bleibt `HTTP 423`
 - Persistenz des Keys (kein localStorage, kein sessionStorage, kein Cookie)
 

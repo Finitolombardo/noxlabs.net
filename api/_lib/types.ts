@@ -1,4 +1,4 @@
-// APP-X-BRIDGE-01 — Operator Cockpit / Andromeda Bridge
+// APP-X-BRIDGE-01 — Operator Cockpit / NOX Agent Bridge
 // Shared command contract types. Skeleton only — no live execution.
 
 export type CommandType =
@@ -114,7 +114,7 @@ export interface NotionUpstreamDiagnostic {
 
 // APP-X-BRIDGE-04a — ReferenceArtifact contract (skeleton only).
 // Metadata-only. APP-X does not upload, store, OCR, transcribe, or summarise
-// artifacts. Ingestion lives downstream (Andromeda / dedicated worker).
+// artifacts. Ingestion lives downstream (NOX Agent / dedicated worker).
 // `storageRef` is either a URL or a logical reference like
 // `notion:<page>/<block>` or `drive:<fileId>` — never raw bytes.
 
@@ -180,7 +180,7 @@ export interface ReferenceArtifact {
 }
 
 // APP-X-BRIDGE-04a — Project Context Response.
-// Read-only projection over Notion Master Tasks. No writes, no Andromeda
+// Read-only projection over Notion Master Tasks. No writes, no NOX Agent
 // upstream calls. Empty arrays are valid: when no project mapping is
 // configured, quests/openApprovals/blockers/recentEvents/artifacts stay [].
 
