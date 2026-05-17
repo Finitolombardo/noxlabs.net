@@ -3548,6 +3548,13 @@ function ProjectsDeepDive({
     setApiPreviewLoading(false);
     if (result.ok) {
       setApiPreviewData(result.data);
+      // Auto-chain Phase 2B schema-validation directly after a successful
+      // Phase 2A preview so the operator sees both reports without a second
+      // click. handleApiValidate() owns its own AbortController, error
+      // state, and loading flag — preview state stays untouched if validate
+      // fails. The chain runs only on preview success; preview errors do
+      // NOT cascade into a validate attempt.
+      void handleApiValidate();
     } else {
       setApiPreviewError({
         status: result.status,
@@ -4030,16 +4037,26 @@ function ProjectsDeepDive({
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       onClick={() => void handleApiPreview()}
-                      disabled={apiPreviewLoading || planSteps.length === 0}
+                      disabled={apiPreviewLoading || apiValidateLoading || planSteps.length === 0}
                     >
-                      {apiPreviewLoading ? 'Lädt…' : apiPreviewData ? 'Erneut prüfen' : 'Preview anfordern'}
+                      {apiPreviewLoading
+                        ? 'Preview wird geprüft …'
+                        : apiValidateLoading
+                          ? 'Schema wird validiert …'
+                          : apiPreviewData
+                            ? 'Preview + Schema erneut prüfen'
+                            : 'Preview + Schema prüfen'}
                     </Button>
                     <Button
                       tone="secondary"
                       onClick={() => void handleApiValidate()}
                       disabled={apiValidateLoading || planSteps.length === 0}
                     >
-                      {apiValidateLoading ? 'Validiert…' : apiValidateData ? 'Schema erneut validieren' : 'Schema validieren'}
+                      {apiValidateLoading
+                        ? 'Schema wird validiert …'
+                        : apiValidateData
+                          ? 'Schema erneut validieren'
+                          : 'Schema validieren'}
                     </Button>
                   </div>
                 </div>
@@ -4055,6 +4072,66 @@ function ProjectsDeepDive({
               </div>
 
               <div className="space-y-3">
+                {/* Compact summary banner. Renders as soon as preview/validate
+                    has any result (success or error) so the operator sees the
+                    overall state without scrolling through every detail block.
+                    schemaOk drives the "next action" hint at the bottom. */}
+                {apiPreviewData || apiPreviewError || apiValidateData || apiValidateError ? (
+                  <div className="rounded-2xl border border-[#4a101b]/60 bg-[#0c0507]/75 p-4">
+                    <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200">
+                      Zusammenfassung
+                    </div>
+                    <div className="mt-2 grid gap-2 text-[12px] font-semibold leading-5 text-[#eadbe2] sm:grid-cols-2">
+                      <div>
+                        Preview:{' '}
+                        <span className={`font-black ${apiPreviewData ? 'text-emerald-200' : apiPreviewError ? 'text-rose-200' : 'text-[#9f8d95]'}`}>
+                          {apiPreviewLoading ? 'läuft …' : apiPreviewData ? 'OK' : apiPreviewError ? 'Fehler' : '—'}
+                        </span>
+                      </div>
+                      <div>
+                        Schema:{' '}
+                        <span className={`font-black ${apiValidateData?.schemaOk ? 'text-emerald-200' : apiValidateError ? 'text-rose-200' : apiValidateData ? 'text-amber-200' : 'text-[#9f8d95]'}`}>
+                          {apiValidateLoading
+                            ? 'wird validiert …'
+                            : apiValidateData
+                              ? apiValidateData.schemaOk
+                                ? 'OK'
+                                : 'Nicht bereit'
+                              : apiValidateError
+                                ? 'Fehler'
+                                : '—'}
+                        </span>
+                      </div>
+                      {apiValidateData ? (
+                        <>
+                          <div>
+                            Missing: <span className="font-black text-rose-200">{apiValidateData.missingProperties.length}</span>
+                          </div>
+                          <div>
+                            Unsafe: <span className="font-black text-amber-200">{apiValidateData.unsafeProperties.length}</span>
+                          </div>
+                          <div className="sm:col-span-2">
+                            TypeMismatch: <span className="font-black text-rose-200">{apiValidateData.typeMismatches.length}</span>
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
+
+                    {apiValidateData ? (
+                      apiValidateData.schemaOk ? (
+                        <div className="mt-3 rounded-md border border-emerald-300/40 bg-emerald-400/10 p-2 text-[11px] font-bold leading-5 text-emerald-100">
+                          Schema bereit für Phase 2C-Pre. Noch keine Writes aktiv.
+                        </div>
+                      ) : (
+                        <div className="mt-3 rounded-md border border-amber-300/40 bg-amber-300/10 p-2 text-[11px] font-bold leading-5 text-amber-100">
+                          Notion-Schema noch nicht bereit. Fehlende Properties manuell in
+                          Master Tasks / Questboard anlegen.
+                        </div>
+                      )
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {apiPreviewError ? (
                   <div className="rounded-2xl border border-rose-500/50 bg-rose-500/10 p-4 text-sm font-semibold leading-6 text-rose-100">
                     <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-rose-200">
@@ -4241,6 +4318,56 @@ function ProjectsDeepDive({
                               </li>
                             );
                           })}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {/* Missing-properties copy list — drives the manual
+                        Operator-Hand-Migration in Master Tasks / Questboard.
+                        Types are read from propertyChecks (status='missing')
+                        so the list and types always stay in lockstep with
+                        what Phase 2B actually checked. */}
+                    {apiValidateData.missingProperties.length > 0 ? (
+                      <div className="mt-3 rounded-xl border border-rose-400/40 bg-rose-500/10 p-3">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-rose-200">
+                          Fehlende Properties · Master Tasks / Questboard ({apiValidateData.missingProperties.length})
+                        </div>
+                        <p className="mt-1 text-[11px] font-semibold leading-5 text-rose-50/90">
+                          Diese Spalten muss der Operator manuell in der Notion-DB anlegen.
+                          Kein Schema-Auto-Add. Reihenfolge ist egal.
+                        </p>
+                        <ul className="mt-2 space-y-1 text-[12px] font-mono leading-5 text-rose-50">
+                          {apiValidateData.propertyChecks
+                            .filter((c) => c.status === 'missing')
+                            .map((c) => (
+                              <li key={`missing-${c.notionPropertyName}`}>
+                                <span className="font-black">{c.notionPropertyName}</span>
+                                <span className="text-rose-200"> — {c.expectedType}</span>
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {/* Unsafe-properties explainer — currently 🎯/🤖-prefixed
+                        operator-managed fields. Phase 2C will not touch them
+                        unless the allowlist is consciously expanded later. */}
+                    {apiValidateData.unsafeProperties.length > 0 ? (
+                      <div className="mt-3 rounded-xl border border-amber-300/40 bg-amber-300/10 p-3">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">
+                          Unsafe Properties ({apiValidateData.unsafeProperties.length})
+                        </div>
+                        <p className="mt-1 text-[11px] font-semibold leading-5 text-amber-50/90">
+                          Diese Felder sind aktuell nicht in der Phase-2C-Write-Allowlist.
+                          Sie werden später nicht geschrieben, bis Mapping/Allowlist bewusst
+                          entschieden wurde.
+                        </p>
+                        <ul className="mt-2 space-y-1 text-[12px] font-mono leading-5 text-amber-50">
+                          {apiValidateData.unsafeProperties.map((name) => (
+                            <li key={`unsafe-${name}`}>
+                              <span className="font-black">{name}</span>
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     ) : null}
