@@ -42,13 +42,13 @@ export default function SkillbookDetailPanel({ perk, skizzenHinweis, resolveName
         <h3 className="text-lg font-black text-[#fff5fc]">Detailpanel</h3>
         {skizzenHinweis ? (
           <div className="mt-3 space-y-3 text-sm text-[#e6d9eb]">
-            <p>Dieses Element ist nur eine Skizze und noch kein Perk.</p>
+            <p>Dieses Element ist noch nicht mit einer Karte verbunden.</p>
             <button type="button" onClick={onAlsPerkUebernehmen} className="rounded-xl border border-cyan-300/40 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100">
-              Als Perk übernehmen
+              Als Karte übernehmen
             </button>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-[#e6d9eb]">Wähle einen Perk-Knoten oder erstelle einen neuen Perk.</p>
+          <p className="mt-3 text-sm text-[#e6d9eb]">Wähle eine Karte oder erstelle eine neue Karte.</p>
         )}
       </aside>
     );
@@ -56,7 +56,7 @@ export default function SkillbookDetailPanel({ perk, skizzenHinweis, resolveName
 
   return (
     <aside className="max-h-[620px] overflow-y-auto rounded-3xl border border-[#35243d] bg-[#100813]/95 p-5">
-      <div className="text-xs uppercase tracking-[0.16em] text-[#9f89a7]">NOX Skillbook</div>
+      <div className="text-xs uppercase tracking-[0.16em] text-[#9f89a7]">NOX Canvas – Karten-Details</div>
       <input
         value={perk.name}
         onChange={(event) => onUpdatePerk(perk.id, { name: event.target.value })}
@@ -87,8 +87,8 @@ export default function SkillbookDetailPanel({ perk, skizzenHinweis, resolveName
         </label>
 
         <div>
-          <h4 className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Voraussetzungen</h4>
-          <ul className="mt-1 space-y-1 text-[#ebdced]">{perk.voraussetzungen.length === 0 ? <li>Keine Voraussetzungen</li> : perk.voraussetzungen.map((id) => <li key={id}>• {resolveName(id)}</li>)}</ul>
+          <h4 className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Verbindungen</h4>
+          <ul className="mt-1 space-y-1 text-[#ebdced]">{perk.voraussetzungen.length === 0 ? <li>Keine Verbindungen</li> : perk.voraussetzungen.map((id) => <li key={id}>• {resolveName(id)}</li>)}</ul>
         </div>
 
         <div>
@@ -100,9 +100,55 @@ export default function SkillbookDetailPanel({ perk, skizzenHinweis, resolveName
           <Zeilenliste value={perk.risiken} onChange={(next) => onUpdatePerk(perk.id, { risiken: next })} />
         </div>
         <div>
-          <div className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Nächste Forschung</div>
+          <div className="text-xs font-black uppercase tracking-[0.14em] text-[#b79bc3]">Nächster Schritt</div>
           <Zeilenliste value={perk.naechsteForschung} onChange={(next) => onUpdatePerk(perk.id, { naechsteForschung: next })} />
         </div>
+
+        {(perk.questId || perk.questTitle || perk.questGroupId || perk.questStatus || perk.source || perk.nextStep) ? (
+          <section className="mt-5 space-y-2 rounded-2xl border border-amber-300/25 bg-amber-300/5 p-3">
+            <h4 className="text-xs font-black uppercase tracking-[0.14em] text-amber-200/80">Quest-Verknüpfung</h4>
+            <dl className="grid grid-cols-1 gap-2 text-sm text-[#f0e1d9] sm:grid-cols-2">
+              {perk.questTitle || perk.questId ? (
+                <div>
+                  <dt className="text-[10px] uppercase tracking-[0.14em] text-[#caa590]">Verknüpfte Quest</dt>
+                  <dd className="mt-0.5 font-semibold">{perk.questTitle ?? perk.questId}</dd>
+                </div>
+              ) : null}
+              {perk.questGroupId ? (
+                <div>
+                  <dt className="text-[10px] uppercase tracking-[0.14em] text-[#caa590]">Quest-Reihe</dt>
+                  <dd className="mt-0.5 font-semibold">{perk.questGroupId}</dd>
+                </div>
+              ) : null}
+              {perk.questStatus ? (
+                <div>
+                  <dt className="text-[10px] uppercase tracking-[0.14em] text-[#caa590]">Status</dt>
+                  <dd className="mt-0.5 font-semibold">{perk.questStatus}</dd>
+                </div>
+              ) : null}
+              {perk.source ? (
+                <div>
+                  <dt className="text-[10px] uppercase tracking-[0.14em] text-[#caa590]">Quelle</dt>
+                  <dd className="mt-0.5 font-semibold">{perk.source}</dd>
+                </div>
+              ) : null}
+              {perk.nextStep ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-[10px] uppercase tracking-[0.14em] text-[#caa590]">Nächster Schritt</dt>
+                  <dd className="mt-0.5 font-semibold">{perk.nextStep}</dd>
+                </div>
+              ) : null}
+            </dl>
+            <button
+              type="button"
+              disabled
+              title="Phase 2 – Quest-Routing wird separat implementiert."
+              className="mt-2 inline-flex cursor-not-allowed items-center rounded-xl border border-amber-300/30 bg-amber-300/5 px-3 py-1.5 text-xs font-bold text-amber-200/60"
+            >
+              Quest öffnen – Phase 2
+            </button>
+          </section>
+        ) : null}
       </section>
 
       <section className="mt-5 space-y-2">

@@ -120,7 +120,7 @@ export default function SkillbookPanel() {
   };
 
   const lokalZuruecksetzen = () => {
-    if (!window.confirm('Lokale Skillbook-Änderungen wirklich löschen?')) return;
+    if (!window.confirm('Lokale Canvas-Änderungen wirklich löschen?')) return;
     setPerks(skillbookPerks);
     setSketchElements([]);
     setAusgewaehlterPerkId(skillbookPerks[0]?.id ?? '');
@@ -136,7 +136,7 @@ export default function SkillbookPanel() {
     setPerks((current) => [...current, perk]);
     setAusgewaehlterPerkId(perk.id);
     setAusgewaehlteSkizzeId(null);
-    setMeldung('Neuer Perk lokal erstellt.');
+    setMeldung('Karte lokal erstellt.');
   };
 
   const verbundenerPerk = () => {
@@ -145,7 +145,7 @@ export default function SkillbookPanel() {
     setPerks((current) => [...current, perk]);
     setAusgewaehlterPerkId(perk.id);
     setAusgewaehlteSkizzeId(null);
-    setMeldung('Verbundener Perk erstellt – Voraussetzung automatisch gesetzt.');
+    setMeldung('Verbundene Karte erstellt – Verbindung automatisch gesetzt.');
   };
 
   const alsPerkUebernehmen = () => {
@@ -157,7 +157,7 @@ export default function SkillbookPanel() {
     setPerks((current) => [...current, perk]);
     setAusgewaehlterPerkId(perk.id);
     setAusgewaehlteSkizzeId(null);
-    setMeldung('Skizze als Perk übernommen.');
+    setMeldung('Skizze als Karte übernommen.');
   };
 
   const updatePerk = (perkId: string, patch: Partial<SkillbookPerk>) => {
@@ -172,13 +172,13 @@ export default function SkillbookPanel() {
   return (
     <section className={containerClass}>
       <header className="space-y-2">
-        <h2 className="text-2xl font-black text-[#fff6fc] md:text-3xl">NOX Skillbook</h2>
-        <p className="text-sm text-[#ceb7d2]">Forschungsbuch für Systemfähigkeiten, Agenten und Automatisierungen</p>
+        <h2 className="text-2xl font-black text-[#fff6fc] md:text-3xl">NOX Canvas</h2>
+        <p className="text-sm text-[#ceb7d2]">Internes Whiteboard für Systemplanung – Karten, Verbindungen, Fortschritt</p>
       </header>
 
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={neuerPerk} className="rounded-xl border border-cyan-300/40 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100">+ Neuen Perk</button>
-        <button type="button" onClick={verbundenerPerk} disabled={!ausgewaehlterPerk} className="rounded-xl border border-violet-300/40 bg-violet-400/10 px-3 py-2 text-xs font-bold text-violet-100 disabled:opacity-50">+ Verbundenen Perk</button>
+        <button type="button" onClick={neuerPerk} className="rounded-xl border border-cyan-300/40 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100">+ Neue Karte</button>
+        <button type="button" onClick={verbundenerPerk} disabled={!ausgewaehlterPerk} className="rounded-xl border border-violet-300/40 bg-violet-400/10 px-3 py-2 text-xs font-bold text-violet-100 disabled:opacity-50">+ Verbundene Karte</button>
         <button type="button" onClick={lokalSpeichern} className="rounded-xl border border-emerald-300/40 bg-emerald-400/10 px-3 py-2 text-xs font-bold text-emerald-100">Lokal speichern</button>
         <button type="button" onClick={lokalZuruecksetzen} className="rounded-xl border border-rose-300/40 bg-rose-400/10 px-3 py-2 text-xs font-bold text-rose-100">Lokale Änderungen zurücksetzen</button>
         <button type="button" onClick={() => setVollbild((current) => !current)} className="rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-100">{vollbild ? 'Vollbild verlassen' : 'Vollbild'}</button>
@@ -200,12 +200,12 @@ export default function SkillbookPanel() {
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <label className="block lg:w-[360px]">
-          <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-[#bca8c3]">Perk suchen</span>
+          <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-[#bca8c3]">Karte suchen</span>
           <input value={suche} onChange={(event) => setSuche(event.target.value)} placeholder="Name, Kategorie oder Kapitel" className="w-full rounded-xl border border-[#3a2a41] bg-[#120916] px-3 py-2 text-sm text-[#f6ecf5] outline-none transition focus:border-cyan-300/60" />
         </label>
 
         <div className="inline-flex rounded-xl border border-[#3a2a41] bg-[#120916] p-1">
-          <button type="button" onClick={() => setAnsicht('baum')} className={['rounded-lg px-3 py-2 text-sm font-bold transition', ansicht === 'baum' ? 'bg-cyan-400/20 text-cyan-100' : 'text-[#c9b4d0]'].join(' ')}>Forschungsbaum</button>
+          <button type="button" onClick={() => setAnsicht('baum')} className={['rounded-lg px-3 py-2 text-sm font-bold transition', ansicht === 'baum' ? 'bg-cyan-400/20 text-cyan-100' : 'text-[#c9b4d0]'].join(' ')}>Canvas</button>
           <button type="button" onClick={() => setAnsicht('karten')} className={['rounded-lg px-3 py-2 text-sm font-bold transition', ansicht === 'karten' ? 'bg-cyan-400/20 text-cyan-100' : 'text-[#c9b4d0]'].join(' ')}>Kartenansicht</button>
         </div>
       </div>

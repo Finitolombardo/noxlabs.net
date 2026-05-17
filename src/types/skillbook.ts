@@ -25,6 +25,9 @@ export type SkillbookAuswirkungen = {
   wartungsaufwand: number;
 };
 
+// NOTE: Type/field names keep the historical "Perk" wording to avoid a
+// risky rename across the canvas/render layer. The visible UI labels in
+// the Operator Cockpit refer to these objects as "Karte" / "Element".
 export type SkillbookPerk = {
   id: string;
   name: string;
@@ -45,4 +48,12 @@ export type SkillbookPerk = {
   quelle: string;
   auswirkungen: SkillbookAuswirkungen;
   position: { x: number; y: number };
+  // Phase-2 quest linkage. All fields are optional and only displayed —
+  // no navigation, no API call, no Notion write happens from the canvas.
+  questId?: string;
+  questTitle?: string;
+  questStatus?: string;
+  questGroupId?: string;
+  source?: string;
+  nextStep?: string;
 };

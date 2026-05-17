@@ -653,7 +653,7 @@ const sidebarGroups: SidebarGroup[] = [
     title: 'Agenten',
     items: [
       { label: 'Agenten-Chat', route: 'Agenten-Chat' },
-      { label: 'Skillbook', route: 'Skillbook' },
+      { label: 'Canvas', route: 'Canvas' },
       { label: 'Workflow-Zonen', route: 'Workflow-Zonen' },
       { label: 'Intelligence', route: 'Intelligence' },
     ],
@@ -679,6 +679,7 @@ const routeAliasForSidebar: Record<string, string> = {
   'Lead Map': 'Lead-Eingang',
   'YouTube-Analyse': 'Intelligence',
   'OG-Scraper': 'Intelligence',
+  Skillbook: 'Canvas',
 };
 
 const agentOptions = ['NOX', 'Andromeda', 'Claude', 'Project X', 'Owner'];
@@ -1163,7 +1164,7 @@ export default function OperatorCockpit() {
                 <SimplePage eyebrow="Agenten-Chat" title="Projektbewusst besprechen" text="Der Chat laedt Quest, Projekt, erlaubte und verbotene Aktionen, Artefakte und den Verlauf, bevor delegiert wird." />
               ) : null}
 
-              {active === 'Skillbook' ? <SkillbookPanel /> : null}
+              {active === 'Canvas' || active === 'Skillbook' ? <SkillbookPanel /> : null}
 
               {active === 'Projekt X' ? (
                 <ProjectX
