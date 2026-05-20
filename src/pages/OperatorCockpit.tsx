@@ -4260,7 +4260,15 @@ function ProjectsDeepDive({
             return 'Schreibzugriff nicht autorisiert. Private App/Auth für Writes noch nicht aktiv.';
           }
           if (commitError) {
-            return commitError.errorMessage || `Fehler (HTTP ${commitError.status}).`;
+            // Commit-500-Diagnostics — surface the structured errorCode
+            // when present so the operator gets actionable text instead
+            // of a bare "HTTP 500".
+            const code = commitError.errorCode;
+            const msg = commitError.errorMessage;
+            const codeLabel = code ? `${code}: ` : '';
+            if (msg) return `${codeLabel}${msg}`;
+            if (code) return `${code} (HTTP ${commitError.status}).`;
+            return `Fehler (HTTP ${commitError.status}).`;
           }
           if (commitData?.code === 'committed') {
             const n = commitData.pageResults.filter((p) => p.ok).length;
@@ -4271,6 +4279,23 @@ function ProjectsDeepDive({
           }
           if (commitData?.code === 'duplicate_risk') {
             return 'Dieser Plan wurde bereits erzeugt. Keine Duplikate erstellt.';
+          }
+          if (commitData?.code === 'notion_write_token_missing') {
+            return 'notion_write_token_missing: Server-Env NOX_NOTION_WRITE_TOKEN fehlt. Vercel-Env setzen, danach Re-Deploy.';
+          }
+          if (commitData?.code === 'notion_database_missing') {
+            return 'notion_database_missing: Server-Env NOX_MASTER_TASKS_DB_ID fehlt. Vercel-Env setzen, danach Re-Deploy.';
+          }
+          if (commitData?.code === 'notion_property_mapping_failed') {
+            return 'notion_property_mapping_failed: Alle geplanten Notion-Properties wurden gefiltert. Schema-Mapping prüfen.';
+          }
+          if (commitData?.code === 'notion_create_failed') {
+            const failed = commitData.pageResults.filter((p) => !p.ok).length;
+            const firstErr = commitData.pageResults.find((p) => !p.ok);
+            const detail = firstErr?.errorCode
+              ? ` (${firstErr.errorCode}${firstErr.errorMessage ? ': ' + firstErr.errorMessage.slice(0, 120) : ''})`
+              : '';
+            return `notion_create_failed: Notion konnte ${failed} Page${failed === 1 ? '' : 's'} nicht erstellen${detail}. Write-Token, Datenbank-Zugriff und Property-Mapping prüfen.`;
           }
           if (commitData?.code === 'partial_failure') {
             const ok = commitData.pageResults.filter((p) => p.ok).length;
