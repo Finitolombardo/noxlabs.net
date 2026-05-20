@@ -739,6 +739,8 @@ function Button({
   type = 'button',
   className,
   disabled,
+  title,
+  ariaLabel,
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -746,6 +748,10 @@ function Button({
   type?: 'button' | 'submit';
   className?: string;
   disabled?: boolean;
+  /** Native browser tooltip text — surfaces helper copy without a custom tooltip layer. */
+  title?: string;
+  /** Optional aria-label override when `children` is not plain text. */
+  ariaLabel?: string;
 }) {
   const classNameByTone =
     tone === 'red'
@@ -763,6 +769,8 @@ function Button({
       whileTap={disabled ? undefined : { scale: 0.98 }}
       onClick={onClick}
       disabled={disabled}
+      title={title}
+      aria-label={ariaLabel}
       className={cx(
         'rounded-2xl border px-5 py-3 text-sm font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50',
         classNameByTone,
@@ -2986,6 +2994,54 @@ type PlanStep = {
 
 const AGENT_OPTIONS: AgentOption[] = ['NOX Agent', 'Claude', 'Codex', 'Manuell'];
 
+// =============================================================================
+// Stateflow-Digest-Fix — pure client-side plan fingerprint.
+//
+// The Project Auto Planner sends `wireSteps` built from `planSteps` to the
+// preview / validate / commit endpoints. The server normalises the payload
+// (trim strings, renumber `step` 1..N) and computes a non-cryptographic
+// digest. The browser does NOT recompute that exact digest — keeping the
+// server as the single source of truth for the on-wire digest — but it DOES
+// need its own change-detector so cached preview/validate results can be
+// invalidated the instant the operator mutates the local draft.
+//
+// `computePlanFingerprint` is intentionally simple and pure:
+//   - Trim/normalise strings the same way `planDraft.ts:validatePlanDraftPayload`
+//     does on the server, so semantically-equivalent edits (e.g. trailing
+//     whitespace) don't produce false-positive stale states.
+//   - Renumber `step` to 1..N to match server's `renumbered` step.
+//   - JSON.stringify a canonical shape so deep equality maps to string
+//     equality.
+//
+// It is NEVER sent over the wire and NEVER used in lieu of the server's
+// digest. Its only job is "did the local plan diverge from the last
+// validated snapshot?".
+// =============================================================================
+function computePlanFingerprint(
+  projectId: string,
+  projectGoal: string,
+  planSteps: PlanStep[],
+): string {
+  const canonical = {
+    projectId: projectId.trim(),
+    projectGoal: projectGoal.trim(),
+    planSteps: planSteps.map((s, idx) => ({
+      id: s.id,
+      step: idx + 1,
+      title: s.title.trim(),
+      ziel: s.ziel.trim(),
+      agent: s.agent,
+      output: s.output.trim(),
+      risk: s.risk,
+      gate: s.gate.trim(),
+      reason: s.reason.trim(),
+      feedback: s.feedback.trim(),
+      rating: s.rating,
+    })),
+  };
+  return JSON.stringify(canonical);
+}
+
 // Pure, rule-based generator. No AI, no API. Picks a small set of
 // keyword cues from the operator's goal text and uses them to colour
 // the seven base steps. If the goal text is empty we fall back to a
@@ -3269,6 +3325,25 @@ function ProjectsDeepDive({
   // `planSteps` aren't visible to its closure until the next render. The
   // effect below picks them up and clears the sentinel atomically.
   const [autoTechCheckPending, setAutoTechCheckPending] = useState<boolean>(false);
+
+  // Stateflow-Digest-Fix — snapshot fingerprint that was current at the
+  // moment the last successful /plan/validate response landed. Tracks the
+  // exact payload the server validated, so subsequent local edits to the
+  // plan are detectable on the next render via fingerprint comparison.
+  //
+  // Used to:
+  //   - invalidate apiPreviewData / apiValidateData / commitData /
+  //     commitError as soon as the operator mutates the plan
+  //   - hard-block the commit button when the local plan no longer
+  //     matches the validated snapshot
+  //   - surface an explicit "plan changed since last tech-check" warning
+  //     in the UI instead of letting the operator hit the server-side
+  //     `plan_digest_mismatch` 409
+  const [lastValidatedFingerprint, setLastValidatedFingerprint] = useState<string | null>(null);
+  // Count of plan steps that were sent in the last successful validate.
+  // Used by the UI banner to show "Validate sah X Quests, lokal sind Y"
+  // when those diverge between validate and commit click.
+  const [lastValidatedStepCount, setLastValidatedStepCount] = useState<number | null>(null);
   const [talkText, setTalkText] = useState('');
   const [outputType, setOutputType] = useState(outputTypes[0]);
   const [outputPrompt, setOutputPrompt] = useState('');
@@ -3282,7 +3357,14 @@ function ProjectsDeepDive({
   const [restoredAt, setRestoredAt] = useState<string | null>(null);
   const [emptyGoalHint, setEmptyGoalHint] = useState<boolean>(false);
   const [noxTalkInput, setNoxTalkInput] = useState<string>('');
+  // Last demo answer — kept so the "Antwort als Anpassungsnotiz übernehmen"
+  // action has something to merge into the selected plan step.
   const [noxTalkAnswer, setNoxTalkAnswer] = useState<string>('');
+  // Phase 1 UX — scrollable chat history of the local NOX-Demo dialog. Pure
+  // local state, no persistence, no API. Resets on modal close.
+  const [noxTalkHistory, setNoxTalkHistory] = useState<
+    Array<{ role: 'user' | 'demo'; text: string; at: number }>
+  >([]);
   // Tracks whether the current state was already hydrated for this
   // project id. We delay persistence until after hydration so the
   // first auto-save does not overwrite the stored draft with a fresh
@@ -3633,6 +3715,13 @@ function ProjectsDeepDive({
       feedback: s.feedback,
       rating: s.rating,
     }));
+    // Stateflow-Digest-Fix — snapshot the fingerprint of the exact payload
+    // we're about to validate BEFORE the await. If the operator mutates
+    // planSteps during the round-trip, the snapshot still reflects what
+    // the server validated, and the invalidation effect catches the
+    // divergence on the next render.
+    const sentFingerprint = computePlanFingerprint(project.id, trimmedGoal, planSteps);
+    const sentStepCount = wireSteps.length;
     const result = await fetchPlanValidate({
       projectId: project.id,
       apiKey: apiPreviewKey,
@@ -3649,6 +3738,10 @@ function ProjectsDeepDive({
     setApiValidateLoading(false);
     if (result.ok) {
       setApiValidateData(result.data);
+      // Lock the validated snapshot. Any subsequent plan mutation will
+      // diverge from this fingerprint and trigger the invalidation effect.
+      setLastValidatedFingerprint(sentFingerprint);
+      setLastValidatedStepCount(sentStepCount);
     } else {
       setApiValidateError({
         status: result.status,
@@ -3675,6 +3768,49 @@ function ProjectsDeepDive({
     // would re-fire on unrelated re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoTechCheckPending, planSteps, projektZiel]);
+
+  // Stateflow-Digest-Fix — derive current plan fingerprint + stale flag.
+  // `currentPlanFingerprint` is a pure function of (projectId, projektZiel,
+  // planSteps); React will recompute it only when one of those changes,
+  // which is precisely when we need to re-check staleness.
+  const currentPlanFingerprint = useMemo(
+    () => computePlanFingerprint(project.id, projektZiel, planSteps),
+    [project.id, projektZiel, planSteps],
+  );
+  // The local plan diverges from what was last validated if we have a
+  // snapshot AND the fingerprint moved. Pre-validate / first-render the
+  // flag is false (no snapshot to diverge from).
+  const isPlanStaleAgainstValidate =
+    lastValidatedFingerprint !== null && lastValidatedFingerprint !== currentPlanFingerprint;
+
+  // Stateflow-Digest-Fix — invalidation effect. Whenever the operator
+  // mutates the local plan after a validate result landed, blow away the
+  // cached preview/validate/commit responses so the UI cannot present a
+  // stale "Quests bereit / Digest XYZ" state. The next commit attempt is
+  // forced to go back through tech-check.
+  useEffect(() => {
+    if (!isPlanStaleAgainstValidate) return;
+    // Abort any in-flight tech-check from a previous plan snapshot.
+    if (apiPreviewAbortRef.current) {
+      apiPreviewAbortRef.current.abort();
+      apiPreviewAbortRef.current = null;
+    }
+    if (apiValidateAbortRef.current) {
+      apiValidateAbortRef.current.abort();
+      apiValidateAbortRef.current = null;
+    }
+    setApiPreviewData(null);
+    setApiPreviewError(null);
+    setApiValidateData(null);
+    setApiValidateError(null);
+    setCommitData(null);
+    setCommitError(null);
+    setLastValidatedFingerprint(null);
+    setLastValidatedStepCount(null);
+    // We deliberately depend only on the staleness flag — the setters are
+    // stable across renders, so omitting them is safe and the effect
+    // re-runs purely when the flag transitions to true.
+  }, [isPlanStaleAgainstValidate]);
 
   // Phase 2D-UI — Derived tech-check status for the inline planner banner.
   //   - 'idle'          : nothing has run yet
@@ -3721,6 +3857,35 @@ function ProjectsDeepDive({
         status: 0,
         errorCode: 'client_validation',
         errorMessage: 'Preview-Digest fehlt. Erst „Technisch prüfen" laufen lassen.',
+      });
+      return;
+    }
+    // Stateflow-Digest-Fix — synchronous stale-guard. The invalidation
+    // useEffect normally clears apiPreviewData/apiValidateData the instant
+    // the plan mutates, but a click in the same task-cycle as a mutation
+    // could still reach here before the effect runs. This block catches
+    // that race and replaces the cryptic server-side
+    // `plan_digest_mismatch` 409 with a user-readable instruction.
+    const stalenessCheck = computePlanFingerprint(project.id, projektZiel, planSteps);
+    if (lastValidatedFingerprint !== null && stalenessCheck !== lastValidatedFingerprint) {
+      setCommitError({
+        status: 0,
+        errorCode: 'client_plan_stale',
+        errorMessage:
+          'Plan wurde lokal geändert. Bitte erneut „Technisch prüfen" laufen lassen, bevor du committest.',
+      });
+      return;
+    }
+    // Defensive cross-check — local plan-step count must match what
+    // validate saw. Should already be guaranteed by the fingerprint check
+    // above; keep the explicit count diff as a belt-and-suspenders so the
+    // UI can still surface a precise message if the plan was edited in a
+    // way that left the fingerprint somehow stable (it shouldn't, but).
+    if (lastValidatedStepCount !== null && lastValidatedStepCount !== planSteps.length) {
+      setCommitError({
+        status: 0,
+        errorCode: 'client_plan_step_count_mismatch',
+        errorMessage: `Plan hat lokal ${planSteps.length} Schritt(e), validiert wurden ${lastValidatedStepCount}. Bitte erneut „Technisch prüfen" laufen lassen.`,
       });
       return;
     }
@@ -3909,6 +4074,14 @@ function ProjectsDeepDive({
         onDismissRestoreNotice={() => setRestoredAt(null)}
         techCheckStatus={techCheckStatus}
         techCheckSummary={(() => {
+          if (isPlanStaleAgainstValidate) {
+            // Stateflow-Digest-Fix — never show a "Quests bereit"-style
+            // count when the local plan diverges from the validated
+            // snapshot. The dedicated banner explains what to do.
+            return typeof lastValidatedStepCount === 'number'
+              ? `Letzte Prüfung: ${lastValidatedStepCount} Quest${lastValidatedStepCount === 1 ? '' : 's'} · lokal jetzt: ${planSteps.length}`
+              : 'Plan wurde lokal geändert.';
+          }
           if (techCheckStatus === 'not-ready' && apiValidateData) {
             const parts: string[] = [];
             if (apiValidateData.missingProperties.length > 0)
@@ -3975,6 +4148,36 @@ function ProjectsDeepDive({
         })()}
         writeEnabledHint={commitData?.writeEnabled ? 'enabled' : commitData ? 'locked' : 'unknown'}
         emptyGoalHint={emptyGoalHint}
+        // UX-safety: prefer the validated server count, fall back to the
+        // local draft length so the CTA never lies about "1 Quest" when the
+        // user is actually staring at a 7-step plan. When the plan is stale
+        // we deliberately ignore the validated count and surface the local
+        // count, since the validated number no longer reflects what would
+        // actually be committed.
+        wouldCreateNTasks={
+          isPlanStaleAgainstValidate
+            ? planSteps.length
+            : apiValidateData?.wouldCreateNTasks ?? planSteps.length
+        }
+        // Smoke-Test affordance: reduce the local draft to a single step.
+        // Pure local-state change — no Notion / no backend. Renumbers the
+        // step to 1 so the UI stays consistent. The fingerprint-invalidation
+        // effect catches the resulting plan change and clears the stale
+        // preview/validate snapshots automatically.
+        onReduceToOne={() => {
+          setPlanSteps((prev) => (prev.length === 0 ? prev : prev.slice(0, 1).map((s) => ({ ...s, step: 1 }))));
+        }}
+        // Stateflow-Digest-Fix — wire the staleness flag, the validated
+        // step count, and a re-trigger so the UI can show / dismiss the
+        // "Plan changed since last validate" warning.
+        isPlanStale={isPlanStaleAgainstValidate}
+        validatedStepCount={lastValidatedStepCount}
+        onRevalidate={() => {
+          // Same entry point as the auto-chain after regeneratePlan —
+          // preview success auto-chains validate, so a single call here
+          // refreshes both snapshots.
+          void handleApiPreview();
+        }}
       />
 
       <DecisionBlockers project={project} approvals={projectApprovals} recommend={approvalRecommendation} />
@@ -4002,106 +4205,234 @@ function ProjectsDeepDive({
 
       <AnimatePresence>
         {modal === 'talk' ? (
-          <Modal size="wide" onClose={() => { closeModal(); setNoxTalkInput(''); setNoxTalkAnswer(''); }}>
-            <SectionTitle eyebrow="NOX Agent" title="Mit NOX besprechen" subtitle="Lokaler Gesprächsentwurf · Phase 1 · keine API · keine Notion-Speicherung" />
-            <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-amber-300/30 bg-amber-300/5 p-4">
-                  <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">Projektziel</div>
-                  <p className="mt-2 text-sm font-bold leading-6 text-amber-50">
-                    {projektZiel.trim() || 'Noch kein Projektziel gesetzt.'}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-[#4a101b]/60 bg-[#0c0506]/70 p-4">
-                  <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/80">Aktuelle Quest-Reihe ({planSteps.length} Schritte)</div>
-                  <ul className="mt-2 space-y-1 text-sm font-semibold text-amber-50/90">
-                    {planSteps.map((s) => (
-                      <li key={s.id} className="flex gap-2">
-                        <span className="font-black text-amber-200">{s.step}.</span>
-                        <span className="leading-5">{s.title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">Was willst du ändern oder verstehen?</div>
-                  <textarea
-                    value={noxTalkInput}
-                    onChange={(event) => setNoxTalkInput(event.target.value)}
-                    rows={4}
-                    placeholder="Beispiele: Warum schlägst du diese Reihe vor? Mach es kürzer. Mach es business-lastiger. Welcher Schritt fehlt für Vertrieb?"
-                    className="mt-2 w-full resize-none rounded-2xl border border-amber-300/25 bg-[#120609]/80 px-3 py-2 text-sm font-semibold text-amber-50 outline-none placeholder:text-[#9f8588] focus:border-amber-300/70"
-                  />
-                  <div className="mt-3 flex flex-wrap justify-end gap-2">
-                    <Button tone="ghost" className="!px-3 !py-1.5 !text-[12px]" onClick={() => setNoxTalkAnswer('')}>
-                      Antwort verwerfen
-                    </Button>
-                    <Button
-                      className="!px-3 !py-1.5 !text-[12px]"
-                      onClick={() => {
-                        const input = noxTalkInput.trim();
-                        const lower = input.toLowerCase();
-                        let answer = 'Ich habe diese Quest-Reihe gewählt, weil zuerst Zielklarheit, dann Kontext, dann Risiken, dann Umsetzungsschritte nötig sind.';
-                        if (/kuerzer|kürzer|kompakt/.test(lower)) {
-                          answer = 'Lokaler Vorschlag: Schritte 1, 3 und 7 kombinieren. Schritt 2 + 5 entfallen, wenn Kontext bereits klar ist.';
-                        } else if (/business|sales|vertrieb|lead/.test(lower)) {
-                          answer = 'Lokaler Vorschlag: zusätzlich „Hypothese und Zielgruppe schärfen" vor Schritt 3 und „Pitch-Test mit 5 Leads" als Schritt 6 einbauen.';
-                        } else if (/technisch|implement|code/.test(lower)) {
-                          answer = 'Lokaler Vorschlag: Schritt 5 in „Code-/Workflow-Skeleton bauen" umbenennen und Schritt 6 als „Dry-Run + Logging" konkretisieren.';
-                        } else if (/warum/.test(lower)) {
-                          answer = 'Lokaler Vorschlag: Diese Reihe folgt der Logik Ziel → Kontext → Risiko → Lösung → Bearbeiter → Artefakt → Freigabe. Sie minimiert Rückfragen während der Umsetzung.';
-                        } else if (input.length > 0) {
-                          answer = `Lokaler Vorschlag basierend auf „${input.slice(0, 80)}": Pass den selektierten Schritt im Detailpanel an (Titel, Ziel, Risiko, Bearbeiter) und nutze „Feedback an NOX", damit später echtes NOX-Lernen darauf aufbauen kann.`;
-                        }
-                        setNoxTalkAnswer(answer);
-                      }}
-                    >
-                      Lokale NOX-Antwort generieren
-                    </Button>
-                  </div>
+          (() => {
+            // Pure helper — same regex logic as the previous inline handler,
+            // extracted so both Enter-to-send and the explicit submit button
+            // can share it without duplicating the if-cascade.
+            function generateDemoAnswer(rawInput: string): string {
+              const input = rawInput.trim();
+              const lower = input.toLowerCase();
+              if (/kuerzer|kürzer|kompakt/.test(lower)) {
+                return 'Demo-Vorschlag: Schritte 1, 3 und 7 kombinieren. Schritt 2 + 5 entfallen, wenn Kontext bereits klar ist.';
+              }
+              if (/business|sales|vertrieb|lead/.test(lower)) {
+                return 'Demo-Vorschlag: zusätzlich „Hypothese und Zielgruppe schärfen" vor Schritt 3 und „Pitch-Test mit 5 Leads" als Schritt 6 einbauen.';
+              }
+              if (/technisch|implement|code/.test(lower)) {
+                return 'Demo-Vorschlag: Schritt 5 in „Code-/Workflow-Skeleton bauen" umbenennen und Schritt 6 als „Dry-Run + Logging" konkretisieren.';
+              }
+              if (/warum/.test(lower)) {
+                return 'Demo-Vorschlag: Diese Reihe folgt der Logik Ziel → Kontext → Risiko → Lösung → Bearbeiter → Artefakt → Freigabe. Sie minimiert Rückfragen während der Umsetzung.';
+              }
+              if (input.length > 0) {
+                return `Demo-Vorschlag basierend auf „${input.slice(0, 80)}": Pass den selektierten Schritt im Detailpanel an (Titel, Ziel, Risiko, Bearbeiter) und nutze „Feedback an NOX", damit später echtes NOX-Lernen darauf aufbauen kann.`;
+              }
+              return 'Demo-Vorschlag: Diese Quest-Reihe folgt der Logik Ziel → Kontext → Risiko → Lösung → Bearbeiter → Artefakt → Freigabe.';
+            }
+
+            function resetTalkState() {
+              setNoxTalkInput('');
+              setNoxTalkAnswer('');
+              setNoxTalkHistory([]);
+            }
+
+            function submitTalk() {
+              const input = noxTalkInput.trim();
+              if (!input) return;
+              const answer = generateDemoAnswer(input);
+              const now = Date.now();
+              setNoxTalkHistory((prev) => [
+                ...prev,
+                { role: 'user', text: input, at: now },
+                { role: 'demo', text: answer, at: now + 1 },
+              ]);
+              setNoxTalkAnswer(answer);
+              setNoxTalkInput('');
+            }
+
+            // Dismiss-guard — if the user has unsent text or a history they
+            // probably didn't mean to nuke, ESC / backdrop just keeps the
+            // modal open. The explicit "Schließen" button bypasses this.
+            const hasUnsavedTalk =
+              noxTalkInput.trim().length > 0 || noxTalkHistory.length > 0;
+
+            return (
+              <Modal
+                size="chat"
+                closeGuard={() => !hasUnsavedTalk}
+                onClose={() => { closeModal(); resetTalkState(); }}
+              >
+                <SectionTitle
+                  eyebrow="NOX Agent · LOKALE DEMO"
+                  title="Mit NOX besprechen"
+                  subtitle="Lokale NOX-Demo · kein echter Agent · kein API-Call · keine Notion-Speicherung"
+                />
+
+                {/* Loud honesty banner — the previous yellow blurb was easy to
+                    miss. This makes the demo nature unmissable before the
+                    user types. */}
+                <div className="mt-4 rounded-2xl border border-rose-300/40 bg-rose-400/10 px-4 py-3 text-[12px] font-bold leading-5 text-rose-50">
+                  <span className="text-rose-100">Hinweis:</span> Dies ist ein lokaler Demo-Dialog.
+                  Antworten sind regelbasiert und entstehen ausschließlich im Browser. Es findet
+                  <span className="font-extrabold"> kein API-Call </span>statt, es spricht
+                  <span className="font-extrabold"> kein echter Claude-/NOX-Agent </span>mit, und es wird
+                  <span className="font-extrabold"> nichts in Notion gespeichert</span>. Drafts „vormerken"
+                  legt nur einen lokalen Eintrag in deinem Browser an.
                 </div>
 
-                {noxTalkAnswer ? (
-                  <div className="rounded-2xl border border-amber-300/40 bg-amber-300/10 p-4">
-                    <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">NOX (lokale Beispielantwort)</div>
-                    <p className="mt-2 text-sm font-semibold leading-6 text-amber-50">{noxTalkAnswer}</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Button
-                        tone="secondary"
-                        className="!px-3 !py-1.5 !text-[12px]"
-                        onClick={() => {
-                          if (plannerSelectedStepId) {
-                            const sel = planSteps.find((s) => s.id === plannerSelectedStepId);
-                            const merged = sel?.feedback ? `${sel.feedback}\n${noxTalkAnswer}` : noxTalkAnswer;
-                            updateStep(plannerSelectedStepId, { feedback: merged });
-                          } else {
-                            setProjektZiel((prev) => `${prev}${prev ? '\n' : ''}// NOX-Notiz: ${noxTalkAnswer}`);
-                          }
-                          closeModal();
-                          setNoxTalkInput('');
-                          setNoxTalkAnswer('');
-                        }}
-                      >
-                        Antwort als Anpassungsnotiz übernehmen
-                      </Button>
+                <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-amber-300/30 bg-amber-300/5 p-4">
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">Projektziel</div>
+                      <p className="mt-2 text-sm font-bold leading-6 text-amber-50">
+                        {projektZiel.trim() || 'Noch kein Projektziel gesetzt.'}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-[#4a101b]/60 bg-[#0c0506]/70 p-4">
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/80">Aktuelle Quest-Reihe ({planSteps.length} Schritte)</div>
+                      <ul className="mt-2 space-y-1 text-sm font-semibold text-amber-50/90">
+                        {planSteps.map((s) => (
+                          <li key={s.id} className="flex gap-2">
+                            <span className="font-black text-amber-200">{s.step}.</span>
+                            <span className="leading-5">{s.title}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
-                ) : null}
-              </div>
-            </div>
 
-            <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-semibold leading-6 text-amber-50">
-              Phase 1: Keine API, kein echter Chat. Antworten sind regelbasiert und nur lokal. Später ersetzt NOX Agent das durch echte Auswertung.
-            </div>
+                  <div className="flex min-h-0 flex-col gap-3">
+                    {/* Chat history — scrollable column. Empty state shows a
+                        hint instead of leaving the area blank. */}
+                    <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">Verlauf (lokal, nicht gespeichert)</div>
+                    <div className="max-h-[42vh] min-h-[180px] overflow-y-auto rounded-2xl border border-[#4a101b]/60 bg-[#0c0506]/70 p-3">
+                      {noxTalkHistory.length === 0 ? (
+                        <div className="px-1 py-6 text-center text-[12px] font-semibold leading-5 text-[#bda0a8]">
+                          Noch keine Demo-Nachrichten. Tipp eine Frage unten ein und drücke{' '}
+                          <kbd className="rounded border border-amber-300/40 bg-[#1a0b10] px-1.5 py-0.5 font-mono text-[11px] text-amber-100">Enter</kbd>{' '}
+                          zum Senden. <kbd className="rounded border border-amber-300/40 bg-[#1a0b10] px-1.5 py-0.5 font-mono text-[11px] text-amber-100">Shift</kbd>+<kbd className="rounded border border-amber-300/40 bg-[#1a0b10] px-1.5 py-0.5 font-mono text-[11px] text-amber-100">Enter</kbd> macht einen Zeilenumbruch.
+                        </div>
+                      ) : (
+                        <ul className="flex flex-col gap-2">
+                          {noxTalkHistory.map((entry, idx) => (
+                            <li
+                              key={`${entry.at}-${idx}`}
+                              className={
+                                entry.role === 'user'
+                                  ? 'self-end max-w-[85%] rounded-2xl border border-amber-300/40 bg-amber-300/15 px-3 py-2 text-sm font-semibold leading-5 text-amber-50'
+                                  : 'self-start max-w-[85%] rounded-2xl border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-sm font-semibold leading-5 text-cyan-50'
+                              }
+                            >
+                              <div className={`text-[9px] font-extrabold uppercase tracking-[0.18em] ${entry.role === 'user' ? 'text-amber-200' : 'text-cyan-200'}`}>
+                                {entry.role === 'user' ? 'Du' : 'Demo-Antwort (lokal)'}
+                              </div>
+                              <p className="mt-1 whitespace-pre-wrap break-words">{entry.text}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
 
-            <div className="sticky bottom-0 -mx-5 -mb-5 mt-6 flex flex-wrap justify-end gap-3 border-t border-[#4a101b]/60 bg-[#080304]/95 px-5 py-4 md:-mx-9 md:-mb-9 md:px-9 md:py-5">
-              <Button tone="ghost" onClick={() => createTalkEntry('Quest-Draft')}>Als Quest-Draft vormerken</Button>
-              <Button tone="ghost" onClick={() => createTalkEntry('Output-Draft')}>Als Output-Draft vormerken</Button>
-              <Button onClick={() => { closeModal(); setNoxTalkInput(''); setNoxTalkAnswer(''); }}>Schließen</Button>
-            </div>
-          </Modal>
+                    <div>
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">
+                        Eingabe · Enter sendet · Shift+Enter neue Zeile
+                      </div>
+                      <textarea
+                        value={noxTalkInput}
+                        onChange={(event) => setNoxTalkInput(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+                            event.preventDefault();
+                            submitTalk();
+                          }
+                        }}
+                        rows={6}
+                        placeholder="Beispiele: Warum schlägst du diese Reihe vor? Mach es kürzer. Mach es business-lastiger. Welcher Schritt fehlt für Vertrieb?"
+                        className="mt-2 w-full min-h-[140px] resize-y rounded-2xl border border-amber-300/25 bg-[#120609]/80 px-3 py-2 text-sm font-semibold text-amber-50 outline-none placeholder:text-[#9f8588] focus:border-amber-300/70"
+                      />
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9f8588]">
+                          {noxTalkHistory.length > 0 ? `${noxTalkHistory.length / 2 | 0} Demo-Runden` : 'Noch keine Runde'}
+                        </div>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <Button
+                            tone="ghost"
+                            className="!px-3 !py-1.5 !text-[12px]"
+                            onClick={() => { setNoxTalkHistory([]); setNoxTalkAnswer(''); }}
+                            title="Leert den lokalen Demo-Verlauf. Greift nicht auf Notion zu."
+                          >
+                            Verlauf leeren
+                          </Button>
+                          <Button
+                            className="!px-3 !py-1.5 !text-[12px]"
+                            onClick={submitTalk}
+                            disabled={noxTalkInput.trim().length === 0}
+                            title="Erzeugt regelbasiert eine Demo-Antwort. Kein API-Call, kein echter Agent."
+                          >
+                            Demo-Antwort erzeugen
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {noxTalkAnswer ? (
+                      <div className="rounded-2xl border border-amber-300/40 bg-amber-300/10 p-4">
+                        <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">Letzte Demo-Antwort in lokalen Entwurf übernehmen</div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button
+                            tone="secondary"
+                            className="!px-3 !py-1.5 !text-[12px]"
+                            title="Übernimmt die letzte Demo-Antwort in das Feedback-Feld des aktuell ausgewählten Plan-Schritts (oder in das Projektziel). Kein Notion-Write."
+                            onClick={() => {
+                              if (plannerSelectedStepId) {
+                                const sel = planSteps.find((s) => s.id === plannerSelectedStepId);
+                                const merged = sel?.feedback ? `${sel.feedback}\n${noxTalkAnswer}` : noxTalkAnswer;
+                                updateStep(plannerSelectedStepId, { feedback: merged });
+                              } else {
+                                setProjektZiel((prev) => `${prev}${prev ? '\n' : ''}// NOX-Notiz: ${noxTalkAnswer}`);
+                              }
+                              closeModal();
+                              resetTalkState();
+                            }}
+                          >
+                            Antwort als Anpassungsnotiz übernehmen
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="sticky bottom-0 -mx-5 -mb-5 mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[#4a101b]/60 bg-[#080304]/95 px-5 py-4 md:-mx-9 md:-mb-9 md:px-9 md:py-5">
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-rose-200/90">
+                    Lokale Demo · keine Notion-Speicherung
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-3">
+                    <Button
+                      tone="ghost"
+                      onClick={() => createTalkEntry('Quest-Draft')}
+                      title="Speichert diese Idee nur lokal als Quest-Entwurf. Kein Notion-Write."
+                    >
+                      Als Quest-Draft vormerken (lokal)
+                    </Button>
+                    <Button
+                      tone="ghost"
+                      onClick={() => createTalkEntry('Output-Draft')}
+                      title="Speichert diese Idee nur lokal als Output-/Artefakt-Entwurf. Kein Notion-Write."
+                    >
+                      Als Output-Draft vormerken (lokal)
+                    </Button>
+                    <Button
+                      onClick={() => { closeModal(); resetTalkState(); }}
+                      title="Schließt den Demo-Dialog. Lokaler Verlauf wird verworfen."
+                    >
+                      Schließen
+                    </Button>
+                  </div>
+                </div>
+              </Modal>
+            );
+          })()
         ) : null}
 
         {modal === 'audit' ? (
@@ -5127,6 +5458,11 @@ function UnifiedAutoPlanner({
   writeEnabledHint,
   commitStatus,
   commitMessage,
+  wouldCreateNTasks,
+  onReduceToOne,
+  isPlanStale,
+  validatedStepCount,
+  onRevalidate,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -5160,6 +5496,26 @@ function UnifiedAutoPlanner({
   // Phase 2D-UI — Commit attempt status, drives the second inline banner.
   commitStatus: 'idle' | 'running' | 'committed' | 'writes_locked' | 'duplicate' | 'auth-blocked' | 'error';
   commitMessage?: string;
+  // UX-safety — pass the would-create count from /plan/validate (or the
+  // local plan-step count as a fallback) so the commit CTA can label the
+  // exact number of quests it would create. Default-undefined keeps the
+  // label as the legacy "Quests erzeugen" wording.
+  wouldCreateNTasks?: number;
+  // Optional safety affordance: reduce the local plan draft to a single
+  // step. Surfaced only when the count is >1, never auto-fires. No
+  // backend or Notion call.
+  onReduceToOne?: () => void;
+  // Stateflow-Digest-Fix — true when the local plan has diverged from the
+  // last validated snapshot. The CTA gets disabled and a re-validate
+  // affordance is surfaced instead of letting the operator hit the
+  // server-side digest mismatch.
+  isPlanStale?: boolean;
+  // Step count the server validated. When this differs from the current
+  // local plan-step count, the banner spells out both numbers.
+  validatedStepCount?: number | null;
+  // Trigger a fresh preview+validate chain from the CTA. Wired by the
+  // parent to handleApiPreview (which auto-chains to validate).
+  onRevalidate?: () => void;
 }) {
   // Phase-1 unified Project Auto Planner. Combines the project-goal
   // composer and the planner action buttons into one card so the user
@@ -5243,6 +5599,12 @@ function UnifiedAutoPlanner({
           className={(() => {
             const base =
               'mt-4 flex flex-col gap-3 rounded-2xl border px-4 py-3 text-[12px] font-semibold leading-5 md:flex-row md:items-center md:justify-between';
+            if (isPlanStale) {
+              // Stateflow-Digest-Fix — the whole banner turns rose the
+              // moment the plan diverges, so the operator cannot misread
+              // a leftover "Bereit …" state.
+              return `${base} border-rose-400/55 bg-rose-400/10 text-rose-50`;
+            }
             switch (techCheckStatus) {
               case 'ready':
                 return `${base} border-emerald-300/40 bg-emerald-400/10 text-emerald-50`;
@@ -5265,17 +5627,19 @@ function UnifiedAutoPlanner({
               Technische Prüfung
             </div>
             <div className="text-[13px] font-black">
-              {techCheckStatus === 'ready'
-                ? 'Bereit für Notion-Erzeugung'
-                : techCheckStatus === 'not-ready'
-                  ? 'Schema nicht bereit'
-                  : techCheckStatus === 'running'
-                    ? 'Prüfung läuft …'
-                    : techCheckStatus === 'auth-blocked'
-                      ? 'Operator-Key erforderlich'
-                      : techCheckStatus === 'error'
-                        ? 'Prüfung fehlgeschlagen'
-                        : 'Noch nicht geprüft'}
+              {isPlanStale
+                ? 'Plan wurde geändert — erneute Prüfung nötig'
+                : techCheckStatus === 'ready'
+                  ? 'Bereit für Notion-Erzeugung'
+                  : techCheckStatus === 'not-ready'
+                    ? 'Schema nicht bereit'
+                    : techCheckStatus === 'running'
+                      ? 'Prüfung läuft …'
+                      : techCheckStatus === 'auth-blocked'
+                        ? 'Operator-Key erforderlich'
+                        : techCheckStatus === 'error'
+                          ? 'Prüfung fehlgeschlagen'
+                          : 'Noch nicht geprüft'}
             </div>
             {techCheckSummary ? (
               <div className="text-[11px] font-semibold opacity-80">{techCheckSummary}</div>
@@ -5285,14 +5649,88 @@ function UnifiedAutoPlanner({
                 Hinweis: Writes serverseitig gesperrt (NOX_NOTION_WRITE_ENABLED ≠ true).
               </div>
             ) : null}
+            {/* Stateflow-Digest-Fix — explicit "plan changed since last
+                validate" banner. Renders as soon as the operator mutates
+                the plan after a validate landed. The CTA below is also
+                disabled in this state. */}
+            {isPlanStale ? (
+              <div className="mt-2 rounded-2xl border border-rose-400/60 bg-rose-400/15 px-3 py-2 text-[12px] font-bold leading-5 text-rose-50">
+                Plan wurde lokal geändert
+                {typeof validatedStepCount === 'number'
+                  ? ` (validiert: ${validatedStepCount}, lokal jetzt: ${stepCount})`
+                  : ''}
+                . Vor dem Commit bitte erneut „Technisch prüfen" laufen lassen.
+                {onRevalidate ? (
+                  <>
+                    {' '}
+                    <button
+                      type="button"
+                      onClick={onRevalidate}
+                      title="Startet einen frischen Preview+Validate-Lauf mit dem aktuellen lokalen Plan. Keine Notion-Writes."
+                      className="underline decoration-rose-200/80 underline-offset-2 hover:text-rose-100"
+                    >
+                      Jetzt erneut prüfen
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+            {/* UX-safety — surface the exact count BEFORE the button so the
+                operator can't think they're committing a single quest when
+                the validate response actually said 7. The warning only
+                renders for >1, and the optional reducer is offered next to
+                it. No backend or Notion call. */}
+            {techCheckStatus === 'ready' && !isPlanStale && (wouldCreateNTasks ?? 0) >= 2 ? (
+              <div className="mt-2 rounded-2xl border border-amber-400/60 bg-amber-400/15 px-3 py-2 text-[12px] font-bold leading-5 text-amber-50">
+                Achtung: Dieser Commit würde {wouldCreateNTasks} Quests erzeugen.
+                {onReduceToOne ? (
+                  <>
+                    {' '}Für den Smoke-Test bitte zuerst{' '}
+                    <button
+                      type="button"
+                      onClick={onReduceToOne}
+                      title="Reduziert den lokalen Plan-Entwurf auf den ersten Schritt. Kein Notion-Write, kein Backend-Call."
+                      className="underline decoration-amber-200/80 underline-offset-2 hover:text-amber-100"
+                    >
+                      auf 1 Smoke-Quest reduzieren
+                    </button>
+                    {' '}und danach erneut „Technisch prüfen".
+                  </>
+                ) : (
+                  ' Für den Smoke-Test bitte vorher auf 1 Quest reduzieren und erneut prüfen.'
+                )}
+              </div>
+            ) : null}
           </div>
           <div className="flex flex-wrap gap-2 md:justify-end">
-            {techCheckStatus === 'ready' ? (
-              <Button onClick={onCommitOpen} disabled={commitStatus === 'running'}>
-                {commitStatus === 'running' ? 'Commit läuft …' : 'Quests erzeugen'}
+            {techCheckStatus === 'ready' && !isPlanStale ? (
+              <Button
+                onClick={onCommitOpen}
+                disabled={commitStatus === 'running'}
+                title={
+                  commitStatus === 'running'
+                    ? 'Commit läuft — bitte warten.'
+                    : typeof wouldCreateNTasks === 'number'
+                      ? `Erzeugt ${wouldCreateNTasks} echte Master-Tasks-Quest${wouldCreateNTasks === 1 ? '' : 's'} in Notion. Idempotenz-Check + Schema-Recheck laufen serverseitig.`
+                      : 'Erzeugt echte Master-Tasks-Quests in Notion.'
+                }
+              >
+                {commitStatus === 'running'
+                  ? 'Commit läuft …'
+                  : typeof wouldCreateNTasks === 'number'
+                    ? `${wouldCreateNTasks} ${wouldCreateNTasks === 1 ? 'Quest' : 'Quests'} erzeugen`
+                    : 'Quests erzeugen'}
               </Button>
             ) : null}
-            {techCheckStatus !== 'idle' ? (
+            {isPlanStale && onRevalidate ? (
+              <Button
+                onClick={onRevalidate}
+                title="Startet einen frischen Preview+Validate-Lauf mit dem aktuellen lokalen Plan. Keine Notion-Writes."
+              >
+                Erneut technisch prüfen
+              </Button>
+            ) : null}
+            {techCheckStatus !== 'idle' || isPlanStale ? (
               <Button tone="ghost" className="!px-3 !py-2 !text-xs" onClick={onApiPreview}>
                 Technische Details
               </Button>
@@ -5332,7 +5770,12 @@ function UnifiedAutoPlanner({
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#4a101b]/40 pt-4">
         <div className="flex flex-wrap gap-2">
-          <Button onClick={onTalk}>Mit NOX besprechen</Button>
+          <Button
+            onClick={onTalk}
+            title="Öffnet einen lokalen Demo-Dialog. Kein echter Agent, kein API-Call, keine Notion-Speicherung."
+          >
+            Mit NOX besprechen (Demo)
+          </Button>
           <Button tone="ghost" onClick={onPlan}>Quest-Reihe entwerfen</Button>
           <Button tone="ghost" onClick={onApiPreview}>Technisch prüfen</Button>
           <Button tone="ghost" onClick={onOutputsViewer}>Outputs ansehen</Button>
@@ -5597,23 +6040,35 @@ function Modal({
   children,
   onClose,
   size = 'default',
+  closeGuard,
 }: {
   children: ReactNode;
   onClose: () => void;
-  size?: 'default' | 'wide';
+  size?: 'default' | 'wide' | 'chat';
+  /**
+   * Optional gate to prevent accidental ESC / backdrop dismiss when there is
+   * unsaved input in the modal. Return `true` to allow close, `false` to
+   * keep the modal open. The explicit "Schließen" button bypasses this.
+   */
+  closeGuard?: () => boolean;
 }) {
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') {
+        if (closeGuard && !closeGuard()) return;
+        onClose();
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, closeGuard]);
 
   const sizeClass =
-    size === 'wide'
-      ? 'w-full max-w-[min(1200px,calc(100vw-32px))] md:max-w-[min(1200px,calc(100vw-96px))]'
-      : 'w-full max-w-4xl';
+    size === 'chat'
+      ? 'w-full max-w-[min(1320px,calc(100vw-32px))] md:max-w-[min(1320px,calc(100vw-64px))]'
+      : size === 'wide'
+        ? 'w-full max-w-[min(1200px,calc(100vw-32px))] md:max-w-[min(1200px,calc(100vw-96px))]'
+        : 'w-full max-w-4xl';
 
   return (
     <motion.div
@@ -5621,7 +6076,10 @@ function Modal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-[#030101]/86 px-3 py-6 backdrop-blur-md md:items-center md:px-6 md:py-10"
-      onMouseDown={onClose}
+      onMouseDown={() => {
+        if (closeGuard && !closeGuard()) return;
+        onClose();
+      }}
     >
       <motion.div
         initial={{ y: 18, scale: 0.97 }}
@@ -6000,7 +6458,13 @@ function QuestDetail({
           <Card>
             <SectionTitle eyebrow="Aktionen" title="NOX Aktionen" />
             <div className="mt-5 flex flex-col gap-3">
-              <Button tone="ghost" onClick={openTalk}>Mit NOX besprechen</Button>
+              <Button
+                tone="ghost"
+                onClick={openTalk}
+                title="Öffnet einen lokalen Demo-Dialog. Kein echter Agent, kein API-Call, keine Notion-Speicherung."
+              >
+                Mit NOX besprechen (Demo)
+              </Button>
               <Button tone="ghost" onClick={() => createProjectXHandoff(quest)}>An Project X übergeben</Button>
               <Button onClick={() => createOutput(quest)}>Output erstellen</Button>
             </div>
