@@ -153,16 +153,48 @@ function isWriteFlagEnabled(): boolean {
   return (process.env.NOX_NOTION_WRITE_ENABLED ?? '').trim().toLowerCase() === 'true';
 }
 
+// Shared-Notion-Token-Fix — explicit opt-in to allow a single Notion
+// integration token to serve both the read-only schema lookups and the
+// write-side page creates. Default-off; the operator must consciously
+// flip this env var. Strictly "true" only — every other value keeps the
+// historical collision-with-readonly hard block in place.
+function isSharedReadWriteTokenAllowed(): boolean {
+  return (
+    (process.env.NOX_NOTION_ALLOW_SHARED_READ_WRITE_TOKEN ?? '')
+      .trim()
+      .toLowerCase() === 'true'
+  );
+}
+
 interface WriteTokenStatus {
+  /** Resolved write token, only present in the success branches. */
   token?: string;
+  /** Failure reason — only set on `not_configured` or `collision_with_readonly`. */
   reason?: 'not_configured' | 'collision_with_readonly';
+  /**
+   * Diagnostic flag: true when the resolved write token is identical to the
+   * read-only token AND the operator opted in via
+   * NOX_NOTION_ALLOW_SHARED_READ_WRITE_TOKEN=true. The token value itself
+   * is never echoed; this boolean is the only signal that leaves the
+   * resolver.
+   */
+  sharedReadWrite?: boolean;
 }
 
 function resolveWriteToken(readonlyToken: string): WriteTokenStatus {
   const raw = (process.env.NOX_NOTION_WRITE_TOKEN ?? '').trim();
   if (raw.length === 0) return { reason: 'not_configured' };
-  if (raw === readonlyToken) return { reason: 'collision_with_readonly' };
-  return { token: raw };
+  if (raw === readonlyToken) {
+    // Shared-Notion-Token-Fix — collision is a hard block by default
+    // because two distinct integrations make rotation safer and reduce
+    // blast radius on a write-side leak. Operators with intentionally
+    // shared single-integration setups opt in via the env var below.
+    if (!isSharedReadWriteTokenAllowed()) {
+      return { reason: 'collision_with_readonly' };
+    }
+    return { token: raw, sharedReadWrite: true };
+  }
+  return { token: raw, sharedReadWrite: false };
 }
 
 // Build a baseline response object so every early-return path produces the
@@ -628,7 +660,7 @@ const handler: ApiHandler = async (req, res) => {
         duplicateRisk: false,
         pageResults: [],
         diagnostics: [
-          'NOX_NOTION_WRITE_TOKEN is identical to NOX_NOTION_READONLY_TOKEN. Use a dedicated write-scope integration token.',
+          'NOX_NOTION_WRITE_TOKEN is identical to NOX_NOTION_READONLY_TOKEN. Use a dedicated write-scope integration token, or set NOX_NOTION_ALLOW_SHARED_READ_WRITE_TOKEN=true if a single integration is intended.',
         ],
         authMode: authModeWire,
       }),
@@ -636,6 +668,21 @@ const handler: ApiHandler = async (req, res) => {
     return;
   }
   const writeToken = writeStatus.token!;
+  // Shared-Notion-Token-Fix — pre-allocate a diagnostics array so the
+  // shared-token opt-in surfaces as a single sanitised string in the
+  // final response (and in the structured log). The token VALUE is
+  // never written here.
+  const baseDiagnostics: string[] = [];
+  if (writeStatus.sharedReadWrite) {
+    baseDiagnostics.push(
+      'shared_read_write_token_allowed: write token equals read token; opt-in via NOX_NOTION_ALLOW_SHARED_READ_WRITE_TOKEN=true is active.',
+    );
+    logCommitEvent('warn', requestId, {
+      projectId,
+      code: 'shared_read_write_token_allowed',
+      summary: 'sharedReadWriteTokenAllowed=true',
+    });
+  }
 
   // 11. Re-run schema validation against the live Notion DB.
   const schemaRecheck = await recheckSchemaForCommit(notion.token, notion.dbId, projectId);
@@ -749,7 +796,10 @@ const handler: ApiHandler = async (req, res) => {
   }
 
   const pageResults: PlanCommitPageResult[] = [];
-  const diagnostics: string[] = [];
+  // Shared-Notion-Token-Fix — seed with baseDiagnostics so the
+  // shared-token opt-in (when active) is the first entry, ahead of any
+  // per-step drop or upstream diagnostics.
+  const diagnostics: string[] = [...baseDiagnostics];
 
   for (const mutation of mutations) {
     const built = mapPlanMutationToNotionProperties(mutation, { relationOverrides });
