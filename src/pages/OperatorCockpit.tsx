@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { fetchOperatorProjectContext } from '../lib/operatorContextClient';
 import {
+  fetchAuditRecent,
   fetchPlanCommit,
   fetchPlanPreview,
   fetchPlanValidate,
@@ -3267,7 +3268,15 @@ function ProjectsDeepDive({
   // Quest-Reihen-Entwurf, `approvals` shows a Freigabe-Gate-Vorschau,
   // `outputsViewer` is a read-only categorized list of existing outputs.
   const [modal, setModal] = useState<
-    'talk' | 'audit' | 'output' | 'planner' | 'approvals' | 'outputsViewer' | 'apiPreview' | null
+    | 'talk'
+    | 'audit'
+    | 'output'
+    | 'planner'
+    | 'approvals'
+    | 'outputsViewer'
+    | 'apiPreview'
+    | 'serverAudit'
+    | null
   >(null);
   // Phase 2A — local Project Auto Planner API-preview state. The
   // operator API key lives only in this component's memory for the
@@ -3319,6 +3328,29 @@ function ProjectsDeepDive({
     errorMessage?: string;
   } | null>(null);
   const commitAbortRef = useRef<AbortController | null>(null);
+
+  // Phase 2D-Plus — Server-Audit modal state. Reads the persistent audit
+  // log via `/api/operator/audit/recent`. No mutation, no Notion call,
+  // no secret in the response. The modal is opt-in and never fires
+  // automatically.
+  const [serverAuditLoading, setServerAuditLoading] = useState<boolean>(false);
+  const [serverAuditEvents, setServerAuditEvents] = useState<
+    import('../lib/projectPlannerClient').AuditEventWire[] | null
+  >(null);
+  const [serverAuditMeta, setServerAuditMeta] = useState<{
+    source: 'persistent' | 'memory';
+    limit: number;
+    count: number;
+    totalAvailable: number;
+  } | null>(null);
+  const [serverAuditError, setServerAuditError] = useState<{
+    status: number;
+    errorCode?: string;
+    errorMessage?: string;
+  } | null>(null);
+  const [serverAuditFilterProject, setServerAuditFilterProject] = useState<boolean>(true);
+  const serverAuditAbortRef = useRef<AbortController | null>(null);
+
   // Phase 2D-UI — Sentinel that fires the background Preview+Validate
   // chain once after `regeneratePlan(...)` produced a new plan. We can't
   // call `handleApiPreview()` inline inside onPlan because the new
@@ -4198,6 +4230,55 @@ function ProjectsDeepDive({
     }
   }
 
+  // Phase 2D-Plus — load recent audit events from the server. Reads
+  // `/api/operator/audit/recent` with the current operator key (when
+  // present) so the cockpit can see the persistent log without the
+  // operator having to grep Vercel-Logs. No mutation, no Notion call.
+  async function handleLoadServerAudit(opts: { filterProject?: boolean } = {}) {
+    if (serverAuditAbortRef.current) {
+      serverAuditAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    serverAuditAbortRef.current = controller;
+    setServerAuditLoading(true);
+    setServerAuditError(null);
+    const filterProject = opts.filterProject ?? serverAuditFilterProject;
+    const result = await fetchAuditRecent({
+      apiKey: apiPreviewKey,
+      limit: 80,
+      projectId: filterProject ? project.id : undefined,
+      signal: controller.signal,
+    });
+    if (serverAuditAbortRef.current !== controller) return;
+    serverAuditAbortRef.current = null;
+    setServerAuditLoading(false);
+    if (result.ok) {
+      setServerAuditEvents(result.data.events);
+      setServerAuditMeta({
+        source: result.data.meta.source,
+        limit: result.data.meta.limit,
+        count: result.data.meta.count,
+        totalAvailable: result.data.meta.totalAvailable,
+      });
+    } else {
+      setServerAuditEvents(null);
+      setServerAuditMeta(null);
+      setServerAuditError({
+        status: result.status,
+        errorCode: result.errorCode,
+        errorMessage: result.errorMessage,
+      });
+    }
+  }
+
+  function openServerAuditModal() {
+    setModal('serverAudit');
+    // Fire an initial load if we have nothing yet, or refresh when the
+    // operator re-opens after a smoke run. A small debounce isn't needed
+    // because the abort guard above handles repeat clicks.
+    void handleLoadServerAudit({ filterProject: serverAuditFilterProject });
+  }
+
   return (
     <div className="space-y-6">
       {/* Top workspace card — minimal, work-first. Project picker is part
@@ -4345,6 +4426,7 @@ function ProjectsDeepDive({
         onReset={resetPlan}
         onDeleteDraft={deleteLocalDraft}
         onAudit={() => setModal('audit')}
+        onServerAudit={openServerAuditModal}
         onOutputCreate={() => setModal('output')}
         stepCount={planSteps.length}
         approvalsCount={projectApprovals.length}
@@ -5764,6 +5846,135 @@ function ProjectsDeepDive({
             </div>
           </Modal>
         ) : null}
+
+        {modal === 'serverAudit' ? (
+          <Modal size="wide" onClose={() => setModal(null)}>
+            <SectionTitle
+              eyebrow="Phase 2D-Plus · Audit"
+              title="Server-Audit — letzte Ereignisse"
+              subtitle="Liest die persistierten Audit-Events des Operator-API-Pfads. Read-only, kein Notion-Touch, keine Mutation."
+            />
+
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9f8d95]">
+              <label className="inline-flex items-center gap-2 normal-case tracking-normal">
+                <input
+                  type="checkbox"
+                  checked={serverAuditFilterProject}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setServerAuditFilterProject(next);
+                    void handleLoadServerAudit({ filterProject: next });
+                  }}
+                />
+                <span className="text-[12px] font-bold normal-case text-[#eadbe2]">
+                  Nur Events für <code className="rounded bg-black/40 px-1.5 py-0.5">{project.id}</code>
+                </span>
+              </label>
+              <Button
+                tone="ghost"
+                className="!px-3 !py-1.5 !text-[11px]"
+                onClick={() => void handleLoadServerAudit({ filterProject: serverAuditFilterProject })}
+                disabled={serverAuditLoading}
+              >
+                {serverAuditLoading ? 'Lädt …' : 'Aktualisieren'}
+              </Button>
+              {serverAuditMeta ? (
+                <span className="text-[11px] font-semibold normal-case text-[#9f8d95]">
+                  Quelle: <strong className={serverAuditMeta.source === 'persistent' ? 'text-amber-200' : 'text-amber-100/70'}>
+                    {serverAuditMeta.source === 'persistent' ? 'persistent' : 'memory'}
+                  </strong>
+                  {' · '}{serverAuditMeta.count} / {serverAuditMeta.totalAvailable} Events
+                </span>
+              ) : null}
+            </div>
+
+            {serverAuditMeta?.source === 'memory' ? (
+              <div className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-[12px] font-semibold leading-5 text-amber-100">
+                Persistenter Audit-Store nicht konfiguriert oder aktuell nicht erreichbar. Der Server liefert
+                den In-Memory-Ring-Buffer zurück — Events gehen beim nächsten Vercel-Cold-Start verloren.
+                Setze <code className="rounded bg-black/40 px-1.5 py-0.5">NOX_AUDIT_KV_REST_URL</code> und
+                <code className="rounded bg-black/40 px-1.5 py-0.5">NOX_AUDIT_KV_REST_TOKEN</code> in der Vercel-Env,
+                um die Persistenz zu aktivieren.
+              </div>
+            ) : null}
+
+            {serverAuditError ? (
+              <div className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm font-semibold leading-6 text-red-100">
+                Audit-Read fehlgeschlagen
+                {typeof serverAuditError.status === 'number' && serverAuditError.status > 0
+                  ? ` (HTTP ${serverAuditError.status})`
+                  : ''}
+                {serverAuditError.errorCode ? ` · ${serverAuditError.errorCode}` : ''}
+                {serverAuditError.errorMessage ? ` — ${serverAuditError.errorMessage}` : ''}
+              </div>
+            ) : null}
+
+            {!serverAuditError && !serverAuditLoading && serverAuditEvents && serverAuditEvents.length === 0 ? (
+              <div className="mt-4 rounded-2xl border border-dashed border-[#4a101b]/60 bg-[#120609]/35 p-6 text-center text-sm font-bold text-[#9f8d95]">
+                Keine Audit-Events für den aktuellen Filter.
+              </div>
+            ) : null}
+
+            {serverAuditEvents && serverAuditEvents.length > 0 ? (
+              <div className="mt-4 overflow-x-auto rounded-2xl border border-[#4a101b]/60 bg-[#120609]/55">
+                <table className="min-w-full text-left text-[11px] leading-5">
+                  <thead className="border-b border-[#4a101b]/60 bg-black/30 text-[10px] uppercase tracking-[0.16em] text-[#9f8d95]">
+                    <tr>
+                      <th className="px-3 py-2">Zeit</th>
+                      <th className="px-3 py-2">Event</th>
+                      <th className="px-3 py-2">Outcome</th>
+                      <th className="px-3 py-2">HTTP</th>
+                      <th className="px-3 py-2">Projekt</th>
+                      <th className="px-3 py-2">Digest</th>
+                      <th className="px-3 py-2">Notion Page</th>
+                      <th className="px-3 py-2">Error</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-[#eadbe2]">
+                    {serverAuditEvents.map((ev) => {
+                      const outcomeTone =
+                        ev.outcome === 'success'
+                          ? 'text-emerald-300'
+                          : ev.outcome === 'failure'
+                            ? 'text-red-300'
+                            : ev.outcome === 'blocked'
+                              ? 'text-amber-300'
+                              : 'text-[#eadbe2]';
+                      return (
+                        <tr key={ev.id} className="border-b border-[#4a101b]/30 align-top">
+                          <td className="whitespace-nowrap px-3 py-2 text-[#9f8d95]">
+                            {new Date(ev.timestamp).toLocaleString('de-DE', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                            })}
+                          </td>
+                          <td className="px-3 py-2 font-bold">{ev.eventType}</td>
+                          <td className={`px-3 py-2 font-bold ${outcomeTone}`}>{ev.outcome}</td>
+                          <td className="px-3 py-2 font-mono">{ev.statusCode ?? '—'}</td>
+                          <td className="px-3 py-2 font-mono text-[10px]">{ev.projectId ?? '—'}</td>
+                          <td className="px-3 py-2 font-mono text-[10px]">{ev.planDigest ?? '—'}</td>
+                          <td className="px-3 py-2 font-mono text-[10px]" title={ev.notionPageId ?? ''}>
+                            {ev.notionPageId ? ev.notionPageId.slice(0, 10) + '…' : '—'}
+                          </td>
+                          <td className="px-3 py-2 font-mono text-[10px] text-red-200">
+                            {ev.errorCode ?? '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex justify-end gap-3 border-t border-[#4a101b]/50 pt-4">
+              <Button onClick={() => setModal(null)}>Schließen</Button>
+            </div>
+          </Modal>
+        ) : null}
       </AnimatePresence>
     </div>
   );
@@ -5780,6 +5991,7 @@ function UnifiedAutoPlanner({
   onReset,
   onDeleteDraft,
   onAudit,
+  onServerAudit,
   onOutputCreate,
   stepCount,
   approvalsCount,
@@ -5813,6 +6025,7 @@ function UnifiedAutoPlanner({
   onReset: () => void;
   onDeleteDraft: () => void;
   onAudit: () => void;
+  onServerAudit: () => void;
   onOutputCreate: () => void;
   stepCount: number;
   approvalsCount: number;
@@ -6223,6 +6436,14 @@ function UnifiedAutoPlanner({
             Outputs ansehen
           </Button>
           <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={onAudit}>Projektkontext-Audit</Button>
+          <Button
+            tone="secondary"
+            className="!px-3 !py-2 !text-xs"
+            onClick={onServerAudit}
+            title="Lädt die letzten Server-Audit-Events (Preview/Validate/Commit) aus dem persistenten Audit-Log. Read-only, keine Notion-Aktion."
+          >
+            Audit anzeigen
+          </Button>
           <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={onOutputCreate}>Output anlegen</Button>
           <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={onDeleteDraft}>Lokalen Entwurf löschen</Button>
         </div>
