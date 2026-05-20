@@ -80,6 +80,51 @@ import {
 
 const ROUTE_LABEL = '/api/operator/projects/:projectId/plan/commit';
 
+// Commit-500-Diagnostics — short, request-scoped id for safe correlation
+// between server logs and the response body. Never includes secrets.
+function newRequestId(): string {
+  const stamp = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `cmt_${stamp}_${rand}`;
+}
+
+// Sanitised structured logger. Vercel function logs surface anything
+// written to stdout/stderr; we keep the payload to a known allowlist of
+// safe fields. No tokens, no env values, no headers, no request bodies.
+function logCommitEvent(
+  level: 'info' | 'warn' | 'error',
+  requestId: string,
+  fields: {
+    projectId?: string;
+    planSteps?: number;
+    code?: string;
+    statusCode?: number;
+    notionStatus?: number;
+    notionCode?: string;
+    propertyName?: string;
+    summary?: string;
+  },
+): void {
+  const fn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
+  const safe = {
+    src: 'plan/commit',
+    requestId,
+    projectId: fields.projectId,
+    planSteps: typeof fields.planSteps === 'number' ? fields.planSteps : undefined,
+    code: fields.code,
+    statusCode: fields.statusCode,
+    notionStatus: fields.notionStatus,
+    notionCode: fields.notionCode,
+    propertyName: fields.propertyName,
+    summary: typeof fields.summary === 'string' ? fields.summary.slice(0, 240) : undefined,
+  };
+  try {
+    fn(JSON.stringify(safe));
+  } catch {
+    // Never let logging itself throw out of the handler.
+  }
+}
+
 // ---- helpers ----
 
 function readProjectIdParam(
@@ -282,8 +327,17 @@ async function recheckSchemaForCommit(
 const handler: ApiHandler = async (req, res) => {
   const method = req.method ?? '?';
   const route = ROUTE_LABEL;
+  const requestId = newRequestId();
 
   setNoStore(res);
+  // Echo the request id back so the operator can grep server logs.
+  res.setHeader('x-nox-request-id', requestId);
+
+  // Commit-500-Diagnostics — top-level guard. Any throw inside the gates
+  // collapses to a sanitised JSON 500 with `code: 'internal_commit_error'`
+  // instead of leaking Vercel's default HTML error page. The frontend
+  // can then read `error` / `code` / `message` consistently.
+  try {
 
   // 1. Rate limit
   const rl = checkRateLimit(req);
@@ -465,6 +519,15 @@ const handler: ApiHandler = async (req, res) => {
   // read-only token (for schema re-check + idempotency lookup).
   const notion = readNotionConfig();
   if (!notion.ok) {
+    // Commit-500-Diagnostics — distinguish which env var is actually
+    // missing so the response code is actionable.
+    const tokenMissing = notion.missing.includes('NOX_NOTION_READONLY_TOKEN');
+    const dbMissing = notion.missing.includes('NOX_MASTER_TASKS_DB_ID');
+    const specificCode: PlanCommitResultCode = dbMissing && !tokenMissing
+      ? 'notion_database_missing'
+      : tokenMissing && !dbMissing
+        ? 'notion_write_token_missing'
+        : 'write_not_configured';
     appendAuditEvent({
       eventType: 'PLAN_COMMIT_WRITE_NOT_CONFIGURED',
       route,
@@ -474,9 +537,15 @@ const handler: ApiHandler = async (req, res) => {
       clientKeyLabel,
       detailsSummary: `missing=${notion.missing.join(',')}`,
     });
+    logCommitEvent('warn', requestId, {
+      projectId,
+      code: specificCode,
+      statusCode: 503,
+      summary: `missing=${notion.missing.join(',')}`,
+    });
     res.status(503).json(
       buildResponse({
-        code: 'write_not_configured',
+        code: specificCode,
         ok: false,
         projectId,
         clientPlanId: commit.clientPlanId,
@@ -508,9 +577,15 @@ const handler: ApiHandler = async (req, res) => {
       clientKeyLabel,
       detailsSummary: 'NOX_NOTION_WRITE_TOKEN unset',
     });
+    logCommitEvent('warn', requestId, {
+      projectId,
+      code: 'notion_write_token_missing',
+      statusCode: 503,
+      summary: 'NOX_NOTION_WRITE_TOKEN unset',
+    });
     res.status(503).json(
       buildResponse({
-        code: 'write_not_configured',
+        code: 'notion_write_token_missing',
         ok: false,
         projectId,
         clientPlanId: commit.clientPlanId,
@@ -682,6 +757,44 @@ const handler: ApiHandler = async (req, res) => {
       diagnostics.push(
         `step=${mutation.planStepId} dropped ${drop.notionPropertyName}: ${drop.reason}`,
       );
+      logCommitEvent('warn', requestId, {
+        projectId,
+        code: 'property_dropped',
+        propertyName: drop.notionPropertyName,
+        summary: drop.reason,
+      });
+    }
+
+    // Commit-500-Diagnostics — guard against an empty payload. If every
+    // proposed property was dropped (allowlist filtering, unresolved
+    // relation, etc.) the create-page call would either be silently
+    // accepted by Notion with a "Untitled" page or 400 with a generic
+    // schema error. Skip the network call and surface a precise code.
+    const propertyCount = Object.keys(built.properties).length;
+    if (propertyCount === 0) {
+      appendAuditEvent({
+        eventType: 'PLAN_COMMIT_PROPERTY_MAPPING_FAILED',
+        route,
+        method,
+        statusCode: 424,
+        outcome: 'failure',
+        clientKeyLabel,
+        detailsSummary: `step=${mutation.planStepId} all_properties_dropped`,
+      });
+      logCommitEvent('error', requestId, {
+        projectId,
+        code: 'notion_property_mapping_failed',
+        statusCode: 424,
+        summary: `step=${mutation.planStepId} all_properties_dropped`,
+      });
+      pageResults.push({
+        planStepId: mutation.planStepId,
+        ok: false,
+        errorCode: 'notion_property_mapping_failed',
+        errorMessage:
+          'Alle für diesen Schritt geplanten Notion-Properties wurden gefiltert (Allowlist / unresolved relation). Prüfe Notion-Schema und Mapping.',
+      });
+      continue;
     }
 
     const createRes = await createMasterTaskPage(writeToken, notion.dbId, built.properties);
@@ -694,6 +807,12 @@ const handler: ApiHandler = async (req, res) => {
         outcome: 'success',
         clientKeyLabel,
         detailsSummary: `step=${mutation.planStepId} pageId=${createRes.pageId}`,
+      });
+      logCommitEvent('info', requestId, {
+        projectId,
+        code: 'page_created',
+        statusCode: 200,
+        summary: `step=${mutation.planStepId}`,
       });
       pageResults.push({
         planStepId: mutation.planStepId,
@@ -711,6 +830,14 @@ const handler: ApiHandler = async (req, res) => {
         clientKeyLabel,
         detailsSummary: `step=${mutation.planStepId} ${createRes.summary.slice(0, 120)}`,
       });
+      logCommitEvent('error', requestId, {
+        projectId,
+        code: 'page_create_failed',
+        statusCode: createRes.statusCode,
+        notionStatus: createRes.upstreamStatus,
+        notionCode: createRes.upstreamCode,
+        summary: `step=${mutation.planStepId} ${createRes.summary.slice(0, 200)}`,
+      });
       pageResults.push({
         planStepId: mutation.planStepId,
         ok: false,
@@ -723,19 +850,42 @@ const handler: ApiHandler = async (req, res) => {
   const successCount = pageResults.filter((p) => p.ok).length;
   const failureCount = pageResults.length - successCount;
   const allOk = failureCount === 0;
+  // Commit-500-Diagnostics — when EVERY per-step create failed, return
+  // 502 with `code: 'notion_create_failed'` instead of the misleading
+  // 200 `partial_failure`. Partial-success still uses 200.
+  const allFailed = pageResults.length > 0 && successCount === 0;
+
   appendAuditEvent({
-    eventType: allOk ? 'PLAN_COMMIT_SUCCESS' : 'PLAN_COMMIT_PARTIAL_FAILURE',
+    eventType: allOk
+      ? 'PLAN_COMMIT_SUCCESS'
+      : allFailed
+        ? 'PLAN_COMMIT_ALL_FAILED'
+        : 'PLAN_COMMIT_PARTIAL_FAILURE',
     route,
     method,
-    statusCode: 200,
+    statusCode: allOk ? 200 : allFailed ? 502 : 200,
     outcome: allOk ? 'success' : 'failure',
     clientKeyLabel,
     detailsSummary: `digest=${recomputedDigest} ok=${successCount} failed=${failureCount}`,
   });
+  logCommitEvent(allOk ? 'info' : 'error', requestId, {
+    projectId,
+    planSteps: pageResults.length,
+    code: allOk ? 'committed' : allFailed ? 'notion_create_failed' : 'partial_failure',
+    statusCode: allOk ? 200 : allFailed ? 502 : 200,
+    summary: `ok=${successCount} failed=${failureCount}`,
+  });
 
-  res.status(200).json(
+  const finalCode: PlanCommitResultCode = allOk
+    ? 'committed'
+    : allFailed
+      ? 'notion_create_failed'
+      : 'partial_failure';
+  const finalStatus = allOk ? 200 : allFailed ? 502 : 200;
+
+  res.status(finalStatus).json(
     buildResponse({
-      code: allOk ? 'committed' : 'partial_failure',
+      code: finalCode,
       ok: allOk,
       projectId,
       clientPlanId: commit.clientPlanId,
@@ -750,6 +900,45 @@ const handler: ApiHandler = async (req, res) => {
       authMode: authModeWire,
     }),
   );
+  } catch (err) {
+    // Commit-500-Diagnostics — last-resort catch. Any thrown exception
+    // collapses to a sanitised JSON 500. The Vercel function would
+    // otherwise return a generic HTML 500 with no `error`/`message`,
+    // and the frontend would only display "Fehler (HTTP 500)".
+    const safeName = err instanceof Error ? err.name : 'UnknownError';
+    appendAuditEvent({
+      eventType: 'PLAN_COMMIT_INTERNAL_ERROR',
+      route: ROUTE_LABEL,
+      method,
+      statusCode: 500,
+      outcome: 'failure',
+      clientKeyLabel: 'unknown',
+      detailsSummary: `requestId=${requestId} err=${safeName}`,
+    });
+    logCommitEvent('error', requestId, {
+      code: 'internal_commit_error',
+      statusCode: 500,
+      summary: `${safeName}: ${err instanceof Error ? err.message.slice(0, 200) : 'no message'}`,
+    });
+    // Do NOT include stack traces or the raw error message in the
+    // response body — they may leak internal paths or env values.
+    try {
+      res.status(500).json({
+        error: 'internal_commit_error',
+        code: 'internal_commit_error',
+        message:
+          'Interner Fehler im Commit-Endpunkt. Server-Logs (Vercel) für RequestId-Korrelation prüfen.',
+        requestId,
+      });
+    } catch {
+      // If even the JSON serialiser fails, fall back to a plain status.
+      try {
+        res.status(500).end('{"error":"internal_commit_error"}');
+      } catch {
+        // Give up silently — the runtime will close the connection.
+      }
+    }
+  }
 };
 
 export default handler;

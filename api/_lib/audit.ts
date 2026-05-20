@@ -73,7 +73,13 @@ export type AuditEventType =
   | 'PLAN_COMMIT_PAGE_CREATED'
   | 'PLAN_COMMIT_PAGE_FAILED'
   | 'PLAN_COMMIT_SUCCESS'
-  | 'PLAN_COMMIT_PARTIAL_FAILURE';
+  | 'PLAN_COMMIT_PARTIAL_FAILURE'
+  // Commit-500-Diagnostics — fine-grained envelope so the audit log can
+  // distinguish the failure path even when the HTTP shape collapses to
+  // a generic 500 (sanitised JSON).
+  | 'PLAN_COMMIT_PROPERTY_MAPPING_FAILED'
+  | 'PLAN_COMMIT_ALL_FAILED'
+  | 'PLAN_COMMIT_INTERNAL_ERROR';
 
 export type AuditOutcome = 'success' | 'attempt' | 'blocked' | 'failure';
 

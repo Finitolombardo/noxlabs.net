@@ -579,6 +579,20 @@ export interface PlanCommitRequestBody {
 
 // What the commit endpoint did. `writes_locked` is the default state in
 // Phase 2C-Pre — the flag is off, no Notion write happened.
+//
+// Commit-500-Diagnostics — additive codes for more actionable client UX:
+//   - notion_write_token_missing  : write token env unset (was 'write_not_configured')
+//   - notion_database_missing     : master tasks DB id env unset (was 'write_not_configured')
+//   - notion_property_mapping_failed : property allowlist produced an
+//     empty Notion payload (every property dropped); aborts before any
+//     create-page call so the operator gets a precise reason
+//   - notion_create_failed        : all per-step creates failed (was 'partial_failure' even at 100% fail)
+//   - internal_commit_error       : top-level handler caught an unexpected
+//     throw; sanitised JSON instead of a generic Vercel HTML 500
+//
+// The legacy codes ('write_not_configured', 'partial_failure', etc.) are
+// kept so older clients keep parsing successfully; new clients can branch
+// on the more specific codes when present.
 export type PlanCommitResultCode =
   | 'writes_locked'
   | 'write_not_configured'
@@ -588,7 +602,12 @@ export type PlanCommitResultCode =
   | 'schema_not_ready'
   | 'duplicate_risk'
   | 'committed'
-  | 'partial_failure';
+  | 'partial_failure'
+  | 'notion_write_token_missing'
+  | 'notion_database_missing'
+  | 'notion_property_mapping_failed'
+  | 'notion_create_failed'
+  | 'internal_commit_error';
 
 export interface PlanCommitPageResult {
   planStepId: string;
