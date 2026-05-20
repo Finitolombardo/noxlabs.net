@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { fetchOperatorProjectContext } from '../lib/operatorContextClient';
 import {
+  fetchDispatchPreview,
   fetchPlanCommit,
   fetchPlanPreview,
   fetchPlanValidate,
@@ -3267,7 +3268,15 @@ function ProjectsDeepDive({
   // Quest-Reihen-Entwurf, `approvals` shows a Freigabe-Gate-Vorschau,
   // `outputsViewer` is a read-only categorized list of existing outputs.
   const [modal, setModal] = useState<
-    'talk' | 'audit' | 'output' | 'planner' | 'approvals' | 'outputsViewer' | 'apiPreview' | null
+    | 'talk'
+    | 'audit'
+    | 'output'
+    | 'planner'
+    | 'approvals'
+    | 'outputsViewer'
+    | 'apiPreview'
+    | 'dispatchPreview'
+    | null
   >(null);
   // Phase 2A — local Project Auto Planner API-preview state. The
   // operator API key lives only in this component's memory for the
@@ -3319,6 +3328,22 @@ function ProjectsDeepDive({
     errorMessage?: string;
   } | null>(null);
   const commitAbortRef = useRef<AbortController | null>(null);
+
+  // Andromeda Worker Dispatch MVP — pure read-only preview state. Holds
+  // the last-rendered dispatch report for the currently selected plan
+  // step. No worker is invoked, no Notion call is made.
+  const [dispatchPreviewLoading, setDispatchPreviewLoading] = useState<boolean>(false);
+  const [dispatchPreviewData, setDispatchPreviewData] = useState<
+    import('../lib/projectPlannerClient').DispatchPreviewResponseWire | null
+  >(null);
+  const [dispatchPreviewError, setDispatchPreviewError] = useState<{
+    status: number;
+    errorCode?: string;
+    errorMessage?: string;
+  } | null>(null);
+  const [dispatchPreviewStepId, setDispatchPreviewStepId] = useState<string | null>(null);
+  const dispatchPreviewAbortRef = useRef<AbortController | null>(null);
+
   // Phase 2D-UI — Sentinel that fires the background Preview+Validate
   // chain once after `regeneratePlan(...)` produced a new plan. We can't
   // call `handleApiPreview()` inline inside onPlan because the new
@@ -4191,6 +4216,53 @@ function ProjectsDeepDive({
       setCommitData(result.data);
     } else {
       setCommitError({
+        status: result.status,
+        errorCode: result.errorCode,
+        errorMessage: result.errorMessage,
+      });
+    }
+  }
+
+  // Andromeda Worker Dispatch MVP — pure dry-run. Reads the currently
+  // selected planner step, sends it to the dispatch-preview endpoint,
+  // renders the readiness report. No worker / runner / Notion call.
+  async function handleDispatchPreview(stepId: string) {
+    const step = planSteps.find((s) => s.id === stepId);
+    if (!step) return;
+    if (dispatchPreviewAbortRef.current) {
+      dispatchPreviewAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    dispatchPreviewAbortRef.current = controller;
+    setDispatchPreviewLoading(true);
+    setDispatchPreviewError(null);
+    setDispatchPreviewStepId(stepId);
+    setModal('dispatchPreview');
+    const result = await fetchDispatchPreview({
+      apiKey: apiPreviewKey,
+      projectId: project.id,
+      projectGoal: projektZiel,
+      step: {
+        id: step.id,
+        step: step.step,
+        title: step.title,
+        ziel: step.ziel,
+        output: step.output,
+        reason: step.reason,
+        agent: step.agent,
+        risk: step.risk,
+        gate: step.gate,
+      },
+      signal: controller.signal,
+    });
+    if (dispatchPreviewAbortRef.current !== controller) return;
+    dispatchPreviewAbortRef.current = null;
+    setDispatchPreviewLoading(false);
+    if (result.ok) {
+      setDispatchPreviewData(result.data);
+    } else {
+      setDispatchPreviewData(null);
+      setDispatchPreviewError({
         status: result.status,
         errorCode: result.errorCode,
         errorMessage: result.errorMessage,
@@ -5468,13 +5540,23 @@ function ProjectsDeepDive({
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">Schritt {sel.step} · Lokaler Entwurf</div>
-                        <Button
-                          tone="ghost"
-                          className="!px-2 !py-1 !text-[11px]"
-                          onClick={() => removeStep(sel.id)}
-                        >
-                          Schritt entfernen
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            tone="ghost"
+                            className="!px-2 !py-1 !text-[11px]"
+                            onClick={() => void handleDispatchPreview(sel.id)}
+                            title="Andromeda Worker Dispatch MVP — pure Dry-Run. Zeigt den Dispatch-Payload, fehlende Felder, Risk-Flags. Kein Worker startet, kein Notion-Write."
+                          >
+                            Dispatch prüfen
+                          </Button>
+                          <Button
+                            tone="ghost"
+                            className="!px-2 !py-1 !text-[11px]"
+                            onClick={() => removeStep(sel.id)}
+                          >
+                            Schritt entfernen
+                          </Button>
+                        </div>
                       </div>
 
                       <div>
@@ -5761,6 +5843,175 @@ function ProjectsDeepDive({
             <div className="mt-6 flex justify-end gap-3">
               <Button tone="ghost" onClick={() => setModal('output')}>Neuen Output anlegen</Button>
               <Button onClick={() => setModal(null)}>Schließen</Button>
+            </div>
+          </Modal>
+        ) : null}
+
+        {modal === 'dispatchPreview' ? (
+          <Modal size="wide" onClose={() => setModal(null)}>
+            <SectionTitle
+              eyebrow="Andromeda · Worker Dispatch MVP"
+              title="Dispatch-Vorschau (Dry-Run)"
+              subtitle="Pure read-only Prüfung: zeigt den Dispatch-Payload, fehlende Felder und Risk-Flags. Kein Worker startet, kein Notion-Write, kein externer Call."
+            />
+
+            <div className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-[12px] font-semibold leading-5 text-amber-100">
+              Aktueller Stand: kein Server-Worker / kein API-Runner konfiguriert. Dispatch-Mode bleibt
+              <strong> manual</strong>, bis ein Anthropic-API-Runner, Codex-Runner oder NOX-Agent-Runner
+              in einer separaten Quest gebaut wird. Diese Vorschau zeigt nur, ob die Quest plausibel
+              an einen Agent gehen <em>könnte</em>.
+            </div>
+
+            {dispatchPreviewLoading ? (
+              <div className="mt-4 rounded-2xl border border-[#4a101b]/60 bg-[#120609]/55 p-4 text-sm font-semibold text-amber-100/80">
+                Dispatch-Vorschau lädt …
+              </div>
+            ) : null}
+
+            {dispatchPreviewError ? (
+              <div className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm font-semibold leading-6 text-red-100">
+                Dispatch-Preview fehlgeschlagen
+                {typeof dispatchPreviewError.status === 'number' && dispatchPreviewError.status > 0
+                  ? ` (HTTP ${dispatchPreviewError.status})`
+                  : ''}
+                {dispatchPreviewError.errorCode ? ` · ${dispatchPreviewError.errorCode}` : ''}
+                {dispatchPreviewError.errorMessage ? ` — ${dispatchPreviewError.errorMessage}` : ''}
+              </div>
+            ) : null}
+
+            {dispatchPreviewData ? (
+              <div className="mt-4 space-y-4">
+                <div className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/55 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/80">
+                        Bereitschaft
+                      </div>
+                      <div className={`mt-1 text-lg font-black ${dispatchPreviewData.dispatchReady ? 'text-emerald-300' : 'text-amber-300'}`}>
+                        {dispatchPreviewData.dispatchReady ? 'Quest könnte an Agent gehen' : 'Noch nicht dispatch-bereit'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200/80">Dispatch-Mode</div>
+                      <div className="mt-1 font-mono text-sm font-bold text-amber-50">
+                        {dispatchPreviewData.dispatchPayloadPreview.dispatchMode}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 rounded-xl border border-amber-300/25 bg-amber-300/8 p-3 text-[12px] font-semibold leading-5 text-amber-50">
+                    Empfehlung: {dispatchPreviewData.recommendedNextAction}
+                  </div>
+                </div>
+
+                {dispatchPreviewData.missingFields.length > 0 ? (
+                  <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4">
+                    <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-red-200">
+                      Fehlende Felder
+                    </div>
+                    <ul className="mt-2 space-y-1 text-[12px] font-semibold leading-5 text-red-50">
+                      {dispatchPreviewData.missingFields.map((m) => (
+                        <li key={m.code}>
+                          <code className="rounded bg-black/40 px-1 py-0.5 text-[10px]">{m.field}</code>{' '}
+                          — {m.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {dispatchPreviewData.riskFlags.length > 0 ? (
+                  <div className="rounded-2xl border border-amber-300/30 bg-amber-300/8 p-4">
+                    <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-amber-200">
+                      Risk-Flags
+                    </div>
+                    <ul className="mt-2 space-y-1 text-[12px] font-semibold leading-5 text-amber-50">
+                      {dispatchPreviewData.riskFlags.map((f) => {
+                        const tone =
+                          f.severity === 'block'
+                            ? 'text-red-200'
+                            : f.severity === 'warn'
+                              ? 'text-amber-200'
+                              : 'text-amber-100/70';
+                        return (
+                          <li key={f.code} className={tone}>
+                            <strong className="uppercase tracking-[0.14em] text-[10px]">[{f.severity}]</strong>{' '}
+                            <code className="rounded bg-black/40 px-1 py-0.5 text-[10px]">{f.code}</code>{' '}
+                            — {f.message}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ) : null}
+
+                <div className="rounded-2xl border border-[#4a101b]/60 bg-[#0c0506]/70 p-4">
+                  <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-amber-200/90">
+                    Dispatch-Payload (Vorschau)
+                  </div>
+                  <pre className="mt-2 max-h-[260px] overflow-auto rounded-xl border border-[#4a101b]/40 bg-black/40 p-3 text-[11px] leading-5 text-amber-50">
+{JSON.stringify(dispatchPreviewData.dispatchPayloadPreview, null, 2)}
+                  </pre>
+                </div>
+
+                <div className="rounded-2xl border border-[#4a101b]/60 bg-[#0c0506]/70 p-4">
+                  <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-amber-200/90">
+                    Status-Modell (Vorschlag)
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {Object.entries(dispatchPreviewData.meta.statusModel).map(([key, label]) => (
+                      <span
+                        key={key}
+                        className="rounded-full border border-amber-300/30 bg-amber-300/8 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-100"
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-[11px] font-semibold leading-5 text-[#9f8d95]">
+                    Hinweis: Das aktuelle Master-Tasks-Write-Allowlist enthält noch keine
+                    status-Property. Ein späteres Mapping (z. B. auf eine neue
+                    <code className="mx-1 rounded bg-black/40 px-1 py-0.5">Bearbeitungsstatus</code>-Property
+                    in Notion) muss in <code className="rounded bg-black/40 px-1 py-0.5">ALLOWED_MASTER_TASKS_WRITE_PROPERTIES</code>
+                    ergänzt und im Plan-Mutation-Builder verdrahtet werden, bevor der Status
+                    persistiert wird.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#4a101b]/60 bg-[#120609]/55 p-4">
+                  <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-amber-200/90">
+                    Server-Hinweise
+                  </div>
+                  <ul className="mt-2 space-y-1 text-[11px] font-semibold leading-5 text-[#eadbe2]">
+                    {dispatchPreviewData.meta.notes.map((note) => (
+                      <li key={note}>· {note}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-[#4a101b]/50 pt-4">
+              <Button
+                tone="ghost"
+                disabled
+                title="Coming soon. Es ist aktuell KEIN Server-Worker / Runner verdrahtet — der Button ist bewusst deaktiviert."
+              >
+                Agent starten (coming soon)
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  tone="ghost"
+                  onClick={() => {
+                    if (dispatchPreviewStepId) {
+                      void handleDispatchPreview(dispatchPreviewStepId);
+                    }
+                  }}
+                  disabled={!dispatchPreviewStepId || dispatchPreviewLoading}
+                >
+                  Erneut prüfen
+                </Button>
+                <Button onClick={() => setModal(null)}>Schließen</Button>
+              </div>
             </div>
           </Modal>
         ) : null}

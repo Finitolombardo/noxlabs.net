@@ -434,6 +434,143 @@ export async function fetchPlanCommit(
   };
 }
 
+// Andromeda Worker Dispatch MVP — read-only POST against
+// `/api/operator/andromeda/dispatch/preview`. Returns the structured
+// dispatch payload preview + readiness report without touching any
+// worker, runner, queue, Notion write or external API.
+export interface DispatchPayloadWire {
+  taskId: string;
+  notionPageId: string;
+  projectId: string;
+  title: string;
+  objective: string;
+  context: string;
+  expectedOutput: string;
+  assignedAgent: 'NOX Agent' | 'Claude' | 'Codex' | 'Manuell';
+  risk: 'Niedrig' | 'Mittel' | 'Hoch';
+  status:
+    | 'draft'
+    | 'ready_for_agent'
+    | 'dispatch_queued'
+    | 'in_progress'
+    | 'blocked'
+    | 'needs_operator_review'
+    | 'done'
+    | 'failed';
+  createdAt: string;
+  dispatchMode: 'dry_run' | 'manual' | 'runner';
+  operatorApprovalRequired: boolean;
+  outputTarget: 'operator_inbox' | 'notion_master_task' | 'noop';
+}
+
+export interface DispatchMissingFieldWire {
+  code: string;
+  field: string;
+  message: string;
+}
+
+export interface DispatchRiskFlagWire {
+  code: string;
+  severity: 'info' | 'warn' | 'block';
+  message: string;
+}
+
+export interface DispatchPreviewResponseWire {
+  ok: boolean;
+  dispatchReady: boolean;
+  missingFields: DispatchMissingFieldWire[];
+  riskFlags: DispatchRiskFlagWire[];
+  dispatchPayloadPreview: DispatchPayloadWire;
+  recommendedNextAction: string;
+  meta: {
+    skeleton: false;
+    phase: 'andromeda-mvp';
+    readOnly: true;
+    notionWritesEnabled: false;
+    liveExecution: 'locked';
+    statusModel: Record<string, string>;
+    notes: string[];
+  };
+}
+
+export interface DispatchPreviewStepInput {
+  id: string;
+  step?: number;
+  title: string;
+  ziel: string;
+  output: string;
+  reason: string;
+  agent: 'NOX Agent' | 'Claude' | 'Codex' | 'Manuell';
+  risk: 'Niedrig' | 'Mittel' | 'Hoch';
+  gate?: string;
+}
+
+export interface FetchDispatchPreviewArgs {
+  apiKey?: string;
+  projectId: string;
+  projectGoal: string;
+  notionPageId?: string;
+  step: DispatchPreviewStepInput;
+  signal?: AbortSignal;
+}
+
+export type DispatchPreviewResult =
+  | { ok: true; status: number; data: DispatchPreviewResponseWire }
+  | { ok: false; status: number; errorCode?: string; errorMessage?: string };
+
+export async function fetchDispatchPreview(
+  args: FetchDispatchPreviewArgs,
+): Promise<DispatchPreviewResult> {
+  let resp: Response;
+  try {
+    resp = await fetch('/api/operator/andromeda/dispatch/preview', {
+      method: 'POST',
+      headers: buildPlannerHeaders(args.apiKey),
+      cache: 'no-store',
+      signal: args.signal,
+      body: JSON.stringify({
+        projectId: args.projectId,
+        projectGoal: args.projectGoal,
+        notionPageId: args.notionPageId ?? undefined,
+        step: args.step,
+      }),
+    });
+  } catch (err) {
+    const aborted = err instanceof Error && err.name === 'AbortError';
+    return {
+      ok: false,
+      status: 0,
+      errorCode: aborted ? 'aborted' : 'network_error',
+      errorMessage: aborted
+        ? 'Anfrage abgebrochen.'
+        : 'Netzwerkfehler beim Dispatch-Preview-Aufruf.',
+    };
+  }
+  let body: unknown = null;
+  try {
+    body = await resp.json();
+  } catch {
+    // non-JSON body — handled below
+  }
+  if (resp.ok && body && typeof body === 'object' && (body as DispatchPreviewResponseWire).dispatchPayloadPreview) {
+    return { ok: true, status: resp.status, data: body as DispatchPreviewResponseWire };
+  }
+  if (body && typeof body === 'object') {
+    const env = body as Partial<OperatorApiErrorBody>;
+    return {
+      ok: false,
+      status: resp.status,
+      errorCode: typeof env.error === 'string' ? env.error : undefined,
+      errorMessage: typeof env.message === 'string' ? env.message : undefined,
+    };
+  }
+  return {
+    ok: false,
+    status: resp.status,
+    errorMessage: `Unerwartete Server-Antwort (HTTP ${resp.status}, kein JSON-Body).`,
+  };
+}
+
 // Build a stable per-click idempotencyKey on the browser side. Phase 2A
 // does not persist this key server-side, but enforces the same format
 // regex Phase 2B/2C will use. Length stays within 4..128.
