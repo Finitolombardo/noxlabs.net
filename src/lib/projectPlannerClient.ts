@@ -434,6 +434,123 @@ export async function fetchPlanCommit(
   };
 }
 
+// Phase 2D-Plus — Audit-Persistenz reader. Same-origin GET against
+// `/api/operator/audit/recent`. Read-only; never sends a body, never
+// triggers a Notion call. Honours the same auth posture as the
+// read-only planner endpoints (optional Operator-Key, otherwise the
+// server's Private-Cockpit mode must be on).
+export interface AuditEventWire {
+  id: string;
+  timestamp: string;
+  eventType: string;
+  route: string;
+  method: string;
+  outcome: 'success' | 'attempt' | 'blocked' | 'failure';
+  statusCode?: number;
+  commandId?: string;
+  action?: string;
+  detailsSummary?: string;
+  projectId?: string;
+  planDigest?: string;
+  idempotencyKey?: string;
+  clientPlanId?: string;
+  planStepsCount?: number;
+  notionPageId?: string;
+  errorCode?: string;
+  requestId?: string;
+  source?: string;
+  clientKeyLabel?: string;
+}
+
+export interface AuditRecentResponseWire {
+  events: AuditEventWire[];
+  meta: {
+    source: 'persistent' | 'memory';
+    limit: number;
+    count: number;
+    totalAvailable: number;
+    authMode?: string;
+  };
+}
+
+export type AuditRecentResult =
+  | { ok: true; status: number; data: AuditRecentResponseWire }
+  | { ok: false; status: number; errorCode?: string; errorMessage?: string };
+
+export interface FetchAuditRecentArgs {
+  /** Optional Operator API key (omitted when the server is in private mode). */
+  apiKey?: string;
+  /** Max events to return, server-clamped to [1, 500]. Default 50. */
+  limit?: number;
+  /** Optional filters — sent only when non-empty. */
+  projectId?: string;
+  eventType?: string;
+  planDigest?: string;
+  signal?: AbortSignal;
+}
+
+export async function fetchAuditRecent(
+  args: FetchAuditRecentArgs,
+): Promise<AuditRecentResult> {
+  const params = new URLSearchParams();
+  if (typeof args.limit === 'number' && Number.isFinite(args.limit) && args.limit > 0) {
+    params.set('limit', String(Math.min(Math.max(Math.floor(args.limit), 1), 500)));
+  }
+  if (args.projectId && args.projectId.trim().length > 0) {
+    params.set('projectId', args.projectId.trim());
+  }
+  if (args.eventType && args.eventType.trim().length > 0) {
+    params.set('eventType', args.eventType.trim());
+  }
+  if (args.planDigest && args.planDigest.trim().length > 0) {
+    params.set('planDigest', args.planDigest.trim());
+  }
+  const qs = params.toString();
+  const url = `/api/operator/audit/recent${qs ? `?${qs}` : ''}`;
+
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: 'GET',
+      headers: buildPlannerHeaders(args.apiKey),
+      cache: 'no-store',
+      signal: args.signal,
+    });
+  } catch (err) {
+    const aborted = err instanceof Error && err.name === 'AbortError';
+    return {
+      ok: false,
+      status: 0,
+      errorCode: aborted ? 'aborted' : 'network_error',
+      errorMessage: aborted ? 'Anfrage abgebrochen.' : 'Netzwerkfehler beim Audit-Read.',
+    };
+  }
+
+  let body: unknown = null;
+  try {
+    body = await resp.json();
+  } catch {
+    // non-JSON body — surfaced as a sanitised fallback below
+  }
+  if (resp.ok && body && typeof body === 'object' && Array.isArray((body as AuditRecentResponseWire).events)) {
+    return { ok: true, status: resp.status, data: body as AuditRecentResponseWire };
+  }
+  if (body && typeof body === 'object') {
+    const env = body as Partial<OperatorApiErrorBody>;
+    return {
+      ok: false,
+      status: resp.status,
+      errorCode: typeof env.error === 'string' ? env.error : undefined,
+      errorMessage: typeof env.message === 'string' ? env.message : undefined,
+    };
+  }
+  return {
+    ok: false,
+    status: resp.status,
+    errorMessage: `Unerwartete Server-Antwort (HTTP ${resp.status}, kein JSON-Body).`,
+  };
+}
+
 // Build a stable per-click idempotencyKey on the browser side. Phase 2A
 // does not persist this key server-side, but enforces the same format
 // regex Phase 2B/2C will use. Length stays within 4..128.

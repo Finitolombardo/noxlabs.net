@@ -446,6 +446,9 @@ const handler: ApiHandler = async (req, res) => {
     outcome: 'attempt',
     clientKeyLabel,
     detailsSummary: `projectId=${projectId}`,
+    projectId,
+    requestId,
+    source: 'plan-commit',
   });
 
   // 5. Body — commit-specific fields first, then shared payload. The
@@ -502,6 +505,14 @@ const handler: ApiHandler = async (req, res) => {
       outcome: 'blocked',
       clientKeyLabel,
       detailsSummary: `expected=${recomputedDigest} provided=${commit.planDigest.slice(0, 32)}`,
+      projectId,
+      planDigest: recomputedDigest,
+      clientPlanId: commit.clientPlanId,
+      idempotencyKey: commit.idempotencyKey,
+      planStepsCount: Array.isArray(commit.planSteps) ? commit.planSteps.length : undefined,
+      errorCode: 'plan_digest_mismatch',
+      requestId,
+      source: 'plan-commit',
     });
     sendError(
       res,
@@ -524,6 +535,14 @@ const handler: ApiHandler = async (req, res) => {
       outcome: 'blocked',
       clientKeyLabel,
       detailsSummary: `projectId=${projectId} steps=${draft.planSteps.length} digest=${recomputedDigest}`,
+      projectId,
+      planDigest: recomputedDigest,
+      idempotencyKey: draft.idempotencyKey,
+      clientPlanId: commit.clientPlanId,
+      planStepsCount: draft.planSteps.length,
+      errorCode: 'writes_locked',
+      requestId,
+      source: 'plan-commit',
     });
     res.status(423).json(
       buildResponse({
@@ -762,6 +781,14 @@ const handler: ApiHandler = async (req, res) => {
       outcome: 'blocked',
       clientKeyLabel,
       detailsSummary: `digest=${recomputedDigest} existing=${dupCheck.results.length}`,
+      projectId,
+      planDigest: recomputedDigest,
+      idempotencyKey: draft.idempotencyKey,
+      clientPlanId: commit.clientPlanId,
+      planStepsCount: draft.planSteps.length,
+      errorCode: 'duplicate_risk',
+      requestId,
+      source: 'plan-commit',
     });
     res.status(200).json(
       buildResponse({
@@ -830,6 +857,13 @@ const handler: ApiHandler = async (req, res) => {
         outcome: 'failure',
         clientKeyLabel,
         detailsSummary: `step=${mutation.planStepId} all_properties_dropped`,
+        projectId,
+        planDigest: recomputedDigest,
+        idempotencyKey: draft.idempotencyKey,
+        clientPlanId: commit.clientPlanId,
+        errorCode: 'notion_property_mapping_failed',
+        requestId,
+        source: 'plan-commit',
       });
       logCommitEvent('error', requestId, {
         projectId,
@@ -857,6 +891,13 @@ const handler: ApiHandler = async (req, res) => {
         outcome: 'success',
         clientKeyLabel,
         detailsSummary: `step=${mutation.planStepId} pageId=${createRes.pageId}`,
+        projectId,
+        planDigest: recomputedDigest,
+        idempotencyKey: draft.idempotencyKey,
+        clientPlanId: commit.clientPlanId,
+        notionPageId: createRes.pageId,
+        requestId,
+        source: 'plan-commit',
       });
       logCommitEvent('info', requestId, {
         projectId,
@@ -879,6 +920,13 @@ const handler: ApiHandler = async (req, res) => {
         outcome: 'failure',
         clientKeyLabel,
         detailsSummary: `step=${mutation.planStepId} ${createRes.summary.slice(0, 120)}`,
+        projectId,
+        planDigest: recomputedDigest,
+        idempotencyKey: draft.idempotencyKey,
+        clientPlanId: commit.clientPlanId,
+        errorCode: createRes.upstreamCode ?? 'upstream_error',
+        requestId,
+        source: 'plan-commit',
       });
       logCommitEvent('error', requestId, {
         projectId,
@@ -917,6 +965,14 @@ const handler: ApiHandler = async (req, res) => {
     outcome: allOk ? 'success' : 'failure',
     clientKeyLabel,
     detailsSummary: `digest=${recomputedDigest} ok=${successCount} failed=${failureCount}`,
+    projectId,
+    planDigest: recomputedDigest,
+    idempotencyKey: draft.idempotencyKey,
+    clientPlanId: commit.clientPlanId,
+    planStepsCount: pageResults.length,
+    errorCode: allOk ? undefined : allFailed ? 'notion_create_failed' : 'partial_failure',
+    requestId,
+    source: 'plan-commit',
   });
   logCommitEvent(allOk ? 'info' : 'error', requestId, {
     projectId,
@@ -964,6 +1020,9 @@ const handler: ApiHandler = async (req, res) => {
       outcome: 'failure',
       clientKeyLabel: 'unknown',
       detailsSummary: `requestId=${requestId} err=${safeName}`,
+      errorCode: 'internal_commit_error',
+      requestId,
+      source: 'plan-commit',
     });
     logCommitEvent('error', requestId, {
       code: 'internal_commit_error',
