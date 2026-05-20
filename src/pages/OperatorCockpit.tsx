@@ -3431,8 +3431,33 @@ function ProjectsDeepDive({
   }
 
   function removeStep(id: string) {
-    setPlanSteps((curr) => curr.filter((s) => s.id !== id).map((s, idx) => ({ ...s, step: idx + 1 })));
-    setPlannerSelectedStepId((sel) => (sel === id ? null : sel));
+    // Modal-Draft-Apply-Fix — robust delete with auto-select.
+    //
+    // After removing a step, the planner should auto-select the step that
+    // now occupies the same index slot, so the operator can keep clicking
+    // "Schritt entfernen" without re-selecting each time:
+    //   - last step removed       → select the new last step
+    //   - middle step removed     → select the step that slid into that slot
+    //   - non-selected step gone  → keep current selection if still present
+    //   - empty list              → null
+    const removedIdx = planSteps.findIndex((s) => s.id === id);
+    if (removedIdx === -1) return;
+    const nextSteps = planSteps
+      .filter((s) => s.id !== id)
+      .map((s, i) => ({ ...s, step: i + 1 }));
+    const fallbackId =
+      nextSteps.length === 0
+        ? null
+        : nextSteps[Math.min(removedIdx, nextSteps.length - 1)]?.id ?? null;
+    setPlanSteps(nextSteps);
+    setPlannerSelectedStepId((sel) => {
+      if (nextSteps.length === 0) return null;
+      if (sel === id) return fallbackId;
+      if (sel === null) return fallbackId;
+      // Selection was on a different step; keep it if it still exists,
+      // otherwise re-anchor on the deleted slot.
+      return nextSteps.some((s) => s.id === sel) ? sel : fallbackId;
+    });
   }
 
   function addStep() {
@@ -3570,16 +3595,65 @@ function ProjectsDeepDive({
     return 'Plausibel — Freigabe kann nach kurzer Pruefung erfolgen.';
   }
 
-  // Local "Plan-Output vormerken" — turns the current Quest-Reihen-Entwurf
-  // into a new local OutputArtifact draft. No backend, no Notion write.
+  // Modal-Draft-Apply-Fix — local "Plan-Output vormerken".
+  //
+  // Goals beyond just creating an Output-Draft entry:
+  //   (a) Defensively re-normalise planSteps (trim, drop completely-empty
+  //       steps, renumber 1..N) and write the normalised array back to
+  //       canonical state so any consumer (auto-save, fingerprint,
+  //       badges) sees exactly what the operator just confirmed.
+  //   (b) Explicitly invalidate preview/validate/commit caches so the
+  //       tech-check banner immediately reads "Plan wurde geändert".
+  //       The Stateflow-Digest-Fix invalidation effect already does this
+  //       on fingerprint divergence, but doing it here is defensive
+  //       (covers same-render-edge-cases) and gives the operator
+  //       deterministic feedback.
+  //   (c) Clear `autoTechCheckPending` so a leftover sentinel from a
+  //       previous regenerate flow doesn't auto-fire on the just-applied
+  //       draft. The operator must click "Technisch prüfen" explicitly.
+  //   (d) Render visible feedback as a milestone log entry that names
+  //       the actual step count ("Entwurf übernommen: 1 Schritt").
+  //
+  // No backend call. No Notion write.
   function vormerkenAlsPlanOutput() {
-    const planText = planSteps
+    // (a) Defensive normalisation — applies even if planSteps was already
+    // clean. Idempotent; safe to call twice.
+    const normalised = planSteps
+      .filter((s) => s.title.trim().length > 0 || s.ziel.trim().length > 0)
+      .map((s, i) => ({ ...s, step: i + 1 }));
+    setPlanSteps(normalised);
+    setPlannerSelectedStepId((sel) =>
+      sel !== null && normalised.some((s) => s.id === sel)
+        ? sel
+        : normalised[0]?.id ?? null,
+    );
+
+    // (b) Explicit cache invalidation. Mirrors the stale-effect's clears.
+    // We intentionally do NOT abort in-flight requests here; the
+    // Techcheck-Pending-Fix relies on letting them complete naturally.
+    setApiPreviewData(null);
+    setApiPreviewError(null);
+    setApiValidateData(null);
+    setApiValidateError(null);
+    setCommitData(null);
+    setCommitError(null);
+    setLastValidatedFingerprint(null);
+    setLastValidatedStepCount(null);
+
+    // (c) Cancel any pending auto-tech-check sentinel so we don't fire it
+    // against the just-applied draft. Operator must consciously click
+    // "Technisch prüfen" to revalidate.
+    setAutoTechCheckPending(false);
+
+    // (d) Build the Output-Draft text from the NORMALISED array (post-clean).
+    const planText = normalised
       .map(
         (s) =>
           `${s.step}. ${s.title}\n   Ziel: ${s.ziel}\n   Agent: ${s.agent}\n   Output: ${s.output}\n   Risiko: ${s.risk}\n   Freigabe-Gate: ${s.gate}\n   Status: Entwurf`,
       )
       .join('\n\n');
     const goalLine = `Projektziel: ${projektZiel.trim() || '(Demo-Projektziel)'}`;
+    const stepNoun = normalised.length === 1 ? 'Schritt' : 'Schritte';
     setOutputs((current) => [
       {
         id: `ART-${Date.now()}`,
@@ -3593,7 +3667,12 @@ function ProjectsDeepDive({
       },
       ...current,
     ]);
-    addMilestone(project.id, 'Plan', `Quest-Reihen-Entwurf vorgemerkt`, `${goalLine}\n\n${planText}`);
+    addMilestone(
+      project.id,
+      'Plan',
+      `Entwurf übernommen: ${normalised.length} ${stepNoun}`,
+      `${goalLine}\n\n${planText}`,
+    );
     setModal(null);
   }
 
@@ -5135,6 +5214,13 @@ function ProjectsDeepDive({
                     </tr>
                   </thead>
                   <tbody className="text-[#eadbe2]">
+                    {planSteps.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-6 text-center text-[12px] font-semibold leading-5 text-amber-100/80">
+                          Keine Quest im Entwurf. Füge mindestens eine Quest hinzu oder generiere den Plan neu.
+                        </td>
+                      </tr>
+                    ) : null}
                     {planSteps.map((row, idx) => {
                       const selected = plannerSelectedStepId === row.id;
                       return (
@@ -5184,7 +5270,9 @@ function ProjectsDeepDive({
                   </tbody>
                 </table>
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#4a101b]/40 bg-[#0c0506]/60 px-3 py-2 text-[11px] font-semibold text-amber-100/80">
-                  <span>{planSteps.length} Schritte · lokaler Entwurf · auto-saved</span>
+                  <span>
+                    {planSteps.length} {planSteps.length === 1 ? 'Schritt' : 'Schritte'} · lokaler Entwurf · auto-saved
+                  </span>
                   <Button tone="ghost" className="!px-2 !py-1 !text-[11px]" onClick={addStep}>+ Schritt hinzufügen</Button>
                 </div>
               </div>
@@ -5353,7 +5441,23 @@ function ProjectsDeepDive({
                 </Button>
               </span>
               <Button tone="ghost" onClick={() => { setModal(null); setPlannerSelectedStepId(null); }}>Schließen</Button>
-              <Button onClick={vormerkenAlsPlanOutput}>Als Plan-Output vormerken</Button>
+              {/* Modal-Draft-Apply-Fix — disable Apply when the draft is
+                  empty. The dynamic label calls out the exact step count
+                  so the operator never wonders how many quests will land
+                  in the local Output-Draft entry. */}
+              <Button
+                onClick={vormerkenAlsPlanOutput}
+                disabled={planSteps.length === 0}
+                title={
+                  planSteps.length === 0
+                    ? 'Leerer Entwurf — füge zuerst mindestens eine Quest hinzu oder generiere den Plan neu.'
+                    : 'Übernimmt den lokalen Quest-Reihen-Entwurf, erzeugt einen Plan-Output-Eintrag und invalidiert vorherige Tech-Check-Resultate. Kein Notion-Write.'
+                }
+              >
+                {planSteps.length === 0
+                  ? 'Als Plan-Output vormerken'
+                  : `Als Plan-Output vormerken (${planSteps.length} ${planSteps.length === 1 ? 'Schritt' : 'Schritte'})`}
+              </Button>
             </div>
           </Modal>
         ) : null}
@@ -5607,7 +5711,7 @@ function UnifiedAutoPlanner({
           <Pill>{questsCount} Quests</Pill>
           <Pill tone={approvalsCount > 0 ? 'red' : 'gold'}>{approvalsCount} offene Freigaben</Pill>
           <Pill tone="gold">{outputsCount} Outputs</Pill>
-          <Pill>{stepCount} Schritte im Entwurf</Pill>
+          <Pill>{stepCount} {stepCount === 1 ? 'Schritt' : 'Schritte'} im Entwurf</Pill>
         </div>
       </div>
 
