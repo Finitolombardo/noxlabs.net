@@ -3326,6 +3326,14 @@ function ProjectsDeepDive({
   // effect below picks them up and clears the sentinel atomically.
   const [autoTechCheckPending, setAutoTechCheckPending] = useState<boolean>(false);
 
+  // One-Button-Operator-Flow — sentinel for the combined "Prüfen & X Quests
+  // erzeugen" CTA. When set, a watcher useEffect (further down) listens for
+  // the preview+validate chain to settle; if validate landed OK on a fresh
+  // plan it fires handleApiCommit, otherwise it surfaces the error and
+  // disarms. The sentinel never causes a write by itself — it just sequences
+  // the existing handlers in order while keeping every safety gate intact.
+  const [pendingCheckAndCommit, setPendingCheckAndCommit] = useState<boolean>(false);
+
   // Stateflow-Digest-Fix — snapshot fingerprint that was current at the
   // moment the last successful /plan/validate response landed. Tracks the
   // exact payload the server validated, so subsequent local edits to the
@@ -3948,6 +3956,59 @@ function ProjectsDeepDive({
     setLastValidatedStepCount(null);
   }, [planSteps.length]);
 
+  // One-Button-Operator-Flow — derived flag: does the plan contain a
+  // Phase-2E-Smoke marker? Used as a hard safety on the combined CTA to
+  // prevent accidentally creating more than one quest during a smoke. The
+  // regex is intentionally lax (handles `PHASE-2E-SMOKE`, `phase 2e smoke`,
+  // `PHASE2ESMOKE-1` etc.) so an honest smoke run is recognised regardless
+  // of casing or punctuation. False positives outside a smoke would only
+  // cost the operator an extra step (reduce to 1 quest first).
+  const hasSmokeMarker = useMemo(() => {
+    const re = /phase\W*2e\W*smoke/i;
+    return re.test(projektZiel) || planSteps.some((s) => re.test(s.title));
+  }, [projektZiel, planSteps]);
+
+  // One-Button-Operator-Flow — watcher effect. When the combined CTA was
+  // clicked against a stale / unvalidated plan, the handler triggered the
+  // preview+validate chain and set the sentinel. This effect watches for
+  // the chain to settle and then either fires the commit or surfaces the
+  // accumulated error. The sentinel is ALWAYS disarmed once both loading
+  // flags fall back to false, so it cannot get stuck.
+  useEffect(() => {
+    if (!pendingCheckAndCommit) return;
+    // Wait until both preview and validate calls have settled. The watcher
+    // re-runs on every state transition, but we only act on the final one.
+    if (apiPreviewLoading || apiValidateLoading) return;
+    setPendingCheckAndCommit(false);
+    if (apiPreviewError || apiValidateError) {
+      // Error already surfaced via the existing apiPreviewError /
+      // apiValidateError UI bindings. No commit.
+      return;
+    }
+    // Only commit when the validated snapshot still matches the plan the
+    // operator is looking at — Stateflow-Digest-Fix invariants.
+    if (
+      apiValidateData?.schemaOk === true &&
+      apiPreviewData &&
+      !isPlanStaleAgainstValidate
+    ) {
+      void handleApiCommit();
+    }
+    // handleApiCommit is a stable function defined later in this component;
+    // listing it would cause infinite re-runs on render-recreations. We
+    // intentionally omit it from the deps array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    pendingCheckAndCommit,
+    apiPreviewLoading,
+    apiValidateLoading,
+    apiPreviewData,
+    apiValidateData,
+    apiPreviewError,
+    apiValidateError,
+    isPlanStaleAgainstValidate,
+  ]);
+
   // Phase 2D-UI — Derived tech-check status for the inline planner banner.
   //   - 'idle'          : nothing has run yet
   //   - 'running'       : preview or validate is in flight
@@ -3977,6 +4038,62 @@ function ProjectsDeepDive({
   //     wire. The UI surfaces that as "write-auth not yet active".
   //   - 423 writes_locked means the server flag is still down. UI says so.
   // The handler never touches localStorage / sessionStorage / cookies.
+
+  // One-Button-Operator-Flow — combined "check & commit" entry point.
+  //
+  // Sequences the existing handlers without bypassing any safety gate:
+  //   1. Empty-plan + smoke-prefix guard (client-side).
+  //   2. If the plan is already validated freshly (validateData.schemaOk,
+  //      not stale, preview digest present) → fire handleApiCommit directly.
+  //   3. Otherwise: arm the pendingCheckAndCommit sentinel and trigger
+  //      handleApiPreview (which auto-chains to handleApiValidate). The
+  //      watcher useEffect picks up the settled chain and either calls
+  //      handleApiCommit or surfaces the error.
+  //
+  // Server-side gates (digest, schema, idempotency, write-flag, write-
+  // token-distinct, schema-recheck) are unchanged and run on every commit.
+  async function handleApiCheckAndCommit() {
+    setCommitError(null);
+    if (planSteps.length === 0) {
+      setCommitError({
+        status: 0,
+        errorCode: 'client_empty_plan',
+        errorMessage: 'Keine Quest im Entwurf. Füge mindestens eine Quest hinzu oder generiere den Plan neu.',
+      });
+      return;
+    }
+    if (hasSmokeMarker && planSteps.length > 1) {
+      setCommitError({
+        status: 0,
+        errorCode: 'smoke_safety_block',
+        errorMessage: `Smoke-Test darf nur 1 Quest erzeugen. Plan hat ${planSteps.length} Schritte — zuerst auf 1 Quest reduzieren.`,
+      });
+      return;
+    }
+    if (!projektZiel.trim()) {
+      setCommitError({
+        status: 0,
+        errorCode: 'client_empty_goal',
+        errorMessage: 'Bitte erst ein Projektziel eintragen.',
+      });
+      return;
+    }
+    // Fast path: plan is already validated freshly.
+    if (
+      !isPlanStaleAgainstValidate &&
+      apiValidateData?.schemaOk === true &&
+      apiPreviewData
+    ) {
+      void handleApiCommit();
+      return;
+    }
+    // Slow path: arm sentinel and trigger the chain. The watcher useEffect
+    // fires handleApiCommit once validate settles OK.
+    setCommitData(null);
+    setPendingCheckAndCommit(true);
+    void handleApiPreview();
+  }
+
   async function handleApiCommit() {
     setCommitError(null);
     setCommitData(null);
@@ -4190,6 +4307,11 @@ function ProjectsDeepDive({
           setModal('planner');
         }}
         onApiPreview={() => {
+          // One-Button-Operator-Flow — this prop now ONLY opens the
+          // "Technische Details" modal. The inline check is handled by
+          // onTechCheckInline (below). Operators who want diagnostic
+          // detail click "Technische Details"; the modal stays a pure
+          // read-only diagnostic surface, no primary CTA lives inside.
           if (!projektZiel.trim()) {
             setEmptyGoalHint(true);
             return;
@@ -4197,6 +4319,28 @@ function ProjectsDeepDive({
           setEmptyGoalHint(false);
           setModal('apiPreview');
         }}
+        onTechCheckInline={() => {
+          // One-Button-Operator-Flow — inline preview+validate without
+          // popping the modal. The status banner in UnifiedAutoPlanner
+          // already surfaces the result; the operator no longer has to
+          // close a modal to see "Bereit für Notion-Erzeugung".
+          if (!projektZiel.trim()) {
+            setEmptyGoalHint(true);
+            return;
+          }
+          setEmptyGoalHint(false);
+          void handleApiPreview();
+        }}
+        onCheckAndCommit={() => {
+          if (!projektZiel.trim()) {
+            setEmptyGoalHint(true);
+            return;
+          }
+          setEmptyGoalHint(false);
+          void handleApiCheckAndCommit();
+        }}
+        hasSmokeMarker={hasSmokeMarker}
+        pendingCheckAndCommit={pendingCheckAndCommit}
         onOutputsViewer={() => setModal('outputsViewer')}
         onReset={resetPlan}
         onDeleteDraft={deleteLocalDraft}
@@ -4239,11 +4383,6 @@ function ProjectsDeepDive({
           }
           return undefined;
         })()}
-        onCommitOpen={() => {
-          setCommitError(null);
-          setCommitData(null);
-          void handleApiCommit();
-        }}
         commitStatus={(() => {
           if (commitLoading) return 'running' as const;
           if (commitError?.status === 401) return 'auth-blocked' as const;
@@ -4260,6 +4399,17 @@ function ProjectsDeepDive({
             return 'Schreibzugriff nicht autorisiert. Private App/Auth für Writes noch nicht aktiv.';
           }
           if (commitError) {
+            // One-Button-Operator-Flow — client-side smoke block has its
+            // own message; pass through cleanly.
+            if (commitError.errorCode === 'smoke_safety_block') {
+              return commitError.errorMessage ?? 'Smoke-Test darf nur 1 Quest erzeugen.';
+            }
+            if (commitError.errorCode === 'client_empty_plan') {
+              return commitError.errorMessage ?? 'Keine Quest im Entwurf.';
+            }
+            if (commitError.errorCode === 'client_empty_goal') {
+              return commitError.errorMessage ?? 'Bitte erst ein Projektziel eintragen.';
+            }
             // Commit-500-Diagnostics — surface the structured errorCode
             // when present so the operator gets actionable text instead
             // of a bare "HTTP 500".
@@ -5640,7 +5790,6 @@ function UnifiedAutoPlanner({
   emptyGoalHint,
   techCheckStatus,
   techCheckSummary,
-  onCommitOpen,
   writeEnabledHint,
   commitStatus,
   commitMessage,
@@ -5649,6 +5798,10 @@ function UnifiedAutoPlanner({
   isPlanStale,
   validatedStepCount,
   onRevalidate,
+  onTechCheckInline,
+  onCheckAndCommit,
+  hasSmokeMarker,
+  pendingCheckAndCommit,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -5674,8 +5827,6 @@ function UnifiedAutoPlanner({
   // Optional one-line summary the parent passes through (e.g. count of
   // missing properties, validate error code).
   techCheckSummary?: string;
-  // Opens the commit confirm modal. Parent decides when this is allowed.
-  onCommitOpen: () => void;
   // True if the last commit attempt returned `writes_locked` so the inline
   // banner can stay loud without spawning a separate alert.
   writeEnabledHint?: 'unknown' | 'locked' | 'enabled';
@@ -5702,6 +5853,23 @@ function UnifiedAutoPlanner({
   // Trigger a fresh preview+validate chain from the CTA. Wired by the
   // parent to handleApiPreview (which auto-chains to validate).
   onRevalidate?: () => void;
+  // One-Button-Operator-Flow — inline preview+validate trigger that does
+  // NOT open the technical-details modal. Used by the "Nur prüfen"
+  // secondary button.
+  onTechCheckInline?: () => void;
+  // One-Button-Operator-Flow — primary combined CTA. Internally sequences
+  // preview → validate → commit (only commits if validate passes and the
+  // plan is fresh). Used by the prominent "Prüfen & X Quests erzeugen"
+  // / "X Quests erzeugen" button.
+  onCheckAndCommit?: () => void;
+  // True if the current plan contains the PHASE-2E-SMOKE marker. With
+  // >1 step the combined CTA blocks at the client layer so the operator
+  // cannot accidentally create multiple quests during a smoke run.
+  hasSmokeMarker?: boolean;
+  // True while the combined CTA is mid-flight (chain still running before
+  // the commit fires). Lets the CTA show a "Läuft …" label even between
+  // preview and validate when the loading flags briefly flip.
+  pendingCheckAndCommit?: boolean;
 }) {
   // Phase-1 unified Project Auto Planner. Combines the project-goal
   // composer and the planner action buttons into one card so the user
@@ -5907,39 +6075,73 @@ function UnifiedAutoPlanner({
             ) : null}
           </div>
           <div className="flex flex-wrap gap-2 md:justify-end">
-            {techCheckStatus === 'ready' && !isPlanStale ? (
-              <Button
-                onClick={onCommitOpen}
-                disabled={commitStatus === 'running'}
-                title={
-                  commitStatus === 'running'
-                    ? 'Commit läuft — bitte warten.'
-                    : typeof wouldCreateNTasks === 'number'
-                      ? `Erzeugt ${wouldCreateNTasks} echte Master-Tasks-Quest${wouldCreateNTasks === 1 ? '' : 's'} in Notion. Idempotenz-Check + Schema-Recheck laufen serverseitig.`
-                      : 'Erzeugt echte Master-Tasks-Quests in Notion.'
-                }
-              >
-                {commitStatus === 'running'
-                  ? 'Commit läuft …'
-                  : typeof wouldCreateNTasks === 'number'
-                    ? `${wouldCreateNTasks} ${wouldCreateNTasks === 1 ? 'Quest' : 'Quests'} erzeugen`
-                    : 'Quests erzeugen'}
-              </Button>
-            ) : null}
-            {isPlanStale && onRevalidate ? (
-              <Button
-                onClick={onRevalidate}
-                title="Startet einen frischen Preview+Validate-Lauf mit dem aktuellen lokalen Plan. Keine Notion-Writes."
-              >
-                Erneut technisch prüfen
-              </Button>
-            ) : null}
+            {/* One-Button-Operator-Flow — combined "check & commit" CTA.
+                Replaces the previous commit-only button. Adapts its label
+                based on the validated-vs-stale-vs-empty state so the
+                operator always sees the exact next action. Internal flow
+                via parent: handleApiCheckAndCommit() runs preview+validate
+                first if needed, then handleApiCommit. All server-side
+                gates still execute on every commit. */}
+            {onCheckAndCommit && stepCount > 0 ? (() => {
+              const smokeBlock = Boolean(hasSmokeMarker) && stepCount > 1;
+              const chainRunning =
+                techCheckStatus === 'running' ||
+                commitStatus === 'running' ||
+                Boolean(pendingCheckAndCommit);
+              const validatedAndFresh =
+                techCheckStatus === 'ready' && !isPlanStale;
+              const countLabel =
+                typeof wouldCreateNTasks === 'number'
+                  ? `${wouldCreateNTasks} ${wouldCreateNTasks === 1 ? 'Quest' : 'Quests'}`
+                  : 'Quests';
+              const label = chainRunning
+                ? 'Läuft …'
+                : validatedAndFresh
+                  ? `${countLabel} erzeugen`
+                  : `Prüfen & ${countLabel} erzeugen`;
+              const disabled = chainRunning || smokeBlock;
+              const title = smokeBlock
+                ? 'Smoke-Test darf nur 1 Quest erzeugen. Bitte zuerst auf 1 Quest reduzieren.'
+                : chainRunning
+                  ? 'Vorgang läuft — bitte warten.'
+                  : validatedAndFresh
+                    ? `Erzeugt ${countLabel} in Notion. Server-Gates (Digest, Schema, Write-Flag, Token, Idempotenz) laufen unverändert.`
+                    : `Sequenzielle Ausführung: Preview → Validate → Commit. Commit nur wenn alle Gates OK.`;
+              return (
+                <Button onClick={onCheckAndCommit} disabled={disabled} title={title}>
+                  {label}
+                </Button>
+              );
+            })() : null}
             {techCheckStatus !== 'idle' || isPlanStale ? (
               <Button tone="ghost" className="!px-3 !py-2 !text-xs" onClick={onApiPreview}>
                 Technische Details
               </Button>
             ) : null}
           </div>
+        </div>
+      ) : null}
+
+      {/* One-Button-Operator-Flow — smoke-safety inline notice. Renders
+          right under the tech-check banner so the operator sees the block
+          reason without parsing the disabled-button tooltip. */}
+      {Boolean(hasSmokeMarker) && stepCount > 1 ? (
+        <div className="mt-3 rounded-2xl border border-rose-400/55 bg-rose-400/10 px-4 py-3 text-[12px] font-bold leading-5 text-rose-50">
+          Smoke-Test darf nur 1 Quest erzeugen. Plan hat {stepCount} Schritte.
+          {onReduceToOne ? (
+            <>
+              {' '}Bitte zuerst{' '}
+              <button
+                type="button"
+                onClick={onReduceToOne}
+                title="Reduziert den lokalen Plan-Entwurf auf den ersten Schritt. Kein Notion-Write."
+                className="underline decoration-rose-200/80 underline-offset-2 hover:text-rose-100"
+              >
+                auf 1 Smoke-Quest reduzieren
+              </button>
+              .
+            </>
+          ) : null}
         </div>
       ) : null}
 
@@ -5972,20 +6174,54 @@ function UnifiedAutoPlanner({
         </div>
       ) : null}
 
+      {/* One-Button-Operator-Flow — primary action row reduced to the
+          four affordances spec'd as primary:
+            - Quest-Reihe entwerfen (regenerate)
+            - Nur prüfen (inline preview+validate, no modal)
+            - Technische Details (modal, diagnostic only)
+            - Zurücksetzen
+          Outputs-Viewer + Mit-NOX-Demo move to a secondary, opacity-reduced
+          row so they remain accessible without competing with the primary
+          flow. The combined "Prüfen & X Quests erzeugen" CTA lives in the
+          tech-check banner above, not here, so it sits next to the status
+          it acts on. */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#4a101b]/40 pt-4">
         <div className="flex flex-wrap gap-2">
+          <Button onClick={onPlan} title="Generiert eine neue 7-Schritte-Quest-Reihe aus dem Projektziel und öffnet den Planner.">
+            Quest-Reihe entwerfen
+          </Button>
+          {onTechCheckInline ? (
+            <Button
+              tone="ghost"
+              onClick={onTechCheckInline}
+              title="Führt Preview + Validate aus, ohne ein Modal zu öffnen. Status erscheint im Banner oben."
+            >
+              Nur prüfen
+            </Button>
+          ) : null}
           <Button
+            tone="ghost"
+            onClick={onApiPreview}
+            title="Öffnet das Technische-Details-Modal mit Preview-Mutationen, Schema-Checks, missing/unsafe-Listen. Reiner Diagnose-Modus."
+          >
+            Technische Details
+          </Button>
+          <Button tone="ghost" onClick={onReset} title="Setzt Projektziel und Quest-Reihen-Entwurf zurück. Kein Notion-Touch.">
+            Zurücksetzen
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            tone="ghost"
+            className="!px-3 !py-2 !text-xs opacity-80"
             onClick={onTalk}
             title="Öffnet einen lokalen Demo-Dialog. Kein echter Agent, kein API-Call, keine Notion-Speicherung."
           >
             Mit NOX besprechen (Demo)
           </Button>
-          <Button tone="ghost" onClick={onPlan}>Quest-Reihe entwerfen</Button>
-          <Button tone="ghost" onClick={onApiPreview}>Technisch prüfen</Button>
-          <Button tone="ghost" onClick={onOutputsViewer}>Outputs ansehen</Button>
-          <Button tone="ghost" onClick={onReset}>Zurücksetzen</Button>
-        </div>
-        <div className="flex flex-wrap gap-2">
+          <Button tone="ghost" className="!px-3 !py-2 !text-xs opacity-80" onClick={onOutputsViewer}>
+            Outputs ansehen
+          </Button>
           <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={onAudit}>Projektkontext-Audit</Button>
           <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={onOutputCreate}>Output anlegen</Button>
           <Button tone="secondary" className="!px-3 !py-2 !text-xs" onClick={onDeleteDraft}>Lokalen Entwurf löschen</Button>
