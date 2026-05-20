@@ -3654,7 +3654,20 @@ function ProjectsDeepDive({
         idempotencyKey: generatePreviewIdempotencyKey(),
       },
     });
-    if (apiPreviewAbortRef.current !== controller) return;
+    if (apiPreviewAbortRef.current !== controller) {
+      // Techcheck-Pending-Fix — controller mismatch happens in two cases:
+      //   (a) another preview started → ref points at a new controller;
+      //       that fresh call already set its own loading flag, we must
+      //       NOT clear it here.
+      //   (b) ref was nulled externally (e.g. by an abort that no longer
+      //       happens, but we keep the guard so any future abort path
+      //       can't leak loading=true and stick the UI on "Prüfung läuft…").
+      // We use `apiPreviewAbortRef.current === null` to disambiguate.
+      if (apiPreviewAbortRef.current === null) {
+        setApiPreviewLoading(false);
+      }
+      return;
+    }
     apiPreviewAbortRef.current = null;
     setApiPreviewLoading(false);
     if (result.ok) {
@@ -3733,7 +3746,15 @@ function ProjectsDeepDive({
         idempotencyKey: generatePreviewIdempotencyKey('plan-validate'),
       },
     });
-    if (apiValidateAbortRef.current !== controller) return;
+    if (apiValidateAbortRef.current !== controller) {
+      // Techcheck-Pending-Fix — same disambiguation as in handleApiPreview.
+      // Mismatch + ref-is-null means an external abort happened; clear
+      // the loading flag so the UI doesn't stay on "Prüfung läuft …".
+      if (apiValidateAbortRef.current === null) {
+        setApiValidateLoading(false);
+      }
+      return;
+    }
     apiValidateAbortRef.current = null;
     setApiValidateLoading(false);
     if (result.ok) {
@@ -3783,22 +3804,37 @@ function ProjectsDeepDive({
   const isPlanStaleAgainstValidate =
     lastValidatedFingerprint !== null && lastValidatedFingerprint !== currentPlanFingerprint;
 
-  // Stateflow-Digest-Fix — invalidation effect. Whenever the operator
-  // mutates the local plan after a validate result landed, blow away the
-  // cached preview/validate/commit responses so the UI cannot present a
-  // stale "Quests bereit / Digest XYZ" state. The next commit attempt is
-  // forced to go back through tech-check.
+  // Stateflow-Digest-Fix + Techcheck-Pending-Fix — invalidation effect.
+  // Whenever the operator mutates the local plan after a validate result
+  // landed, blow away the cached preview/validate/commit responses so the
+  // UI cannot present a stale "Quests bereit / Digest XYZ" state. The
+  // next commit attempt is forced back through tech-check.
+  //
+  // IMPORTANT: This effect deliberately does NOT call `.abort()` on the
+  // in-flight tech-check controllers, even if the abort refs are non-null.
+  //
+  // Reason: this effect can fire on the SAME render that
+  // `autoTechCheckPending` triggers a fresh `handleApiPreview` (e.g. when
+  // the operator hits "Quest-Reihe entwerfen" against an already-validated
+  // plan). The freshly started request is working on the NEW plan and is
+  // exactly what we want. Aborting it here would:
+  //   1. cancel the fresh request mid-flight
+  //   2. push the handler into its `if (abortRef.current !== controller)`
+  //      early-return path (because we just nulled the ref)
+  //   3. leak `apiPreviewLoading=true` because the early-return runs
+  //      BEFORE `setApiPreviewLoading(false)` in the handler
+  //   4. leave the UI stuck on "Prüfung läuft …" forever
+  //
+  // Letting in-flight requests run to completion is safe: their results
+  // either match the new fingerprint (then they land cleanly) or they
+  // don't (then the next render of this effect catches it and clears
+  // them). Eventual consistency without the stuck-loading hazard.
+  //
+  // Belt-and-suspenders: handleApiPreview / handleApiValidate ALSO clear
+  // their loading flag in the controller-mismatch early-return path so
+  // even if a future caller does abort externally, the UI never gets stuck.
   useEffect(() => {
     if (!isPlanStaleAgainstValidate) return;
-    // Abort any in-flight tech-check from a previous plan snapshot.
-    if (apiPreviewAbortRef.current) {
-      apiPreviewAbortRef.current.abort();
-      apiPreviewAbortRef.current = null;
-    }
-    if (apiValidateAbortRef.current) {
-      apiValidateAbortRef.current.abort();
-      apiValidateAbortRef.current = null;
-    }
     setApiPreviewData(null);
     setApiPreviewError(null);
     setApiValidateData(null);
@@ -3811,6 +3847,27 @@ function ProjectsDeepDive({
     // stable across renders, so omitting them is safe and the effect
     // re-runs purely when the flag transitions to true.
   }, [isPlanStaleAgainstValidate]);
+
+  // Techcheck-Pending-Fix — empty-plan safety. If the operator mutates the
+  // plan down to zero steps (e.g. deletes the last quest in the planner
+  // modal), make sure no loading flag is left over from a previous
+  // tech-check round. Mirrors the user-spec behaviour:
+  //   "Keine Quest im Entwurf. Füge mindestens eine Quest hinzu oder
+  //    generiere den Plan neu."
+  // Commit / tech-check are both inert in this state, so we also clear
+  // any half-populated preview/validate data the operator could otherwise
+  // see.
+  useEffect(() => {
+    if (planSteps.length > 0) return;
+    setApiPreviewLoading(false);
+    setApiValidateLoading(false);
+    setApiPreviewData(null);
+    setApiPreviewError(null);
+    setApiValidateData(null);
+    setApiValidateError(null);
+    setLastValidatedFingerprint(null);
+    setLastValidatedStepCount(null);
+  }, [planSteps.length]);
 
   // Phase 2D-UI — Derived tech-check status for the inline planner banner.
   //   - 'idle'          : nothing has run yet
@@ -5589,6 +5646,24 @@ function UnifiedAutoPlanner({
         ) : null}
       </div>
 
+      {/* Techcheck-Pending-Fix — empty-plan state. Surfaces an explicit
+          message instead of just hiding the tech-check banner, so the
+          operator knows what to do next. */}
+      {stepCount === 0 ? (
+        <div className="mt-4 rounded-2xl border border-[#4a101b]/55 bg-[#0c0507]/65 px-4 py-3 text-[12px] font-semibold leading-5 text-[#bfa9b3]">
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-amber-200/80">
+            Technische Prüfung
+          </div>
+          <div className="mt-1 text-[13px] font-black text-amber-50">
+            Keine Quest im Entwurf
+          </div>
+          <div className="mt-1">
+            Füge mindestens eine Quest hinzu oder generiere den Plan neu. Commit ist gesperrt,
+            solange der Entwurf leer ist.
+          </div>
+        </div>
+      ) : null}
+
       {/* Phase 2D-UI — Compact tech-check status banner. Replaces the
           previous developer-style "Technische Prüfung jetzt starten"
           handhold. Auto-fires after `Quest-Reihe entwerfen` finishes; the
@@ -5628,7 +5703,7 @@ function UnifiedAutoPlanner({
             </div>
             <div className="text-[13px] font-black">
               {isPlanStale
-                ? 'Plan wurde geändert — erneute Prüfung nötig'
+                ? 'Plan wurde geändert — bitte erneut technisch prüfen'
                 : techCheckStatus === 'ready'
                   ? 'Bereit für Notion-Erzeugung'
                   : techCheckStatus === 'not-ready'
