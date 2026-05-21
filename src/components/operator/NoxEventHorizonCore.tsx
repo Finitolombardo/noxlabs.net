@@ -1,18 +1,18 @@
 // NOX Event Horizon Core
 //
-// Zentraler Visual-Core der NOX-Operator-UI. Ersetzt die alten
-// SVG-/Orb-Darstellungen (`NoxCommandCore`, `NoxSystemCore`) als
-// Premium-Hero-Element.
+// Zentraler Visual-Core der NOX-Operator-UI. Wirkt wie ein Fenster
+// in den Ereignishorizont — kein HUD-Ring, keine sichtbare runde
+// UI-Hülle. Subtile Vignette + sehr dezenter Ruby/Gold-Outer-Glow
+// rahmen das Video, ohne den schwarzen Kern zu übermalen.
 //
 // SCOPE
 // =====
-//   - Rendert ein loopendes, stummes, inline-playendes <video> aus
-//     /nox-assets/nox-event-horizon-core.mp4.
-//   - Subtile Overlay-Layer (Vignette, Ruby/Gold-Glow, optionaler
-//     Agent-Color-Glow), kein UI-Chrome.
+//   - Rendert ein loopendes, stummes, inline-playendes <video>.
+//     Quelle ist ein Ping-Pong-Loop (forward+reverse), damit der
+//     Browser-Loop nicht sichtbar springt.
 //   - `prefers-reduced-motion` respektiert: Video wird pausiert,
 //     Poster bleibt sichtbar.
-//   - Keine Browser-Controls. Kein Audio. Endlos-Loop.
+//   - Keine Browser-Controls. Kein Audio.
 //
 // SICHERHEIT
 // ==========
@@ -35,18 +35,18 @@ export type NoxActiveAgent =
 
 /** Agent-Farben für den optionalen Outer-Glow (deutsche Operator-Palette). */
 const AGENT_GLOW: Record<NoxActiveAgent, string> = {
-  nox: 'rgba(232,64,64,0.55)', // NOX-Ruby (Default)
-  lead_claude: 'rgba(244,180,90,0.55)', // Gold
-  hermes: 'rgba(190,120,255,0.55)', // Magenta-Violett
-  codex: 'rgba(120,200,255,0.55)', // Cyan
-  security: 'rgba(255,80,80,0.65)', // Red, kräftiger
-  quest: 'rgba(120,160,255,0.55)', // Blau
-  n8n: 'rgba(120,255,180,0.45)', // Mint
-  mcp: 'rgba(255,200,120,0.50)', // Amber
-  bridge: 'rgba(200,200,200,0.45)', // Neutralgrau
+  nox: 'rgba(232,64,64,0.45)', // NOX-Ruby (Default)
+  lead_claude: 'rgba(244,180,90,0.45)', // Gold
+  hermes: 'rgba(190,120,255,0.45)', // Magenta-Violett
+  codex: 'rgba(120,200,255,0.45)', // Cyan
+  security: 'rgba(255,80,80,0.55)', // Red, kräftiger
+  quest: 'rgba(120,160,255,0.45)', // Blau
+  n8n: 'rgba(120,255,180,0.40)', // Mint
+  mcp: 'rgba(255,200,120,0.40)', // Amber
+  bridge: 'rgba(200,200,200,0.35)', // Neutralgrau
 };
 
-/** State → Glow-Intensität-Multiplikator + Aria-Label-Hinweis. */
+/** State → Glow-Intensität-Multiplikator + ARIA-Hinweis. */
 const STATE_META: Record<NoxCoreState, { aria: string; intensity: number }> = {
   bereit: { aria: 'bereit', intensity: 1.0 },
   hoert_zu: { aria: 'hört zu', intensity: 1.15 },
@@ -56,7 +56,7 @@ const STATE_META: Record<NoxCoreState, { aria: string; intensity: number }> = {
 };
 
 export interface NoxEventHorizonCoreProps {
-  /** Aktueller Core-Zustand. Steuert subtile Glow-Intensität + ARIA. */
+  /** Aktueller Core-Zustand. Steuert Glow-Intensität + ARIA. */
   state?: NoxCoreState;
   /** Aktiver Agent — färbt den äußeren Glow. */
   activeAgent?: NoxActiveAgent;
@@ -64,10 +64,12 @@ export interface NoxEventHorizonCoreProps {
   className?: string;
   /** object-fit Modus für das <video>. Default: cover. */
   fit?: 'cover' | 'contain';
+  /** Aspect-Ratio des Cinematic-Fensters. Default: 16/9. */
+  aspectRatio?: string;
 }
 
 /**
- * Zentraler Event-Horizon-Visual-Core.
+ * Zentraler Event-Horizon-Visual-Core (cinematic).
  *
  * Verwendung minimal:
  *   <NoxEventHorizonCore />
@@ -80,6 +82,7 @@ export default function NoxEventHorizonCore({
   activeAgent = 'nox',
   className = '',
   fit = 'cover',
+  aspectRatio = '16 / 9',
 }: NoxEventHorizonCoreProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const meta = STATE_META[state];
@@ -112,64 +115,47 @@ export default function NoxEventHorizonCore({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-full bg-black select-none ${className}`}
+      className={`relative overflow-hidden bg-black select-none ${className}`}
       role="img"
       aria-label={`NOX Ereignishorizont Core — ${meta.aria}`}
-      style={{ aspectRatio: '1 / 1' }}
+      style={{
+        aspectRatio,
+        // Sehr weicher Außen-Glow als Shadow, kein sichtbarer Rand
+        boxShadow: `0 0 80px 8px ${glow.replace(/[\d.]+\)$/, `${0.35 * meta.intensity})`)}`,
+      }}
     >
-      {/* Video-Ebene */}
+      {/* Video-Ebene — füllt den Container komplett, ohne Maske/Ring */}
       <video
         ref={videoRef}
         className="absolute inset-0 h-full w-full"
         style={{ objectFit: fit }}
-        src="/nox-assets/nox-event-horizon-core.mp4"
-        poster="/nox-assets/nox-event-horizon-core-poster.jpg"
+        src="/nox-assets/nox-event-horizon-core-loop.mp4"
+        poster="/nox-assets/nox-event-horizon-core-loop-poster.jpg"
         autoPlay
         muted
         loop
         playsInline
         preload="auto"
-        // controls bewusst nicht setzen — keine Browser-Chrome
-        // Fallback-Text für sehr alte Engines / fehlende Codecs
       >
         <span className="sr-only">NOX Ereignishorizont lädt…</span>
       </video>
 
-      {/* Fallback-Text, sichtbar nur falls Video-Element nicht rendert */}
+      {/* Fallback-Text, sichtbar nur falls Video-Element gar nicht rendert */}
       <noscript>
         <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-[#9f8d95]">
           NOX Ereignishorizont lädt…
         </div>
       </noscript>
 
-      {/* Vignette — dezenter Schwarzring nach außen */}
+      {/*
+        Vignette — sehr dezent, nur Ecken-Verdunkelung.
+        Cinematic-Fenster-Effekt, KEIN sichtbarer Kreis-Ring.
+      */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(closest-side, transparent 55%, rgba(0,0,0,0.35) 85%, rgba(0,0,0,0.7) 100%)',
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Agent-Color-Glow — Außenring, multipliziert mit State-Intensität */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: `radial-gradient(closest-side, transparent 62%, ${glow} 92%, transparent 100%)`,
-          opacity: 0.55 * meta.intensity,
-          mixBlendMode: 'screen',
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Sehr dezenter Ruby/Gold-Innen-Glow, der das schwarze Loch nicht clippt */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(closest-side, rgba(255,90,90,0.06) 30%, transparent 70%)',
-          mixBlendMode: 'screen',
+            'radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.45) 100%)',
         }}
         aria-hidden="true"
       />

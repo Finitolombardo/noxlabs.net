@@ -19,7 +19,7 @@ export default function OperatorIntegrations() {
           <span className="text-amber-200/80">Integrationen</span>
         </nav>
 
-        <header className="grid items-center gap-8 md:grid-cols-[1fr_320px] md:gap-12">
+        <header className="space-y-6">
           <div className="space-y-3">
             <div className="text-[12px] font-extrabold uppercase tracking-[0.28em] text-amber-200/80">
               NOX Integration Center
@@ -31,13 +31,14 @@ export default function OperatorIntegrations() {
               verschlüsselter Token-Storage.
             </p>
           </div>
-          <div className="justify-self-center md:justify-self-end">
-            <NoxEventHorizonCore
-              state="bereit"
-              activeAgent="nox"
-              className="w-56 md:w-72"
-            />
-          </div>
+
+          {/* Event-Horizon-Core als cinematic Hero-Fenster über dem Katalog */}
+          <NoxEventHorizonCore
+            state="bereit"
+            activeAgent="nox"
+            className="w-full"
+            aspectRatio="21 / 9"
+          />
         </header>
 
         <IntegrationsPanel />
