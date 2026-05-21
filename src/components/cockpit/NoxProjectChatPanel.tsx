@@ -1,25 +1,29 @@
-// Operator Cockpit — Permanent NOX Project Chat Panel (MVP).
+// Operator Cockpit — NOX Project Chat Panel mit Claude-Code-Bridge-Status.
 //
-// Lokaler Command-Layer für den NOX/Andromeda-Hauptagenten. Bewusst
-// OHNE LLM, OHNE Anthropic-API, OHNE Hermes, OHNE n8n, OHNE Worker.
-// Der Operator chattet — die Eingaben gehen durch den lokalen
-// `parseNoxCommand`-Parser und werden im Panel zu Tool-Vorschlags-
-// karten gerendert, die bestehende Project-Auto-Planner-Handler
-// auslösen. Jeder Notion-Write läuft weiter durch den geprüften
-// Server-Pfad (`/plan/commit`) mit allen Gates.
+// PR #26 baute hier einen rein lokalen Regex-Command-Layer. Diese
+// Erweiterung (PR „operator-cockpit-claude-code-bridge") hängt den
+// Panel an den Status der lokalen Claude-Code-Bridge:
 //
-// Strict invariants:
-//   - Kein fetch außer durch die Cockpit-Handler, die das Panel als
-//     Props bekommt.
-//   - Keine Persistenz außer ggf. später vom Caller über
-//     `localStorage` (in dieser MVP-Phase NICHT aktiv).
-//   - Keine Secrets, keine Token-Eingabe, kein API-Key-Feld.
-//   - Confirmation-Phrase wird im Chat-State gehalten; der
-//     bestehende Server-Gate bleibt maßgeblich.
-//   - Header trägt ein ehrliches Label, damit der Operator nie denkt,
-//     hier laufe ein Live-Modell.
+//   - Bridge online (`status === 'online'`)     → Header signalisiert
+//       „Claude Code Chat · lokales Abo/Login · über Bridge".
+//       Send wird in einer späteren PR an `sendClaudeCodeMessage()`
+//       angehängt. In DIESER PR bleibt der Send-Pfad noch der lokale
+//       Parser, der Header sagt nur ehrlich, was geht.
+//   - Bridge dry_run / degraded                 → Status-Streifen warnt,
+//       Parser bleibt aktiv.
+//   - Bridge offline / unknown                  → Header zeigt
+//       „Lokale Schnellbefehle (Fallback)", Parser läuft normal.
+//
+// HARTE REGELN
+// ============
+//   - Keine Anthropic-API-Calls. Kein ANTHROPIC_API_KEY im Bundle.
+//   - Keine claude.ai-Cookies, keine Token-Reads.
+//   - Bridge-URL ist Loopback (`http://127.0.0.1:8799`), kein Secret.
+//   - Server-seitige Notion-Write-Gates bleiben unverändert maßgeblich.
+//   - Confirmation-Phrase ist weiterhin ein UI-Gate ZUSÄTZLICH, kein
+//     Ersatz für die Server-Gates in `/plan/commit`.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import {
   parseNoxCommand,
@@ -28,6 +32,13 @@ import {
   type NoxToolAction,
   type NoxToolCard,
 } from '../../lib/noxCommandParser';
+import {
+  bridgeStatusLabel,
+  bridgeStatusTone,
+  checkBridgeHealth,
+  type BridgeHealth,
+  type BridgeHealthStatus,
+} from '../../lib/claudeCodeBridgeClient';
 
 export interface NoxChatMessage {
   id: string;
@@ -147,13 +158,41 @@ export function NoxProjectChatPanel(props: NoxProjectChatPanelProps): JSX.Elemen
       id: nextId(),
       role: 'nox',
       text:
-        'Hi. Ich bin der lokale NOX-Command-Layer. Kein API-Call, keine Magie. Sag mir was — z. B. „Hilfe", „mach mir die nächsten quests" oder „status".',
+        'Hi. Ich bin der NOX-Command-Layer. Aktuell läuft lokal über Regex-Parser. ' +
+        'Sobald die Claude-Code-Bridge online ist, übernimmt Claude über dein Abo/Login. ' +
+        'Sag mir was — z. B. „Hilfe", „mach mir die nächsten quests" oder „status".',
       timestamp: nowIso(),
     },
   ]);
   const [input, setInput] = useState('');
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Claude-Code-Bridge Health-Poll. Initial unbekannt; nach 1. Check
+  // wird der Streifen sichtbar. Polling-Intervall: 30s (cheap, lokal,
+  // 2s-Timeout).
+  const [bridge, setBridge] = useState<BridgeHealth>({
+    status: 'unknown' as BridgeHealthStatus,
+    bridgeUrl: '',
+    checkedAt: nowIso(),
+  });
+
+  const pollBridge = useCallback(async (signal?: AbortSignal) => {
+    const next = await checkBridgeHealth(signal);
+    setBridge(next);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void pollBridge(controller.signal);
+    const t = setInterval(() => {
+      void pollBridge(controller.signal);
+    }, 30_000);
+    return () => {
+      controller.abort();
+      clearInterval(t);
+    };
+  }, [pollBridge]);
 
   const ctx: NoxCommandContext = useMemo(
     () => ({
@@ -300,6 +339,42 @@ export function NoxProjectChatPanel(props: NoxProjectChatPanelProps): JSX.Elemen
   const techChipTone = statusTone(props.techCheckStatus);
   const commitChipTone = statusTone(props.commitStatus);
 
+  // Header-Copy + Mode-Pill abhängig vom Bridge-State. Wir verkaufen
+  // hier nie „Claude im UI", solange die Bridge nicht online ist.
+  const isBridgeOnline = bridge.status === 'online';
+  const isBridgeDryRun = bridge.status === 'dry_run';
+  const isBridgeDegraded = bridge.status === 'degraded';
+  const isBridgeReachable = isBridgeOnline || isBridgeDryRun || isBridgeDegraded;
+
+  const headerTitle = isBridgeOnline
+    ? 'Claude Code Chat · lokales Abo/Login · über Bridge'
+    : isBridgeDryRun
+      ? 'Claude-Code-Bridge online (Dry-Run) · echte Aufrufe geblockt'
+      : isBridgeDegraded
+        ? 'Claude-Code-Bridge online · Claude-CLI nicht gefunden'
+        : 'Lokale Schnellbefehle (Fallback) · kein Claude-Aufruf';
+
+  const modePillLabel = isBridgeOnline
+    ? 'Claude Code · Bridge'
+    : isBridgeReachable
+      ? 'Bridge · Dry-Run'
+      : 'Lokal · Regex-Fallback';
+
+  const bridgeTone = bridgeStatusTone(bridge.status);
+  const bridgeChipClasses = (() => {
+    switch (bridgeTone) {
+      case 'green':
+        return 'text-emerald-300 border-emerald-300/40 bg-emerald-300/10';
+      case 'amber':
+        return 'text-amber-200 border-amber-300/40 bg-amber-300/10';
+      case 'red':
+        return 'text-red-200 border-red-500/40 bg-red-500/10';
+      case 'gray':
+      default:
+        return 'text-[#9f8d95] border-[#4a101b]/50 bg-[#120609]/60';
+    }
+  })();
+
   return (
     <div className="rounded-2xl border border-amber-300/30 bg-gradient-to-br from-[#1a0a0d] to-[#0c0506] p-4 md:p-5">
       {/* Header */}
@@ -308,7 +383,7 @@ export function NoxProjectChatPanel(props: NoxProjectChatPanelProps): JSX.Elemen
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-extrabold uppercase tracking-[0.28em] text-amber-200/90">NOX Project Chat</span>
             <span className="rounded-full border border-amber-300/40 bg-amber-300/10 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-100">
-              MVP · lokaler Command-Layer
+              {modePillLabel}
             </span>
           </div>
           <h3 className="mt-1 truncate text-lg font-black leading-tight text-amber-50">
@@ -316,7 +391,7 @@ export function NoxProjectChatPanel(props: NoxProjectChatPanelProps): JSX.Elemen
             <span className="text-[#9f8d95] font-bold text-sm">({props.projectId})</span>
           </h3>
           <p className="mt-1 text-[11px] font-semibold leading-5 text-[#9f8d95]">
-            Lokaler Command Layer · kein API-Call · Writes nur nach Bestätigung
+            {headerTitle}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -336,6 +411,46 @@ export function NoxProjectChatPanel(props: NoxProjectChatPanelProps): JSX.Elemen
               ⓘ {props.lastValidatedDigest}
             </span>
           ) : null}
+        </div>
+      </div>
+
+      {/* Bridge-Status-Streifen. Loopback-Bridge (`http://127.0.0.1:8799`),
+          die in einem späteren PR Claude Code lokal aufruft. Diese PR
+          baut nur Status-/Health-Reporting; der eigentliche Send-Pfad
+          ist weiter der lokale Parser. */}
+      <div className="mt-3 flex flex-col gap-1.5 rounded-xl border border-[#4a101b]/40 bg-black/30 px-3 py-2 text-[11px] font-semibold text-[#eadbe2] md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.16em] ${bridgeChipClasses}`}>
+            {bridgeStatusLabel(bridge.status)}
+          </span>
+          {bridge.bridgeUrl ? (
+            <span className="font-mono text-[10px] text-[#9f8d95]" title="Loopback-Adresse, kein Secret">
+              {bridge.bridgeUrl}
+            </span>
+          ) : null}
+          {typeof bridge.exec === 'boolean' ? (
+            <span className="rounded border border-[#4a101b]/60 bg-[#120609]/70 px-1.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-[#9f8d95]">
+              Exec: {bridge.exec ? 'on' : 'dry-run'}
+            </span>
+          ) : null}
+          {bridge.claudeCli ? (
+            <span className="rounded border border-[#4a101b]/60 bg-[#120609]/70 px-1.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-[#9f8d95]">
+              CLI: {bridge.claudeCli}
+            </span>
+          ) : null}
+        </div>
+        <div className="text-[10px] leading-4 text-[#9f8d95]">
+          {bridge.status === 'offline' ? (
+            <>Bridge offline. Starte <span className="font-mono">node scripts/nox-claude-code-bridge.mjs</span> lokal, um Claude Code anzubinden.</>
+          ) : bridge.status === 'dry_run' ? (
+            <>Dry-Run: setze <span className="font-mono">NOX_CLAUDE_CODE_BRIDGE_EXEC=1</span>, um echte Claude-Aufrufe zu erlauben.</>
+          ) : bridge.status === 'degraded' ? (
+            <>Bridge antwortet, aber die Claude-CLI fehlt im PATH (<span className="font-mono">npm i -g @anthropic-ai/claude-code</span>).</>
+          ) : bridge.status === 'online' ? (
+            <>Bridge online. Send-Pfad an Claude Code ist in einer Folge-PR aktivierbar.</>
+          ) : (
+            <>Bridge-Status wird gerade geprüft …</>
+          )}
         </div>
       </div>
 
