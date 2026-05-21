@@ -38,6 +38,7 @@ import type {
   FactoryWorkflowEntry,
 } from '../data/projectXFactoryDemo';
 import SkillbookPanel from '../components/skillbook/SkillbookPanel';
+import NoxProjectChatPanel from '../components/cockpit/NoxProjectChatPanel';
 
 type Project = {
   id: string;
@@ -4058,6 +4059,27 @@ function ProjectsDeepDive({
     return 'idle';
   })();
 
+  // NOX Command Layer — shared derived value so the planner card AND
+  // the new chat panel render the same status chip without diverging.
+  type CommitStatusKind =
+    | 'idle'
+    | 'running'
+    | 'committed'
+    | 'writes_locked'
+    | 'duplicate'
+    | 'auth-blocked'
+    | 'error';
+  const commitStatusKind: CommitStatusKind = (() => {
+    if (commitLoading) return 'running';
+    if (commitError?.status === 401) return 'auth-blocked';
+    if (commitError) return 'error';
+    if (commitData?.code === 'committed') return 'committed';
+    if (commitData?.code === 'writes_locked') return 'writes_locked';
+    if (commitData?.code === 'duplicate_risk') return 'duplicate';
+    if (commitData) return 'error';
+    return 'idle';
+  })();
+
   // Phase 2D-UI — One-click commit handler. The browser sends only the
   // structural payload (plan + digest + idempotency + clientPlanId) and
   // NO secret material:
@@ -4361,6 +4383,69 @@ function ProjectsDeepDive({
         </div>
       </Card>
 
+      {/* NOX Project Chat Panel — permanenter, lokaler Command-Layer.
+          Kein API-Call, kein Hermes, kein Worker. Übersetzt
+          Operator-Eingaben über `parseNoxCommand` in Tool-Vorschläge,
+          die die bestehenden Project-Auto-Planner-Handler ausführen.
+          Der Notion-Write geht weiter durch den geprüften
+          Server-Gate-Pfad (`/plan/commit`) — die Chat-Confirmation ist
+          ein UI-Gate ZUSÄTZLICH, kein Ersatz. */}
+      <NoxProjectChatPanel
+        projectId={project.id}
+        projectName={project.name}
+        projectGoal={projektZiel}
+        planStepsCount={planSteps.length}
+        lastValidatedDigest={apiValidateData?.echoedDigest ?? null}
+        lastCommitCode={commitData?.code ?? null}
+        techCheckStatus={techCheckStatus}
+        commitStatus={commitStatusKind}
+        onPlanRegenerate={() => {
+          if (!projektZiel.trim()) {
+            setEmptyGoalHint(true);
+            return;
+          }
+          setEmptyGoalHint(false);
+          regeneratePlan(projektZiel);
+          setRestoredAt(null);
+          setAutoTechCheckPending(true);
+          setModal('planner');
+        }}
+        onPlanReduceToOne={() => {
+          setPlanSteps((prev) =>
+            prev.length === 0 ? prev : prev.slice(0, 1).map((s) => ({ ...s, step: 1 })),
+          );
+        }}
+        onPlanTechCheck={() => {
+          if (!projektZiel.trim()) {
+            setEmptyGoalHint(true);
+            return;
+          }
+          setEmptyGoalHint(false);
+          void handleApiPreview();
+        }}
+        onPlanOpenTechnicalDetails={() => {
+          if (!projektZiel.trim()) {
+            setEmptyGoalHint(true);
+            return;
+          }
+          setEmptyGoalHint(false);
+          setModal('apiPreview');
+        }}
+        onPlanCheckAndCommit={() => {
+          if (!projektZiel.trim()) {
+            setEmptyGoalHint(true);
+            return;
+          }
+          setEmptyGoalHint(false);
+          void handleApiCheckAndCommit();
+        }}
+        onPlanSetGoal={(next) => {
+          const v = next.trim();
+          setProjektZiel(v);
+          if (v.length > 0 && emptyGoalHint) setEmptyGoalHint(false);
+        }}
+      />
+
       <UnifiedAutoPlanner
         value={projektZiel}
         onChange={(next) => { setProjektZiel(next); if (emptyGoalHint) setEmptyGoalHint(false); }}
@@ -4465,16 +4550,7 @@ function ProjectsDeepDive({
           }
           return undefined;
         })()}
-        commitStatus={(() => {
-          if (commitLoading) return 'running' as const;
-          if (commitError?.status === 401) return 'auth-blocked' as const;
-          if (commitError) return 'error' as const;
-          if (commitData?.code === 'committed') return 'committed' as const;
-          if (commitData?.code === 'writes_locked') return 'writes_locked' as const;
-          if (commitData?.code === 'duplicate_risk') return 'duplicate' as const;
-          if (commitData) return 'error' as const;
-          return 'idle' as const;
-        })()}
+        commitStatus={commitStatusKind}
         commitMessage={(() => {
           if (commitLoading) return 'Commit läuft …';
           if (commitError?.status === 401) {
@@ -6424,13 +6500,17 @@ function UnifiedAutoPlanner({
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">
+          {/* Legacy „Mit NOX besprechen"-Modal. Wird durch das permanente
+              NOX Project Chat Panel ersetzt; bleibt aus Sicherheitsgründen
+              vorerst erreichbar, damit eingestreute Operator-Workflows
+              nicht plötzlich brechen. */}
           <Button
             tone="ghost"
-            className="!px-3 !py-2 !text-xs opacity-80"
+            className="!px-3 !py-2 !text-[10px] opacity-50 italic"
             onClick={onTalk}
-            title="Öffnet einen lokalen Demo-Dialog. Kein echter Agent, kein API-Call, keine Notion-Speicherung."
+            title="Legacy-Demo-Dialog. Wurde durch das oben angedockte NOX Project Chat Panel ersetzt. Bleibt vorübergehend erreichbar."
           >
-            Mit NOX besprechen (Demo)
+            Mit NOX besprechen (Legacy-Demo)
           </Button>
           <Button tone="ghost" className="!px-3 !py-2 !text-xs opacity-80" onClick={onOutputsViewer}>
             Outputs ansehen
