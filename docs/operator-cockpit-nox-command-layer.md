@@ -1,7 +1,10 @@
 # Operator Cockpit · Lokaler NOX Command Layer (MVP)
 
-Status: implementiert lokal auf einem laufenden Feature-Branch.
-Noch kein Commit, noch kein PR.
+Status: Draft-PR #26 auf `feature/operator-cockpit-nox-command-layer`.
+Commit: `c56868c`.
+Basis: `main`.
+Scope: Deterministischer lokaler NOX Command Layer im Operator Cockpit.
+Keine LLM-/Hermes-/n8n-/Worker-Calls. Kein neuer Write-Pfad.
 Letztes Update: 2026-05-21.
 
 ## Warum dieser Schritt
