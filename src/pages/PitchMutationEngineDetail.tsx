@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, AlertTriangle, Layers, CheckCircle2 } from 'luci
 import Button from '../components/UI/Button';
 import Accordion from '../components/UI/Accordion';
 
+
 export default function PitchMutationEngineDetail() {
   const stats = [
     {
@@ -232,6 +233,12 @@ export default function PitchMutationEngineDetail() {
   };
 
   return (
+    <Seo
+      title="Pitch Mutation Engine — Lernender Outreach"
+      description="Outreach, das aus jeder Antwort lernt. Mutation, Testing und Evolution deiner Verkaufsbotschaft — messbar und kausal."
+      path="/systems/pitch-mutation-engine"
+    >
+
     <div className="min-h-screen py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <motion.div
@@ -625,5 +632,6 @@ export default function PitchMutationEngineDetail() {
         </motion.section>
       </div>
     </div>
+    </Seo>
   );
 }

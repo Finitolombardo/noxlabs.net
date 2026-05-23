@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2, Clock, MessageSquare, FileSpreadsheet, AlertCircle, X } from 'lucide-react';
 import Button from '../components/UI/Button';
 
+
 export default function WhatsAppBookingBotDetail() {
   const benefits = [
     {
@@ -99,6 +100,12 @@ export default function WhatsAppBookingBotDetail() {
   };
 
   return (
+    <Seo
+      title="WhatsApp Booking Bot — Terminbuchung via Chat"
+      description="Automatisierte Terminbuchung direkt über WhatsApp mit Cal.com-Sync. Keine manuelle Koordination mehr."
+      path="/systems/whatsapp-booking-bot"
+    >
+
     <div className="min-h-screen py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <motion.div
@@ -377,5 +384,6 @@ export default function WhatsAppBookingBotDetail() {
         </motion.section>
       </div>
     </div>
+    </Seo>
   );
 }

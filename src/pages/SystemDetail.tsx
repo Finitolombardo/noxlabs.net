@@ -9,6 +9,7 @@ import LeadforgeDetail from './LeadforgeDetail';
 import YouTubeEngineDetail from './YouTubeEngineDetail';
 import WhatsAppBookingBotDetail from './WhatsAppBookingBotDetail';
 
+
 export default function SystemDetail() {
   const { slug } = useParams<{ slug: string }>();
 
@@ -64,6 +65,12 @@ export default function SystemDetail() {
   };
 
   return (
+    <Seo
+      title="KI-System Details"
+      description="Erfahre mehr über die lernenden KI-Systeme von NOX Labs — Architektur, Module und Integrationen."
+      path="/systems/detail"
+    >
+
     <div className="min-h-screen py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <motion.div
@@ -272,5 +279,6 @@ export default function SystemDetail() {
         </motion.div>
       </div>
     </div>
+    </Seo>
   );
 }

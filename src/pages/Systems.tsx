@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { systems } from '../data/systems';
 
+
 export default function Systems() {
   const mainSystems = systems.filter((s) => s.isMainSystem);
   const specialSystems = systems.filter((s) => !s.isMainSystem);
@@ -29,6 +30,12 @@ export default function Systems() {
   };
 
   return (
+    <Seo
+      title="Produktarchitektur — Alle KI-Systeme"
+      description="Leadgen Engine, Pitch Mutation Engine, YouTube Engine und mehr. Entdecke die modulare KI-Architektur von NOX Labs."
+      path="/systems"
+    >
+
     <div className="min-h-screen py-20 px-4">
       <div className="max-w-7xl mx-auto">
         <motion.div
@@ -163,5 +170,6 @@ export default function Systems() {
         </div>
       </div>
     </div>
+    </Seo>
   );
 }

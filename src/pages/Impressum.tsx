@@ -2,8 +2,16 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
+
 export default function Impressum() {
   return (
+    <Seo
+      title="Impressum"
+      description="Impressum von NOX Labs."
+      path="/impressum"
+      noIndex
+    >
+
     <div className="relative min-h-screen py-28 px-4 noise">
       <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-nox-red/[0.05] blur-[140px] pointer-events-none" />
       <div className="relative max-w-4xl mx-auto">
@@ -151,5 +159,6 @@ export default function Impressum() {
         </motion.div>
       </div>
     </div>
+    </Seo>
   );
 }

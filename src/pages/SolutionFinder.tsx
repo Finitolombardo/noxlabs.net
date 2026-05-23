@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Loader2, Sparkles } from 'lucide-react';
 import { routeIntake, type IntakePayload, type RoutingResult } from '../lib/solutionFinderRouting';
 
+
 // ============================================================
 // NOX Labs - Solution Finder
 // Multi-Step Guided Intake (kein Chat, kein generisches Form)
@@ -317,6 +318,12 @@ export default function SolutionFinder() {
   }
 
   return (
+    <Seo
+      title="Lösungsfinder — Welche Engine passt zu dir?"
+      description="Finde in 2 Minuten die richtige NOX-Engine-Kombination für dein Business. Geführtes Intake: Situation, Stack, Bottlenecks, Ziele."
+      path="/solution-finder"
+    >
+
     <div className="min-h-screen py-16 md:py-24 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
@@ -500,5 +507,6 @@ export default function SolutionFinder() {
         </p>
       </div>
     </div>
+    </Seo>
   );
 }

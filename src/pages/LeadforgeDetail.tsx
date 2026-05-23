@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, AlertTriangle, Layers, CheckCircle2 } from 'luci
 import Button from '../components/UI/Button';
 import Accordion from '../components/UI/Accordion';
 
+
 export default function LeadforgeDetail() {
   const stats = [
     {
@@ -244,6 +245,12 @@ export default function LeadforgeDetail() {
   };
 
   return (
+    <Seo
+      title="Leadgen Engine — Automatisierte Lead-Generierung"
+      description="Automatisierte Lead-Recherche, Anreicherung und strukturierte Ansprache. Das lernende Demand-System von NOX Labs."
+      path="/systems/leadforge"
+    >
+
     <div className="min-h-screen py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <motion.div
@@ -616,5 +623,6 @@ export default function LeadforgeDetail() {
         </motion.section>
       </div>
     </div>
+    </Seo>
   );
 }

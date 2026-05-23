@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 
+
 interface RoadmapSystem {
   name: string;
   subtitle: string;
@@ -130,6 +131,12 @@ export default function Roadmap() {
   );
 
   return (
+    <Seo
+      title="Roadmap — Entwicklung & Vision"
+      description="Die Roadmap von NOX Labs: Geplante Features, System-Updates und die strategische Vision für lernende KI-Infrastruktur."
+      path="/roadmap"
+    >
+
     <div className="relative min-h-screen pt-32 pb-24 px-4 noise">
       <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[900px] h-[400px] rounded-full bg-nox-red/[0.06] blur-[140px] pointer-events-none" />
       <div className="absolute inset-0 bg-grid mask-radial-fade opacity-40 pointer-events-none" />
@@ -182,5 +189,6 @@ export default function Roadmap() {
         )}
       </div>
     </div>
+    </Seo>
   );
 }

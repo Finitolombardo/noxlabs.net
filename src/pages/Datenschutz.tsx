@@ -2,8 +2,16 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
+
 export default function Datenschutz() {
   return (
+    <Seo
+      title="Datenschutzerklärung"
+      description="Datenschutzerklärung von NOX Labs."
+      path="/datenschutz"
+      noIndex
+    >
+
     <div className="relative min-h-screen py-28 px-4 noise">
       <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-nox-red/[0.05] blur-[140px] pointer-events-none" />
       <div className="relative max-w-4xl mx-auto">
@@ -398,5 +406,6 @@ export default function Datenschutz() {
         </motion.div>
       </div>
     </div>
+    </Seo>
   );
 }

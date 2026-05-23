@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import NoxBolt from '../components/UI/NoxBolt';
 
+
 const problems = [
   {
     icon: UserX,
@@ -136,6 +137,13 @@ function SectionEyebrow({ children }: { children: React.ReactNode }) {
 
 export default function Home() {
   return (
+    <Seo
+      title="KI-Systeme für Leadgen, Qualifizierung & Automatisierung"
+      description="NOX Labs baut lernende KI-Systeme für Lead-Generierung, Qualifizierung und Workflow-Automatisierung. Strukturiert, messbar, produktionsreif."
+      path="/"
+      jsonLd={JSON.parse('{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://noxlabs.net/#organization", "name": "NOX Labs", "url": "https://noxlabs.net", "description": "High-End KI-Systeme für Lead-Generierung, Qualifizierung und Workflow-Automatisierung", "slogan": "KI-Systeme. Gebaut für Wachstum."}, {"@type": "WebSite", "@id": "https://noxlabs.net/#website", "url": "https://noxlabs.net", "name": "NOX Labs", "publisher": {"@id": "https://noxlabs.net/#organization"}, "inLanguage": "de-DE"}, {"@type": "WebPage", "@id": "https://noxlabs.net/#webpage", "url": "https://noxlabs.net/", "name": "NOX Labs — KI-Systeme für Leadgen, Qualifizierung & Automatisierung", "isPartOf": {"@id": "https://noxlabs.net/#website"}, "inLanguage": "de-DE"}]}')}
+    >
+
     <div className="min-h-screen relative">
 
       {/* ─── HERO ─── */}
@@ -686,5 +694,6 @@ export default function Home() {
       </section>
 
     </div>
+    </Seo>
   );
 }

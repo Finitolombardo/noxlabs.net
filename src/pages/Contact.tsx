@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Mail, MessageSquare, Send } from 'lucide-react';
 import Button from '../components/UI/Button';
 
+
 export default function Contact() {
   const [formData, setFormData] = useState({
     name: '',
@@ -23,6 +24,12 @@ export default function Contact() {
   };
 
   return (
+    <Seo
+      title="Kontakt — Gespräch buchen"
+      description="Buche ein Gespräch mit NOX Labs. Wir analysieren deine Prozesse und zeigen, welche KI-Systeme dein Wachstum beschleunigen."
+      path="/contact"
+    >
+
     <div className="relative min-h-screen pt-32 pb-24 px-4 noise">
       <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[380px] rounded-full bg-nox-red/[0.06] blur-[140px] pointer-events-none" />
       <div className="absolute inset-0 bg-grid mask-radial-fade opacity-40 pointer-events-none" />
@@ -190,5 +197,6 @@ export default function Contact() {
         </div>
       </div>
     </div>
+    </Seo>
   );
 }

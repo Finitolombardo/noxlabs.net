@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, AlertTriangle, Layers, CheckCircle2, Repeat } fr
 import Button from '../components/UI/Button';
 import Accordion from '../components/UI/Accordion';
 
+
 export default function YouTubeEngineDetail() {
   const stats = [
     {
@@ -211,6 +212,12 @@ export default function YouTubeEngineDetail() {
   };
 
   return (
+    <Seo
+      title="YouTube Engine — Authority & Reichweite aufbauen"
+      description="Research-getriebene Themen, systematische Hook-Architektur und Learning-Loops. Die YouTube-Infrastruktur von NOX Labs."
+      path="/systems/youtube-engine"
+    >
+
     <div className="min-h-screen py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <motion.div
@@ -560,5 +567,6 @@ export default function YouTubeEngineDetail() {
         </motion.section>
       </div>
     </div>
+    </Seo>
   );
 }
