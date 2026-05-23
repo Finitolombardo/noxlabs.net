@@ -5,7 +5,6 @@ import Systems from './pages/Systems';
 import SystemDetail from './pages/SystemDetail';
 import Roadmap from './pages/Roadmap';
 import SolutionFinder from './pages/SolutionFinder';
-import OperatorCockpit from './pages/OperatorCockpit';
 import Contact from './pages/Contact';
 import Impressum from './pages/Impressum';
 import Datenschutz from './pages/Datenschutz';
@@ -14,7 +13,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/operator-cockpit" element={<OperatorCockpit />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="systems" element={<Systems />} />
