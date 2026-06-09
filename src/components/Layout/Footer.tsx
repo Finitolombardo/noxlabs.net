@@ -49,7 +49,7 @@ export default function Footer() {
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-white/[0.05]">
           <div className="text-[12px] font-mono font-medium tracking-[0.2em] text-white/55 uppercase">
-            © 2025 NOX Labs <span className="text-white/30 mx-1">·</span> Alle Rechte vorbehalten
+            © 2026 NOX Labs <span className="text-white/30 mx-1">·</span> Alle Rechte vorbehalten
           </div>
           <div className="flex items-center gap-7 text-[12px] font-mono font-medium tracking-[0.2em] text-white/55 uppercase">
             <Link to="/impressum" className="hover:text-white transition-colors duration-300">Impressum</Link>

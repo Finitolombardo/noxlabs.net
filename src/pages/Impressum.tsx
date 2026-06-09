@@ -45,6 +45,7 @@ export default function Impressum() {
               <div className="space-y-2">
                 <p className="font-semibold text-nox-white">NOX</p>
                 <p>Alexander Lapizky</p>
+                <p>Einzelunternehmer</p>
                 <p>Bessererstraße 16/2</p>
                 <p>89073 Ulm</p>
                 <p>Deutschland</p>
@@ -58,10 +59,10 @@ export default function Impressum() {
               <p>
                 E-Mail:{' '}
                 <a
-                  href="mailto:admin@alphamindhub.com"
+                  href="mailto:alexander@noxlabs.net"
                   className="text-nox-red hover:underline"
                 >
-                  admin@alphamindhub.com
+                  alexander@noxlabs.net
                 </a>
               </p>
             </section>
@@ -80,7 +81,7 @@ export default function Impressum() {
                 Steuernummer
               </h2>
               <p>
-                Eine Steuernummer wurde noch nicht vergeben.
+                8827014497
               </p>
             </section>
 
