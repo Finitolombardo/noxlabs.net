@@ -160,10 +160,10 @@ export default function Datenschutz() {
                 <p>
                   E-Mail:{' '}
                   <a
-                    href="mailto:admin@alphamindhub.com"
+                    href="mailto:alexander@noxlabs.net"
                     className="text-nox-red hover:underline"
                   >
-                    admin@alphamindhub.com
+                    alexander@noxlabs.net
                   </a>
                 </p>
               </div>
@@ -323,66 +323,26 @@ export default function Datenschutz() {
               </p>
             </section>
 
+            {/*
+              TODO (vorbereitet, NICHT aktiv): Sobald Calendly oder ein anderer
+              Terminbuchungs-Dienst real eingebunden wird, hier eine Plugin-/Tools-
+              Sektion ergänzen (Anbieter, Rechtsgrundlage Art. 6 DSGVO, AVV-Status,
+              US-Datentransfer/SCC). Erst nach tatsächlichem Einbau + abgeschlossenem
+              AVV sichtbar machen. Solange nichts eingebunden ist, bleibt der Text raus.
+            */}
+
             <section>
               <h2 className="text-2xl font-semibold text-nox-white mb-4">
-                5. Plugins und Tools
+                5. Keine Verwendung von Tracking- und Analyse-Tools
               </h2>
-
-              <h3 className="text-xl font-semibold text-nox-white mb-3 mt-6">
-                Calendly
-              </h3>
               <p className="mb-4">
-                Wir haben Calendly auf dieser Website eingebunden. Anbieter ist Calendly LLC, 271 17th St NW, 10th Floor, Atlanta, Georgia 30363, USA (nachfolgend „Calendly").
-              </p>
-              <p className="mb-4">
-                Mit Calendly können Sie online Termine mit uns vereinbaren. Wenn Sie einen Termin vereinbaren möchten, geben Sie die abgefragten Daten und den Wunschtermin in die dafür vorgesehene Eingabemaske ein. Die eingegebenen Daten werden für die Planung, Durchführung und ggf. für die Nachbereitung des Termins verwendet. Die Termindaten werden für uns auf den Servern von Calendly gespeichert, dessen Datenschutzerklärung Sie hier einsehen können:{' '}
-                <a
-                  href="https://calendly.com/privacy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-nox-red hover:underline break-all"
-                >
-                  https://calendly.com/privacy
-                </a>
-              </p>
-              <p className="mb-4">
-                Die von Ihnen eingegebenen Daten verbleiben bei uns bzw. bei Calendly, bis Sie uns zur Löschung auffordern, Ihre Einwilligung zur Speicherung widerrufen oder der Zweck für die Datenspeicherung entfällt. Zwingende gesetzliche Bestimmungen – insbesondere Aufbewahrungsfristen – bleiben unberührt.
-              </p>
-              <p className="mb-4">
-                Die Verwendung von Calendly erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Der Websitebetreiber hat ein berechtigtes Interesse an einer möglichst unkomplizierten Terminvereinbarung mit Interessenten und Kunden. Sofern eine entsprechende Einwilligung abgefragt wurde, erfolgt die Verarbeitung ausschließlich auf Grundlage von Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TTDSG, soweit die Einwilligung die Speicherung von Cookies oder den Zugriff auf Informationen im Endgerät des Nutzers (z.B. Device-Fingerprinting) im Sinne des TTDSG umfasst. Die Einwilligung ist jederzeit widerrufbar.
-              </p>
-              <p className="mb-4">
-                Die Datenübertragung in die USA wird auf die Standardvertragsklauseln der EU-Kommission gestützt. Details finden Sie hier:{' '}
-                <a
-                  href="https://calendly.com/pages/dpa"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-nox-red hover:underline break-all"
-                >
-                  https://calendly.com/pages/dpa
-                </a>
-              </p>
-
-              <h3 className="text-xl font-semibold text-nox-white mb-3 mt-6">
-                Auftragsverarbeitung
-              </h3>
-              <p className="mb-4">
-                Wir haben einen Vertrag über Auftragsverarbeitung (AVV) zur Nutzung des oben genannten Dienstes geschlossen. Hierbei handelt es sich um einen datenschutzrechtlich vorgeschriebenen Vertrag, der gewährleistet, dass dieser die personenbezogenen Daten unserer Websitebesucher nur nach unseren Weisungen und unter Einhaltung der DSGVO verarbeitet.
+                Derzeit verwenden wir auf dieser Website keine Tracking-, Analyse- oder Marketing-Tools wie Google Analytics, Facebook Pixel, Matomo oder vergleichbare Dienste. Es findet keine Analyse Ihres Nutzerverhaltens zu Marketing- oder Analysezwecken statt.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-semibold text-nox-white mb-4">
-                6. Keine Verwendung von Tracking- und Analyse-Tools
-              </h2>
-              <p className="mb-4">
-                Wir verwenden auf dieser Website keine Tracking-, Analyse- oder Marketing-Tools wie Google Analytics, Facebook Pixel, Matomo oder vergleichbare Dienste. Es findet keine Analyse Ihres Nutzerverhaltens zu Marketing- oder Analysezwecken statt.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-nox-white mb-4">
-                7. Keine Verwendung von Cookies, die einer Einwilligung bedürfen
+                6. Keine Verwendung von Cookies, die einer Einwilligung bedürfen
               </h2>
               <p className="mb-4">
                 Diese Website verwendet ausschließlich technisch notwendige Cookies, die für den Betrieb der Website erforderlich sind. Es werden keine Cookies eingesetzt, die einer Einwilligung gemäß DSGVO oder TTDSG bedürfen.
@@ -391,7 +351,7 @@ export default function Datenschutz() {
 
             <div className="mt-12 pt-8 border-t border-white/10">
               <p className="text-sm text-nox-white-muted">
-                Stand: Januar 2025
+                Stand: Juni 2026
               </p>
             </div>
           </div>

@@ -10,16 +10,13 @@ export default function Contact() {
     company: '',
     message: '',
   });
-  const [submitted, setSubmitted] = useState(false);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Contact form submitted:', formData);
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({ name: '', email: '', company: '', message: '' });
-    }, 3000);
+    const subject = encodeURIComponent('Anfrage über noxlabs.net');
+    const body = encodeURIComponent(
+      `Name: ${formData.name}\nE-Mail: ${formData.email}\nFirma: ${formData.company}\n\n${formData.message}`
+    );
+    window.location.href = `mailto:alexander@noxlabs.net?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -117,20 +114,7 @@ export default function Contact() {
               <div className="absolute -inset-px bg-nox-red/[0.06] rounded-2xl blur-xl pointer-events-none" />
               <div className="relative bg-gradient-to-br from-[#0d0a0b]/90 to-[#070707]/90 border border-nox-red/20 rounded-2xl p-8 overflow-hidden">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-nox-red/40 to-transparent" />
-                {submitted ? (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-center py-12"
-                  >
-                    <div className="w-16 h-16 rounded-full bg-nox-red/15 border border-nox-red/40 flex items-center justify-center mx-auto mb-4 shadow-[0_0_32px_rgba(201,48,48,0.3)]">
-                      <Send className="w-7 h-7 text-nox-red" strokeWidth={2.25} />
-                    </div>
-                    <h3 className="text-2xl font-bold text-nox-white mb-2 tracking-tight">Nachricht gesendet</h3>
-                    <p className="text-nox-white-muted">Wir melden uns in Kürze bei dir.</p>
-                  </motion.div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                       <label className="block text-sm font-medium text-nox-white-muted mb-2">Name *</label>
                       <input
@@ -179,11 +163,17 @@ export default function Contact() {
                     </div>
 
                     <Button type="submit" variant="primary" className="w-full">
-                      Nachricht senden
+                      Per E-Mail senden
                       <Send className="inline-block ml-2 w-5 h-5" />
                     </Button>
+                    <p className="text-xs text-nox-white-muted/70 text-center leading-relaxed">
+                      Öffnet dein E-Mail-Programm mit vorausgefüllter Nachricht. Alternativ direkt an{' '}
+                      <a href="mailto:alexander@noxlabs.net" className="text-nox-red hover:underline">
+                        alexander@noxlabs.net
+                      </a>
+                      .
+                    </p>
                   </form>
-                )}
               </div>
             </div>
           </motion.div>
