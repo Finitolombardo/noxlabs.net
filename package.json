@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run verify:diagnosis && npm run test:analyzer && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "verify:diagnosis": "node scripts/verify-diagnosis-surface.mjs",
+    "test:analyzer": "node --test tests/analyzer-v3.test.mjs",
+    "test:analyzer:live": "node scripts/local-ulm-benchmark.mjs"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
