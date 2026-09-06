@@ -179,7 +179,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 1. Rate limit.
   const rl = checkRateLimit(req);
-  if (!rl.ok) {
+  if (rl.ok === false) {
     appendAuditEvent({
       eventType: 'RATE_LIMITED',
       route,
@@ -197,7 +197,7 @@ const handler: ApiHandler = async (req, res) => {
   // helper falls back to the standard operator-key gate when the flag is
   // not set.
   const auth = checkReadOnlyPlannerAuth(req);
-  if (!auth.ok) {
+  if (auth.ok === false) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
       route,
@@ -256,14 +256,14 @@ const handler: ApiHandler = async (req, res) => {
   // 5. Payload re-validation (shared with /plan/preview).
   const body = readBodyAsObject(req);
   const validation = validatePlanDraftPayload(projectId, body);
-  if (!validation.ok) {
+  if (validation.ok === false) {
     return failPayloadValidation(res, clientKeyLabel, method, validation.failure);
   }
   const draft = validation.draft;
 
   // 6. Notion read-only config.
   const notion = readNotionConfig();
-  if (!notion.ok) {
+  if (notion.ok === false) {
     appendAuditEvent({
       eventType: 'PLAN_VALIDATE_NOT_CONFIGURED',
       route,
@@ -344,7 +344,7 @@ const handler: ApiHandler = async (req, res) => {
       // relation, so we want to know the schema is reachable even though
       // Phase 2B never actually uses the property names here).
       const projectsSchemaRes = await getDatabaseSchema(notion.token, projectsDbId);
-      if (!projectsSchemaRes.ok) {
+      if (projectsSchemaRes.ok === false) {
         appendAuditEvent({
           eventType: 'PLAN_VALIDATE_UPSTREAM_FAILED',
           route,
@@ -369,7 +369,7 @@ const handler: ApiHandler = async (req, res) => {
         // Projects-DB row lookup by `Project ID` rich_text — identical
         // to /context's read.
         const lookup = await queryProjectsByProjectId(notion.token, projectsDbId, projectId);
-        if (!lookup.ok) {
+        if (lookup.ok === false) {
           appendAuditEvent({
             eventType: 'PLAN_VALIDATE_UPSTREAM_FAILED',
             route,

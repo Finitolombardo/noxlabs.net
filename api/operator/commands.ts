@@ -27,7 +27,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 1. Rate limit (before auth so 503/401 spam also gets throttled).
   const rl = checkRateLimit(req);
-  if (!rl.ok) {
+  if (rl.ok === false) {
     appendAuditEvent({
       eventType: 'RATE_LIMITED', route: ROUTE, method, statusCode: 429,
       outcome: 'blocked', clientKeyLabel: rl.keyLabel,
@@ -38,7 +38,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 2. Auth gate.
   const auth = checkOperatorAuth(req);
-  if (!auth.ok) {
+  if (auth.ok === false) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
       route: ROUTE, method, statusCode: auth.statusCode, outcome: 'blocked', clientKeyLabel,
@@ -74,32 +74,32 @@ const handler: ApiHandler = async (req, res) => {
   const body = readBodyAsObject(req);
 
   const idem = optionalIdempotencyKey(body.idempotencyKey);
-  if (!idem.ok) return failValidation(res, clientKeyLabel, method, 'idempotencyKey', idem.error);
+  if (idem.ok === false) return failValidation(res, clientKeyLabel, method, 'idempotencyKey', idem.error);
 
   if (!isAllowedCommandType(body.commandType)) {
     return failValidation(res, clientKeyLabel, method, 'commandType', `Field 'commandType' is not on the server allowlist.`);
   }
 
   const projectId = requireString(body.projectId, 'projectId', 64);
-  if (!projectId.ok) return failValidation(res, clientKeyLabel, method, 'projectId', projectId.error);
+  if (projectId.ok === false) return failValidation(res, clientKeyLabel, method, 'projectId', projectId.error);
 
   const questId = optionalString(body.questId, 'questId', 64);
-  if (!questId.ok) return failValidation(res, clientKeyLabel, method, 'questId', questId.error);
+  if (questId.ok === false) return failValidation(res, clientKeyLabel, method, 'questId', questId.error);
 
   const title = requireString(body.title, 'title', 200);
-  if (!title.ok) return failValidation(res, clientKeyLabel, method, 'title', title.error);
+  if (title.ok === false) return failValidation(res, clientKeyLabel, method, 'title', title.error);
 
   const intent = requireString(body.intent, 'intent', 1000);
-  if (!intent.ok) return failValidation(res, clientKeyLabel, method, 'intent', intent.error);
+  if (intent.ok === false) return failValidation(res, clientKeyLabel, method, 'intent', intent.error);
 
   const payloadSummary = requireString(body.payloadSummary, 'payloadSummary', 2000);
-  if (!payloadSummary.ok) return failValidation(res, clientKeyLabel, method, 'payloadSummary', payloadSummary.error);
+  if (payloadSummary.ok === false) return failValidation(res, clientKeyLabel, method, 'payloadSummary', payloadSummary.error);
 
   const requestedBy = requireString(body.requestedBy, 'requestedBy', 80);
-  if (!requestedBy.ok) return failValidation(res, clientKeyLabel, method, 'requestedBy', requestedBy.error);
+  if (requestedBy.ok === false) return failValidation(res, clientKeyLabel, method, 'requestedBy', requestedBy.error);
 
   const requiresApproval = optionalBoolean(body.requiresApproval, 'requiresApproval');
-  if (!requiresApproval.ok) return failValidation(res, clientKeyLabel, method, 'requiresApproval', requiresApproval.error);
+  if (requiresApproval.ok === false) return failValidation(res, clientKeyLabel, method, 'requiresApproval', requiresApproval.error);
 
   let riskLevel: RiskLevel = 'Mittel';
   if (body.riskLevel !== undefined && body.riskLevel !== null) {

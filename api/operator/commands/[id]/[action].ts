@@ -22,7 +22,7 @@ const handler: ApiHandler = async (req, res) => {
   setNoStore(res);
 
   const rl = checkRateLimit(req);
-  if (!rl.ok) {
+  if (rl.ok === false) {
     appendAuditEvent({
       eventType: 'RATE_LIMITED', route: ROUTE, method, statusCode: 429,
       outcome: 'blocked', clientKeyLabel: rl.keyLabel,
@@ -32,7 +32,7 @@ const handler: ApiHandler = async (req, res) => {
   const clientKeyLabel = rl.keyLabel;
 
   const auth = checkOperatorAuth(req);
-  if (!auth.ok) {
+  if (auth.ok === false) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
       route: ROUTE, method, statusCode: auth.statusCode, outcome: 'blocked', clientKeyLabel,
@@ -97,9 +97,9 @@ const handler: ApiHandler = async (req, res) => {
 
     case 'dry-run': {
       const requestedBy = requireString(body.requestedBy, 'requestedBy', 80);
-      if (!requestedBy.ok) return failValidation(res, clientKeyLabel, method, command.id, action, 'requestedBy', requestedBy.error);
+      if (requestedBy.ok === false) return failValidation(res, clientKeyLabel, method, command.id, action, 'requestedBy', requestedBy.error);
       const idem = optionalIdempotencyKey(body.idempotencyKey);
-      if (!idem.ok) return failValidation(res, clientKeyLabel, method, command.id, action, 'idempotencyKey', idem.error);
+      if (idem.ok === false) return failValidation(res, clientKeyLabel, method, command.id, action, 'idempotencyKey', idem.error);
 
       const dryRunResult: DryRunResult = stubDryRun(command);
       const updated: OperatorCommand = {
@@ -131,9 +131,9 @@ const handler: ApiHandler = async (req, res) => {
 
     case 'request-approval': {
       const requestedBy = requireString(body.requestedBy, 'requestedBy', 80);
-      if (!requestedBy.ok) return failValidation(res, clientKeyLabel, method, command.id, action, 'requestedBy', requestedBy.error);
+      if (requestedBy.ok === false) return failValidation(res, clientKeyLabel, method, command.id, action, 'requestedBy', requestedBy.error);
       const reason = requireString(body.reason, 'reason', 500);
-      if (!reason.ok) return failValidation(res, clientKeyLabel, method, command.id, action, 'reason', reason.error);
+      if (reason.ok === false) return failValidation(res, clientKeyLabel, method, command.id, action, 'reason', reason.error);
 
       const updated: OperatorCommand = {
         ...command,
@@ -159,7 +159,7 @@ const handler: ApiHandler = async (req, res) => {
 
     case 'approve': {
       const approvedBy = requireString(body.approvedBy, 'approvedBy', 80);
-      if (!approvedBy.ok) return failValidation(res, clientKeyLabel, method, command.id, action, 'approvedBy', approvedBy.error);
+      if (approvedBy.ok === false) return failValidation(res, clientKeyLabel, method, command.id, action, 'approvedBy', approvedBy.error);
 
       if (command.status === 'Gesperrt') {
         appendAuditEvent({
@@ -196,9 +196,9 @@ const handler: ApiHandler = async (req, res) => {
 
     case 'reject': {
       const rejectedBy = requireString(body.rejectedBy, 'rejectedBy', 80);
-      if (!rejectedBy.ok) return failValidation(res, clientKeyLabel, method, command.id, action, 'rejectedBy', rejectedBy.error);
+      if (rejectedBy.ok === false) return failValidation(res, clientKeyLabel, method, command.id, action, 'rejectedBy', rejectedBy.error);
       const reason = requireString(body.reason, 'reason', 500);
-      if (!reason.ok) return failValidation(res, clientKeyLabel, method, command.id, action, 'reason', reason.error);
+      if (reason.ok === false) return failValidation(res, clientKeyLabel, method, command.id, action, 'reason', reason.error);
 
       const updated: OperatorCommand = {
         ...command,

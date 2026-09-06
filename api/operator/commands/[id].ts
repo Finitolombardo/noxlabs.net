@@ -17,7 +17,7 @@ const handler: ApiHandler = async (req, res) => {
   setNoStore(res);
 
   const rl = checkRateLimit(req);
-  if (!rl.ok) {
+  if (rl.ok === false) {
     appendAuditEvent({
       eventType: 'RATE_LIMITED', route: ROUTE, method, statusCode: 429,
       outcome: 'blocked', clientKeyLabel: rl.keyLabel,
@@ -27,7 +27,7 @@ const handler: ApiHandler = async (req, res) => {
   const clientKeyLabel = rl.keyLabel;
 
   const auth = checkOperatorAuth(req);
-  if (!auth.ok) {
+  if (auth.ok === false) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
       route: ROUTE, method, statusCode: auth.statusCode, outcome: 'blocked', clientKeyLabel,

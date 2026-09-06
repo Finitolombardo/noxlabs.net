@@ -34,7 +34,7 @@ export function requireString(v: unknown, field: string, max = 500): Validated<s
 export function optionalString(v: unknown, field: string, max = 500): Validated<string | undefined> {
   if (v === undefined || v === null) return { ok: true, value: undefined };
   const r = requireString(v, field, max);
-  if (!r.ok) return r;
+  if (r.ok === false) return r;
   return { ok: true, value: r.value };
 }
 

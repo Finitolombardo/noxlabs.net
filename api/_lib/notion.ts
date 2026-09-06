@@ -139,7 +139,7 @@ export async function queryDatabase(
     clearTimeout(timer);
   }
 
-  if (!resp.ok) {
+  if (resp.ok === false) {
     // APP-X-BRIDGE-04e — safe Notion upstream diagnostics.
     // We read the response body (capped) and try to extract the
     // `{object:"error", code, message}` envelope Notion returns on 4xx/5xx.
@@ -406,7 +406,7 @@ export async function getDatabaseSchema(
     clearTimeout(timer);
   }
 
-  if (!resp.ok) {
+  if (resp.ok === false) {
     const diag = await readNotionErrorDiagnostics(resp);
     const codePart = diag.upstreamCode ? ` ${diag.upstreamCode}` : '';
     return {
@@ -687,7 +687,7 @@ export async function createMasterTaskPage(
     clearTimeout(timer);
   }
 
-  if (!resp.ok) {
+  if (resp.ok === false) {
     const diag = await readNotionErrorDiagnostics(resp);
     const codePart = diag.upstreamCode ? ` ${diag.upstreamCode}` : '';
     return {

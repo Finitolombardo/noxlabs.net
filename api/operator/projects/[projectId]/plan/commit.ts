@@ -323,7 +323,7 @@ async function recheckSchemaForCommit(
   projectId: string,
 ): Promise<SchemaCheckResult> {
   const schemaRes: NotionSchemaResult = await getDatabaseSchema(token, masterDbId);
-  if (!schemaRes.ok) {
+  if (schemaRes.ok === false) {
     return { ok: false, reason: 'schema_unreadable', summary: schemaRes.summary.slice(0, 200) };
   }
   // Allowlist must be fully present + correctly typed. We only check the
@@ -373,7 +373,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 1. Rate limit
   const rl = checkRateLimit(req);
-  if (!rl.ok) {
+  if (rl.ok === false) {
     appendAuditEvent({
       eventType: 'RATE_LIMITED',
       route,
@@ -392,7 +392,7 @@ const handler: ApiHandler = async (req, res) => {
   // server gates (flag, write token, digest, schema, idempotency) still
   // run in full.
   const auth = checkPrivateWritePlannerAuth(req);
-  if (!auth.ok) {
+  if (auth.ok === false) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
       route,
@@ -459,7 +459,7 @@ const handler: ApiHandler = async (req, res) => {
   const commitFieldCheck = validateCommitBody(body, {
     requireCommitTokenOrPhrase: authModeWire === 'operator_key',
   });
-  if (!commitFieldCheck.ok) {
+  if (commitFieldCheck.ok === false) {
     appendAuditEvent({
       eventType:
         commitFieldCheck.field === 'commitToken|explicitConfirmPhrase'
@@ -479,7 +479,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 6. Shared payload validation (re-uses planDraft.ts).
   const payloadCheck = validatePlanDraftPayload(projectId, body);
-  if (!payloadCheck.ok) {
+  if (payloadCheck.ok === false) {
     appendAuditEvent({
       eventType: 'PLAN_COMMIT_VALIDATION_FAILED',
       route,
@@ -569,7 +569,7 @@ const handler: ApiHandler = async (req, res) => {
   // 9. Notion config — even with the flag on, we still need a configured
   // read-only token (for schema re-check + idempotency lookup).
   const notion = readNotionConfig();
-  if (!notion.ok) {
+  if (notion.ok === false) {
     // Commit-500-Diagnostics — distinguish which env var is actually
     // missing so the response code is actionable.
     const tokenMissing = notion.missing.includes('NOX_NOTION_READONLY_TOKEN');
@@ -705,7 +705,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 11. Re-run schema validation against the live Notion DB.
   const schemaRecheck = await recheckSchemaForCommit(notion.token, notion.dbId, projectId);
-  if (!schemaRecheck.ok) {
+  if (schemaRecheck.ok === false) {
     appendAuditEvent({
       eventType: 'PLAN_COMMIT_SCHEMA_NOT_READY',
       route,
@@ -743,7 +743,7 @@ const handler: ApiHandler = async (req, res) => {
     notion.dbId,
     recomputedDigest,
   );
-  if (!dupCheck.ok) {
+  if (dupCheck.ok === false) {
     appendAuditEvent({
       eventType: 'PLAN_COMMIT_SCHEMA_NOT_READY',
       route,

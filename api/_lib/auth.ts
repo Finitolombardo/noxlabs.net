@@ -143,7 +143,7 @@ export function checkReadOnlyPlannerAuth(req: ApiRequest): PlannerAuthResult {
     return { ok: true, authMode: 'private_cockpit_readonly' };
   }
   const base = checkOperatorAuth(req);
-  if (!base.ok) return base;
+  if (base.ok === false) return base;
   return { ok: true, authMode: 'operator_key' };
 }
 
@@ -191,6 +191,6 @@ export function checkPrivateWritePlannerAuth(req: ApiRequest): WriteAuthResult {
     return { ok: true, authMode: 'private_write_mode' };
   }
   const base = checkOperatorAuth(req);
-  if (!base.ok) return base;
+  if (base.ok === false) return base;
   return { ok: true, authMode: 'operator_key' };
 }

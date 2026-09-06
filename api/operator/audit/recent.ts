@@ -117,7 +117,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 1. Rate limit
   const rl = checkRateLimit(req);
-  if (!rl.ok) {
+  if (rl.ok === false) {
     appendAuditEvent({
       eventType: 'RATE_LIMITED',
       route: ROUTE,
@@ -137,7 +137,7 @@ const handler: ApiHandler = async (req, res) => {
   // call the read endpoint without a header (the network boundary is
   // the trust boundary), while every other caller must present the key.
   const auth = checkReadOnlyPlannerAuth(req);
-  if (!auth.ok) {
+  if (auth.ok === false) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
       route: ROUTE,

@@ -235,7 +235,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 1. Rate limit.
   const rl = checkRateLimit(req);
-  if (!rl.ok) {
+  if (rl.ok === false) {
     appendAuditEvent({
       eventType: 'RATE_LIMITED', route, method, statusCode: 429,
       outcome: 'blocked', clientKeyLabel: rl.keyLabel,
@@ -246,7 +246,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 2. Auth gate.
   const auth = checkOperatorAuth(req);
-  if (!auth.ok) {
+  if (auth.ok === false) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
       route, method, statusCode: auth.statusCode, outcome: 'blocked', clientKeyLabel,
@@ -286,7 +286,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 5. Notion adapter configuration.
   const notion = readNotionConfig();
-  if (!notion.ok) {
+  if (notion.ok === false) {
     appendAuditEvent({
       eventType: 'PROJECT_CONTEXT_NOT_CONFIGURED', route, method, statusCode: 503,
       outcome: 'blocked', clientKeyLabel,
@@ -322,7 +322,7 @@ const handler: ApiHandler = async (req, res) => {
     });
 
     const projectLookup = await queryProjectsByProjectId(notion.token, projectsDbId, projectId);
-    if (!projectLookup.ok) {
+    if (projectLookup.ok === false) {
       appendAuditEvent({
         eventType: 'PROJECT_CONTEXT_UPSTREAM_FAILED', route, method, statusCode: 502,
         outcome: 'failure', clientKeyLabel,
@@ -352,7 +352,7 @@ const handler: ApiHandler = async (req, res) => {
       notion.dbId,
       projectPage.id,
     );
-    if (!relationLookup.ok) {
+    if (relationLookup.ok === false) {
       appendAuditEvent({
         eventType: 'PROJECT_CONTEXT_UPSTREAM_FAILED', route, method, statusCode: 502,
         outcome: 'failure', clientKeyLabel,
@@ -421,7 +421,7 @@ const handler: ApiHandler = async (req, res) => {
     sorts: [{ timestamp: 'last_edited_time', direction: 'descending' }],
   });
 
-  if (!query.ok) {
+  if (query.ok === false) {
     appendAuditEvent({
       eventType: 'PROJECT_CONTEXT_UPSTREAM_FAILED', route, method, statusCode: 502,
       outcome: 'failure', clientKeyLabel,

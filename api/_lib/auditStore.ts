@@ -158,7 +158,7 @@ async function kvCommand(
     },
     KV_TIMEOUT_MS,
   );
-  if (!res.ok) {
+  if (res.ok === false) {
     throw new Error(`kv_http_${res.status}`);
   }
   const json = (await res.json()) as { result?: unknown; error?: string };

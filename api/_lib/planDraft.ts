@@ -317,7 +317,7 @@ export function validatePlanDraftPayload(
   const seenIds = new Set<string>();
   for (let i = 0; i < body.planSteps.length; i++) {
     const result = validateStep(body.planSteps[i], i);
-    if (!result.ok) return { ok: false, failure: result.failure };
+    if (result.ok === false) return { ok: false, failure: result.failure };
     if (seenIds.has(result.value.id)) {
       return {
         ok: false,
@@ -607,7 +607,7 @@ export function mapPlanMutationToNotionProperties(
       prop.notionPropertyName,
       relationOverrides,
     );
-    if (!built.ok) {
+    if (built.ok === false) {
       dropped.push({
         notionPropertyName: prop.notionPropertyName,
         reason: built.reason,

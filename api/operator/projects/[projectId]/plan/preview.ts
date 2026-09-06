@@ -84,7 +84,7 @@ const handler: ApiHandler = async (req, res) => {
 
   // 1. Rate limit (before auth so unauthenticated spam also gets throttled).
   const rl = checkRateLimit(req);
-  if (!rl.ok) {
+  if (rl.ok === false) {
     appendAuditEvent({
       eventType: 'RATE_LIMITED',
       route,
@@ -101,7 +101,7 @@ const handler: ApiHandler = async (req, res) => {
   // `private_cockpit_readonly` mode when the server-side flag is set; all
   // other operator endpoints continue to require the explicit operator key.
   const auth = checkReadOnlyPlannerAuth(req);
-  if (!auth.ok) {
+  if (auth.ok === false) {
     appendAuditEvent({
       eventType: auth.reason === 'not_configured' ? 'AUTH_NOT_CONFIGURED' : 'AUTH_FAILED',
       route,
@@ -160,7 +160,7 @@ const handler: ApiHandler = async (req, res) => {
   // 5. Structural payload validation (shared with Phase 2B).
   const body = readBodyAsObject(req);
   const validation = validatePlanDraftPayload(projectId, body);
-  if (!validation.ok) {
+  if (validation.ok === false) {
     return failValidation(res, clientKeyLabel, method, validation.failure);
   }
   const draft = validation.draft;
