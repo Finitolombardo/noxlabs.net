@@ -10,6 +10,7 @@ import {
   Gauge,
 } from 'lucide-react';
 import NoxBolt from '../components/UI/NoxBolt';
+import Seo from '../components/Seo';
 
 
 const problems = [

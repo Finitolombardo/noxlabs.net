@@ -17,11 +17,11 @@ export default function Footer() {
               <NoxLogo size="md" />
             </div>
             <p className="text-sm text-nox-white-muted/85 max-w-sm leading-[1.7]">
-              High-End KI-Systeme für Lead-Generierung, Qualifizierung, Workflow-Automatisierung und skalierbare Business-Infrastruktur.
+              High-End KI-Systeme fÃ¼r Lead-Generierung, Qualifizierung, Workflow-Automatisierung und skalierbare Business-Infrastruktur.
             </p>
             <div className="mt-8 flex items-center gap-3 text-[12px] font-mono font-semibold tracking-[0.28em] text-white/55 uppercase">
               <span className="w-8 h-px bg-white/25" />
-              <span>Systeme <span className="text-white/35 mx-0.5">·</span> Kein Consulting</span>
+              <span>Systeme <span className="text-white/35 mx-0.5">Â·</span> Kein Consulting</span>
             </div>
           </div>
 
@@ -31,25 +31,29 @@ export default function Footer() {
             <div className="grid grid-cols-2 gap-x-8 gap-y-3.5">
               <Link to="/" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Start</Link>
               <Link to="/systems" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Systeme</Link>
-              <Link to="/configurator" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Lösungsfinder</Link>
+              <Link to="/configurator" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">LÃ¶sungsfinder</Link>
               <Link to="/roadmap" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Roadmap</Link>
               <Link to="/contact" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300 w-fit">Kontakt</Link>
             </div>
           </div>
 
-          {/* Entry layer block */}
+          {/* Product access block */}
           <div className="md:col-span-3">
-            <p className="text-[13px] font-mono font-semibold tracking-[0.3em] text-[#FF5A5A] uppercase mb-5">Entry Layer</p>
-            <p className="text-sm text-nox-white mb-1.5 font-semibold">GetVoidra</p>
-            <p className="text-[13px] text-nox-white-muted/85 max-w-[220px] leading-relaxed">
-              Produktisierter NOX-Layer. Ready-to-deploy Systeme.
+            <p className="text-[13px] font-mono font-semibold tracking-[0.3em] text-[#FF5A5A] uppercase mb-5">NOX App</p>
+            <p className="text-sm text-nox-white mb-1.5 font-semibold">App & Companion</p>
+            <p className="text-[13px] text-nox-white-muted/85 max-w-[240px] leading-relaxed mb-4">
+              NOX im Browser nutzen oder den aktuellen Windows Companion installieren.
             </p>
+            <div className="flex flex-col items-start gap-2.5">
+              <a href="https://app.noxlabs.net" className="text-sm text-nox-white-muted hover:text-nox-white transition-colors duration-300">NOX App ?ffnen ?</a>
+              <a href="https://app.noxlabs.net/companion/NOX-Companion-Setup.exe" className="text-sm text-[#FF6B6B] hover:text-[#ff8a8a] transition-colors duration-300">Windows Companion herunterladen ?</a>
+            </div>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-white/[0.05]">
           <div className="text-[12px] font-mono font-medium tracking-[0.2em] text-white/55 uppercase">
-            © 2025 NOX Labs <span className="text-white/30 mx-1">·</span> Alle Rechte vorbehalten
+            Â© 2025 NOX Labs <span className="text-white/30 mx-1">Â·</span> Alle Rechte vorbehalten
           </div>
           <div className="flex items-center gap-7 text-[12px] font-mono font-medium tracking-[0.2em] text-white/55 uppercase">
             <Link to="/impressum" className="hover:text-white transition-colors duration-300">Impressum</Link>

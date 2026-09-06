@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, AlertTriangle, Layers, CheckCircle2, Repeat } from 'lucide-react';
 import Button from '../components/UI/Button';
 import Accordion from '../components/UI/Accordion';
+import Seo from '../components/Seo';
 
 
 export default function YouTubeEngineDetail() {

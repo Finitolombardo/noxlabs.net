@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, MessageSquare, Send } from 'lucide-react';
 import Button from '../components/UI/Button';
+import Seo from '../components/Seo';
 
 
 export default function Contact() {

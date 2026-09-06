@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Loader2, Sparkles } from 'lucide-react';
 import { routeIntake, type IntakePayload, type RoutingResult } from '../lib/solutionFinderRouting';
+import Seo from '../components/Seo';
 
 
 // ============================================================

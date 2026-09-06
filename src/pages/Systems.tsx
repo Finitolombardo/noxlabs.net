@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { systems } from '../data/systems';
+import Seo from '../components/Seo';
 
 
 export default function Systems() {

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2, Clock, MessageSquare, FileSpreadsheet, AlertCircle, X } from 'lucide-react';
 import Button from '../components/UI/Button';
+import Seo from '../components/Seo';
 
 
 export default function WhatsAppBookingBotDetail() {

@@ -8,6 +8,7 @@ import PitchMutationEngineDetail from './PitchMutationEngineDetail';
 import LeadforgeDetail from './LeadforgeDetail';
 import YouTubeEngineDetail from './YouTubeEngineDetail';
 import WhatsAppBookingBotDetail from './WhatsAppBookingBotDetail';
+import Seo from '../components/Seo';
 
 
 export default function SystemDetail() {

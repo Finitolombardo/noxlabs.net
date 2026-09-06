@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import Seo from '../components/Seo';
 
 
 interface RoadmapSystem {
